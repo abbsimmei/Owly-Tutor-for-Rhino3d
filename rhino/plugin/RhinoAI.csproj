@@ -17,7 +17,7 @@
   <PropertyGroup>
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">net8.0;net48</TargetFrameworks>
     <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net8.0</TargetFrameworks>
-    <AssemblyName>RhinoAI</AssemblyName>
+    <AssemblyName>Owly</AssemblyName>
     <PackageId>RhinoAI.PlugIn</PackageId>
     <RootNamespace>Rhino.AI</RootNamespace>
     <Title>Rhino AI</Title>

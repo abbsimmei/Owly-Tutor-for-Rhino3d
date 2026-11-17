@@ -7,7 +7,7 @@ namespace Rhino.AI;
 internal static class AISettings
 {
 
-    private static Guid PluginId { get; } = new("2668d7ed-f507-4a68-8295-8172147a0e39");
+    private static Guid PluginId { get; } = new("1f0762a7-df2f-4d11-8ff3-22ec1a40391c");
 
     private static PersistentSettings Settings =>
         PlugIn.Find(PluginId) is PlugIn plugin

@@ -36,6 +36,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="RhinoAI" />
+    <InternalsVisibleTo Include="Owly" />
   </ItemGroup>
 
   <ItemGroup>
