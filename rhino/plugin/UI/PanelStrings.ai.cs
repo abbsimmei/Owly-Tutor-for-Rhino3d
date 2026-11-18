@@ -7,49 +7,35 @@ internal static class PanelStrings
 {
     public static IReadOnlyDictionary<string, string> Localized() => new Dictionary<string, string>
     {
-        ["header.switchAgent"] = Localization.LocalizeString("Switch agent", 60),
-        ["header.noAgent"] = Localization.LocalizeString("No agent", 61),
+        ["header.switchAgent"] = Localization.LocalizeString("Owly", 60),
+        ["header.noAgent"] = Localization.LocalizeString("Owly isn't set up", 61),
         ["header.nothingConfigured"] = Localization.LocalizeString("nothing configured", 62),
         ["header.history"] = Localization.LocalizeString("Conversation history", 63),
         ["header.newConversation"] = Localization.LocalizeString("New conversation  (Ctrl+Shift+N)", 64),
-        ["header.settings"] = Localization.LocalizeString("AI settings", 65),
+        ["header.settings"] = Localization.LocalizeString("Owly settings", 65),
 
         ["empty.ready"] = Localization.LocalizeString("{0} is ready", 66),
-        ["empty.theAgent"] = Localization.LocalizeString("The agent", 67),
+        ["empty.theAgent"] = Localization.LocalizeString("Owly", 67),
         ["empty.body"] = Localization.LocalizeString("Ask how to do something in Rhino. Owly explains which tools and commands to use. You do the modelling.", 68),
         ["empty.starterCommand"] = Localization.LocalizeString("How do I loft between curves?", 69),
         ["empty.starterTower"] = Localization.LocalizeString("What\'s the difference between Join and Group?", 70),
         ["empty.starterLayers"] = Localization.LocalizeString("How do I make a wall with openings?", 71),
-        ["empty.noAgent"] = Localization.LocalizeString("No agent available", 72),
-        ["empty.noAgentBody"] = Localization.LocalizeString("Install Claude Code and sign in.", 73),
-        ["empty.openSettings"] = Localization.LocalizeString("Open AI settings", 74),
-        ["empty.setupGuide"] = Localization.LocalizeString("Read the setup guide", 75),
+        ["empty.noAgent"] = Localization.LocalizeString("Owly isn't set up yet", 72),
+        ["empty.noAgentBody"] = Localization.LocalizeString("Owly uses Claude Code. Install it and sign in, then come back here.", 73),
+        ["empty.openSettings"] = Localization.LocalizeString("Open Owly settings", 74),
+        ["empty.setupGuide"] = Localization.LocalizeString("How to install Claude Code", 75),
 
-        ["plan.head"] = Localization.LocalizeString("Plan", 76),
         ["turn.copy"] = Localization.LocalizeString("Copy the reply", 77),
-        ["turn.retry"] = Localization.LocalizeString("Ask again", 78),
-        ["turn.undoTitle"] = Localization.LocalizeString("Revert every document change this turn made", 79),
-        ["turn.undo"] = Localization.LocalizeString("Revert", 80),
         ["turn.stopped"] = Localization.LocalizeString("stopped", 81),
         ["transcript.newOutput"] = Localization.LocalizeString("New output", 82),
         ["chip.removeNamed"] = Localization.LocalizeString("Remove {0}", 83),
-        ["chip.revealNamed"] = Localization.LocalizeString("Show {0} in Rhino", 84),
 
-        ["tool.copyNamedSection"] = Localization.LocalizeString("Copy {0}", 85),
-        ["tool.arguments"] = Localization.LocalizeString("arguments", 86),
-        ["tool.result"] = Localization.LocalizeString("result", 87),
-        ["tool.noResult"] = Localization.LocalizeString("No result reported, so this may or may not have run.", 88),
 
         ["image.generated"] = Localization.LocalizeString("Generated image", 89),
         ["image.openNamed"] = Localization.LocalizeString("Open {0} in your image viewer", 90),
         ["image.saveNamed"] = Localization.LocalizeString("Save {0}", 91),
         ["image.save"] = Localization.LocalizeString("Save", 92),
 
-        ["preview.captured"] = Localization.LocalizeString("Captured viewport", 93),
-        ["preview.revealObject"] = Localization.LocalizeString("Select and zoom to this object in Rhino", 94),
-        ["preview.wireCount"] = Localization.LocalizeString("{0} wires", 95),
-        ["preview.errorCount"] = Localization.LocalizeString("{0} errors", 96),
-        ["preview.warningCount"] = Localization.LocalizeString("{0} warnings", 97),
 
         ["status.workingForScreenReader"] = Localization.LocalizeString("Working", 98),
 
@@ -83,12 +69,12 @@ internal static class PanelStrings
 
         ["review.readOnlyAtTime"] = Localization.LocalizeString("Read-only · {0}", 126),
         ["review.backToLive"] = Localization.LocalizeString("Back to live", 127),
-        ["review.resumeTitle"] = Localization.LocalizeString("Continue this conversation with its agent", 128),
+        ["review.resumeTitle"] = Localization.LocalizeString("Continue this conversation", 128),
         ["review.resume"] = Localization.LocalizeString("Resume", 129),
 
         ["history.title"] = Localization.LocalizeString("Conversations", 130),
         ["history.close"] = Localization.LocalizeString("Close", 131),
-        ["history.search"] = Localization.LocalizeString("Search prompts, agents, models…", 132),
+        ["history.search"] = Localization.LocalizeString("Search conversations…", 132),
         ["history.empty"] = Localization.LocalizeString("No saved conversations yet", 133),
         ["history.noMatch"] = Localization.LocalizeString("Nothing matches", 134),
         ["history.turnCountOne"] = Localization.LocalizeString("{0} turn", 135),
@@ -96,7 +82,7 @@ internal static class PanelStrings
         ["history.tokenCount"] = Localization.LocalizeString("{0} tok", 137),
 
         ["agent.menuHead"] = Localization.LocalizeString("Agent", 138),
-        ["agent.settings"] = Localization.LocalizeString("AI settings…", 139),
+        ["agent.settings"] = Localization.LocalizeString("Owly settings…", 139),
         ["agent.useNamed"] = Localization.LocalizeString("Use {0}", 140),
         ["agent.reasonDisabled"] = Localization.LocalizeString("turned off in settings", 141),
         ["agent.reasonMissing"] = Localization.LocalizeString("not installed", 142),
@@ -106,7 +92,6 @@ internal static class PanelStrings
         ["composer.placeholderBusy"] = Localization.LocalizeString("Type your next message…", 145),
         ["composer.ariaMessage"] = Localization.LocalizeString("Message", 146),
         ["composer.attachFile"] = Localization.LocalizeString("Attach a file", 147),
-        ["composer.attachContext"] = Localization.LocalizeString("Attach document context", 148),
         ["composer.commands"] = Localization.LocalizeString("Commands", 149),
         ["composer.hintStop"] = Localization.LocalizeString("Esc to stop", 150),
         ["composer.hintSend"] = Localization.LocalizeString("Enter to send", 151),
@@ -116,10 +101,8 @@ internal static class PanelStrings
 
         ["cmd.newHint"] = Localization.LocalizeString("Start a fresh conversation", 155),
         ["cmd.historyHint"] = Localization.LocalizeString("Browse past conversations", 156),
-        ["cmd.agentHint"] = Localization.LocalizeString("Switch agent or model", 157),
-        ["cmd.loginHint"] = Localization.LocalizeString("Sign in to the selected CLI agent", 158),
-        ["cmd.stopHint"] = Localization.LocalizeString("Cancel the running turn", 159),
-        ["cmd.settingsHint"] = Localization.LocalizeString("Open AI settings", 160),
+        ["cmd.stopHint"] = Localization.LocalizeString("Stop Owly's answer", 159),
+        ["cmd.settingsHint"] = Localization.LocalizeString("Open Owly settings", 160),
 
         ["ask.dontKnow"] = Localization.LocalizeString("I don't know", 161),
         ["ask.back"] = Localization.LocalizeString("Back", 162),
@@ -141,7 +124,7 @@ internal static class PanelStrings
         ["unsupported.title"] = "This panel needs a newer system WebView",
         ["unsupported.body"] = "The panel renders in the WebView that comes with your operating system, so updating the OS (macOS ships WebKit with Safari) is what fixes it.",
         ["unsupported.macos"] = "Every Apple Silicon Mac can run a recent macOS, so this usually just means pending system updates.",
-        ["unsupported.classic"] = "The classic AI panel keeps working in the meantime.",
+        ["unsupported.classic"] = "Until then, you can still use Rhino's Help (F1) and the command line.",
         ["unsupported.showAnyway"] = "Show it anyway",
     };
 

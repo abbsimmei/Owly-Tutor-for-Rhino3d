@@ -5,7 +5,7 @@ import { formatBytes } from '../state/format.js';
 import { isAttachable, MAX_ATTACHMENT_BYTES, readAttachments } from '../protocol/attachments.js';
 import { t } from '../i18n/t.js';
 import type { StringKey } from '../i18n/strings.js';
-import type { Attachment, ContextItem } from '../protocol/events.js';
+import type { Attachment } from '../protocol/events.js';
 import type { PanelContext } from './context.js';
 import { icon, type IconName } from './icons.js';
 
@@ -20,21 +20,9 @@ interface Command {
 const COMMANDS: readonly Command[] = [
   { key: 'new', label: '/new', hint: 'cmd.newHint', icon: 'plus', run: (c) => c.send({ type: 'conversation.new' }) },
   { key: 'history', label: '/history', hint: 'cmd.historyHint', icon: 'history', run: (c) => c.ui.openOverlay('history') },
-  { key: 'agent', label: '/agent', hint: 'cmd.agentHint', icon: 'agent', run: (c) => c.ui.openOverlay('agents') },
-  { key: 'login', label: '/login', hint: 'cmd.loginHint', icon: 'agent', run: (c) => c.send({ type: 'agent.login' }) },
   { key: 'stop', label: '/stop', hint: 'cmd.stopHint', icon: 'stop', run: (c) => c.send({ type: 'cancel' }) },
   { key: 'settings', label: '/settings', hint: 'cmd.settingsHint', icon: 'settings', run: (c) => c.send({ type: 'settings.open' }) },
 ];
-
-const CONTEXT_ICON: Record<ContextItem['kind'], IconName> = {
-  selection: 'cube',
-  layer: 'layers',
-  view: 'camera',
-  document: 'document',
-  block: 'cube',
-  grasshopper: 'graph',
-  file: 'document',
-};
 
 export function composer(ctx: PanelContext): Child {
   const { store, ui } = ctx;
@@ -58,7 +46,7 @@ export function composer(ctx: PanelContext): Child {
     input.style.height = `${input.scrollHeight}px`;
   };
 
-  // /command while the draft is a single leading token; @mention while the caret sits in one.
+  // /command while the draft is a single leading token.
   const slashQuery = computed<string | null>(() => {
     const draft = ui.draft();
     const match = /^\/([a-z]*)$/.exec(draft);
@@ -71,17 +59,7 @@ export function composer(ctx: PanelContext): Child {
     return COMMANDS.filter((command) => command.key.startsWith(query));
   });
 
-  const contextMatches = computed<readonly ContextItem[]>(() => {
-    const query = ui.mentionQuery();
-    if (query === null) return [];
-    const lower = query.toLowerCase();
-    return store
-      .context()
-      .filter((item) => item.label.toLowerCase().includes(lower))
-      .filter((item) => !ui.pickedContext().some((picked) => picked.id === item.id));
-  });
-
-  const menuOpen = computed(() => commandMatches().length > 0 || contextMatches().length > 0);
+  const menuOpen = computed(() => commandMatches().length > 0);
 
   // The menu scrolls once it outgrows its box, so arrowing past the edge has to bring the row with
   // it. Deferred a frame because the selected class is applied by an effect, not synchronously.
@@ -96,27 +74,6 @@ export function composer(ctx: PanelContext): Child {
     highlighted.set(0);
   });
 
-  const syncMention = (): void => {
-    const caret = input.selectionStart ?? 0;
-    const before = ui.draft().slice(0, caret);
-    const match = /(?:^|\s)@([\w -]*)$/.exec(before);
-    ui.mentionQuery.set(match ? (match[1] as string) : null);
-  };
-
-  const pickContext = (item: ContextItem): void => {
-    ui.toggleContext(item);
-    const caret = input.selectionStart ?? 0;
-    const draft = ui.draft();
-    const before = draft.slice(0, caret).replace(/@[\w -]*$/, '');
-    ui.draft.set(before + draft.slice(caret));
-    ui.mentionQuery.set(null);
-    requestAnimationFrame(() => {
-      input.focus();
-      input.setSelectionRange(before.length, before.length);
-      grow();
-    });
-  };
-
   const runCommand = (command: Command): void => {
     ui.draft.set('');
     command.run(ctx);
@@ -129,25 +86,19 @@ export function composer(ctx: PanelContext): Child {
       runCommand(commands[Math.min(highlighted(), commands.length - 1)] as Command);
       return true;
     }
-    const items = contextMatches();
-    if (items.length > 0) {
-      pickContext(items[Math.min(highlighted(), items.length - 1)] as ContextItem);
-      return true;
-    }
     return false;
   };
 
   const onKeyDown = (event: KeyboardEvent): void => {
     if (menuOpen() && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
       event.preventDefault();
-      const size = Math.max(commandMatches().length, contextMatches().length);
+      const size = commandMatches().length;
       highlighted.set((current) => (current + (event.key === 'ArrowDown' ? 1 : size - 1)) % size);
       revealHighlighted();
       return;
     }
     if (event.key === 'Escape') {
       if (menuOpen()) {
-        ui.mentionQuery.set(null);
         if (slashQuery() !== null) ui.draft.set('');
         event.preventDefault();
         return;
@@ -199,48 +150,21 @@ export function composer(ctx: PanelContext): Child {
 
   const menu = (): Child => {
     if (!menuOpen()) return null;
-    const commands = commandMatches();
-    if (commands.length > 0)
-      return el(
-        'div',
-        { class: 'mention-menu', role: 'listbox' },
-        el('div', { class: 'menu-head', text: () => t('composer.commands') }),
-        ...commands.map((command, index) =>
-          el(
-            'button',
-            {
-              class: () => `menu-item${index === highlighted() ? ' selected' : ''}`,
-              type: 'button',
-              onMouseEnter: () => highlighted.set(index),
-              onClick: () => runCommand(command),
-            },
-            icon(command.icon, 14),
-            el('span', { class: 'body' }, el('b', { text: command.label }), el('span', { text: () => t(command.hint) })),
-          ),
-        ),
-      );
-
-    const items = contextMatches();
     return el(
       'div',
       { class: 'mention-menu', role: 'listbox' },
-      el('div', { class: 'menu-head', text: () => t('composer.attachContext') }),
-      ...items.map((item, index) =>
+      el('div', { class: 'menu-head', text: () => t('composer.commands') }),
+      ...commandMatches().map((command, index) =>
         el(
           'button',
           {
             class: () => `menu-item${index === highlighted() ? ' selected' : ''}`,
             type: 'button',
             onMouseEnter: () => highlighted.set(index),
-            onClick: () => pickContext(item),
+            onClick: () => runCommand(command),
           },
-          icon(CONTEXT_ICON[item.kind], 14),
-          el(
-            'span',
-            { class: 'body' },
-            el('b', { text: item.count !== undefined ? `${item.label} (${item.count})` : item.label }),
-            el('span', { text: item.detail ?? item.kind }),
-          ),
+          icon(command.icon, 14),
+          el('span', { class: 'body' }, el('b', { text: command.label }), el('span', { text: () => t(command.hint) })),
         ),
       ),
     );
@@ -264,30 +188,6 @@ export function composer(ctx: PanelContext): Child {
     },
     menu,
     when(
-      () => ui.pickedContext().length > 0,
-      () =>
-        el(
-          'div',
-          { class: 'chip-row' },
-          each(
-            () => ui.pickedContext(),
-            (item) => item.id,
-            (item) =>
-              el(
-                'span',
-                { class: 'chip accent' },
-                icon(CONTEXT_ICON[item.kind], 12),
-                el('span', { text: item.count !== undefined ? `${item.label} (${item.count})` : item.label }),
-                el(
-                  'button',
-                  { type: 'button', 'aria-label': () => t('chip.removeNamed', item.label), onClick: () => ui.toggleContext(item) },
-                  icon('close', 11),
-                ),
-              ),
-          ),
-        ),
-    ),
-    when(
       () => ui.attachments().length > 0,
       () =>
         el(
@@ -310,12 +210,10 @@ export function composer(ctx: PanelContext): Child {
         value: () => ui.draft(),
         onInput: (event: Event) => {
           ui.draft.set((event.target as HTMLTextAreaElement).value);
-          syncMention();
           grow();
         },
         onKeyDown,
         onPaste,
-        onClick: syncMention,
         // Never focus() on mount: the panel mounts at startup and on reload, and it would take the keyboard off the command line.
         ref: (node: HTMLTextAreaElement) => {
           input = node;
@@ -329,25 +227,6 @@ export function composer(ctx: PanelContext): Child {
           'button',
           { class: 'icon-btn', type: 'button', title: () => t('composer.attachFile'), onClick: () => ctx.send({ type: 'attachments.pick' }) },
           icon('paperclip', 15),
-        ),
-        el(
-          'button',
-          {
-            class: 'icon-btn',
-            type: 'button',
-            title: () => t('composer.attachContext'),
-            onClick: () => {
-              const draft = ui.draft();
-              const needsSpace = draft.length > 0 && !draft.endsWith(' ');
-              ui.draft.set(`${draft}${needsSpace ? ' ' : ''}@`);
-              ui.mentionQuery.set('');
-              requestAnimationFrame(() => {
-                input.focus();
-                input.setSelectionRange(input.value.length, input.value.length);
-              });
-            },
-          },
-          icon('at', 15),
         ),
         el('span', { class: 'spacer' }),
         el('span', {

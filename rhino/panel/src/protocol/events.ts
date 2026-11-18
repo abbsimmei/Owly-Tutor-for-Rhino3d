@@ -211,7 +211,6 @@ export type HostEvent =
 export interface PromptRequest {
   text: string;
   attachments: Attachment[];
-  context: ContextItem[];
 }
 
 /** One question's answers within a submit. A submit carries every question currently showing. */
@@ -233,14 +232,9 @@ export type PanelCommand =
   | { type: 'question.answer'; items: QuestionAnswer[] }
   | { type: 'question.dismiss'; ids: string[] }
   | { type: 'tool.chip'; callId: string; chipId: string }
-  | { type: 'turn.undo'; turnId: string }
-  | { type: 'turn.retry'; turnId: string }
-  | { type: 'context.refresh' }
-  | { type: 'context.reveal'; id: string }
   | { type: 'image.open'; id: string }
   | { type: 'image.save'; id: string }
   | { type: 'attachments.pick' }
-  | { type: 'attachments.drop'; files: { name: string; mediaType: string; dataUrl: string }[] }
   // The panel cannot store its own level (opaque origin, so localStorage throws), so the host keeps it.
   | { type: 'zoom.set'; level: number }
   | { type: 'settings.open' }

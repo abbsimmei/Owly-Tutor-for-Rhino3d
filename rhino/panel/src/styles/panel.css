@@ -664,37 +664,6 @@ a:hover { text-decoration: underline; }
   padding: 4.5px 6.3px;
 }
 
-/* --------------------------------------------------------------- previews */
-
-.pv-image {
-  display: block;
-  width: 100%;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-}
-.pv-caption { font-size: var(--fs-xs); color: var(--text-faint); margin-top: 2.7px; }
-
-.pv-objects { display: flex; flex-direction: column; gap: 1px; }
-.pv-objects button {
-  display: flex;
-  gap: 7.2px;
-  align-items: baseline;
-  padding: 2.7px 5.4px;
-  border-radius: var(--r-sm);
-  font-size: var(--fs-sm);
-  text-align: start;
-}
-.pv-objects button:hover { background: var(--surface-2); }
-.pv-objects .layer { color: var(--text-faint); font-size: var(--fs-xs); margin-inline-start: auto; }
-
-.pv-graph { display: flex; flex-wrap: wrap; gap: 3.6px; }
-
-.pv-table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
-.pv-table th, .pv-table td { text-align: start; padding: 2.7px 6.3px; border-bottom: 1px solid var(--border); }
-.pv-table th { color: var(--text-faint); font-weight: 500; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .04em; }
-.pv-wrap { overflow-x: auto; scrollbar-width: thin; }
-
 /* ------------------------------------------------------------- image block */
 
 .img-block { margin: 5.4px 0 9px; display: flex; flex-direction: column; gap: 3.6px; }

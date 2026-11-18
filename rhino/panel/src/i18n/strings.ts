@@ -1,49 +1,35 @@
 // English fallback for when no host has pushed a table: the dev server, the mock host and the tests.
 export const EN = {
-  'header.switchAgent': 'Switch agent',
-  'header.noAgent': 'No agent',
+  'header.switchAgent': 'Owly',
+  'header.noAgent': "Owly isn't set up",
   'header.nothingConfigured': 'nothing configured',
   'header.history': 'Conversation history',
   'header.newConversation': 'New conversation  (Ctrl+Shift+N)',
-  'header.settings': 'AI settings',
+  'header.settings': 'Owly settings',
 
   'empty.ready': '{0} is ready',
-  'empty.theAgent': 'The agent',
+  'empty.theAgent': 'Owly',
   'empty.body':
     'Ask how to do something in Rhino. Owly explains which tools and commands to use. You do the modelling.',
   'empty.starterCommand': 'How do I loft between curves?',
   'empty.starterTower': "What's the difference between Join and Group?",
   'empty.starterLayers': 'How do I make a wall with openings?',
-  'empty.noAgent': 'No agent available',
-  'empty.noAgentBody': 'Install Claude Code and sign in.',
-  'empty.openSettings': 'Open AI settings',
-  'empty.setupGuide': 'Read the setup guide',
+  'empty.noAgent': "Owly isn't set up yet",
+  'empty.noAgentBody': 'Owly uses Claude Code. Install it and sign in, then come back here.',
+  'empty.openSettings': 'Open Owly settings',
+  'empty.setupGuide': 'How to install Claude Code',
 
-  'plan.head': 'Plan',
   'turn.copy': 'Copy the reply',
-  'turn.retry': 'Ask again',
-  'turn.undoTitle': 'Revert every document change this turn made',
-  'turn.undo': 'Revert',
   'turn.stopped': 'stopped',
   'transcript.newOutput': 'New output',
   'chip.removeNamed': 'Remove {0}',
-  'chip.revealNamed': 'Show {0} in Rhino',
 
-  'tool.copyNamedSection': 'Copy {0}',
-  'tool.arguments': 'arguments',
-  'tool.result': 'result',
-  'tool.noResult': 'No result reported, so this may or may not have run.',
 
   'image.generated': 'Generated image',
   'image.openNamed': 'Open {0} in your image viewer',
   'image.saveNamed': 'Save {0}',
   'image.save': 'Save',
 
-  'preview.captured': 'Captured viewport',
-  'preview.revealObject': 'Select and zoom to this object in Rhino',
-  'preview.wireCount': '{0} wires',
-  'preview.errorCount': '{0} errors',
-  'preview.warningCount': '{0} warnings',
 
   'status.workingForScreenReader': 'Working',
 
@@ -77,12 +63,12 @@ export const EN = {
 
   'review.readOnlyAtTime': 'Read-only · {0}',
   'review.backToLive': 'Back to live',
-  'review.resumeTitle': 'Continue this conversation with its agent',
+  'review.resumeTitle': 'Continue this conversation',
   'review.resume': 'Resume',
 
   'history.title': 'Conversations',
   'history.close': 'Close',
-  'history.search': 'Search prompts, agents, models…',
+  'history.search': 'Search conversations…',
   'history.empty': 'No saved conversations yet',
   'history.noMatch': 'Nothing matches',
   'history.turnCountOne': '{0} turn',
@@ -90,17 +76,16 @@ export const EN = {
   'history.tokenCount': '{0} tok',
 
   'agent.menuHead': 'Agent',
-  'agent.settings': 'AI settings…',
+  'agent.settings': 'Owly settings…',
   'agent.useNamed': 'Use {0}',
   'agent.reasonDisabled': 'turned off in settings',
   'agent.reasonMissing': 'not installed',
   'agent.reasonSignin': 'needs sign-in',
 
-  'composer.placeholderIdle': 'Ask, or describe what you want built.  / for commands, @ for context',
+  'composer.placeholderIdle': 'Ask Owly how to do something in Rhino…',
   'composer.placeholderBusy': 'Type your next message…',
   'composer.ariaMessage': 'Message',
   'composer.attachFile': 'Attach a file',
-  'composer.attachContext': 'Attach document context',
   'composer.commands': 'Commands',
   'composer.hintStop': 'Esc to stop',
   'composer.hintSend': 'Enter to send',
@@ -110,10 +95,8 @@ export const EN = {
 
   'cmd.newHint': 'Start a fresh conversation',
   'cmd.historyHint': 'Browse past conversations',
-  'cmd.agentHint': 'Switch agent or model',
-  'cmd.loginHint': 'Sign in to the selected CLI agent',
-  'cmd.stopHint': 'Cancel the running turn',
-  'cmd.settingsHint': 'Open AI settings',
+  'cmd.stopHint': "Stop Owly's answer",
+  'cmd.settingsHint': 'Open Owly settings',
 
   'ask.dontKnow': "I don't know",
   'ask.back': 'Back',
@@ -137,7 +120,7 @@ export const EN = {
     'The panel renders in the WebView that comes with your operating system, so updating the OS (macOS ships WebKit with Safari) is what fixes it.',
   'unsupported.macos':
     'Every Apple Silicon Mac can run a recent macOS, so this usually just means pending system updates.',
-  'unsupported.classic': 'The classic AI panel keeps working in the meantime.',
+  'unsupported.classic': "Until then, you can still use Rhino's Help (F1) and the command line.",
   'unsupported.showAnyway': 'Show it anyway',
 } as const;
 

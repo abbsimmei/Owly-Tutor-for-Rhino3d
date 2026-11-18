@@ -3,7 +3,7 @@ import type { Child } from '../core/dom.js';
 import { clockTime, formatTokens, relativeTime } from '../state/format.js';
 import { t } from '../i18n/t.js';
 import type { BlockView, TurnView } from '../state/store.js';
-import type { Attachment, ContextItem, PlanStep } from '../protocol/events.js';
+import type { Attachment } from '../protocol/events.js';
 import type { PanelContext } from './context.js';
 import { emptyState } from './empty.js';
 import { icon } from './icons.js';
@@ -12,76 +12,12 @@ import { notices } from './notices.js';
 import { agentMessage } from './message.js';
 import { toolCard } from './toolCard.js';
 
-const CONTEXT_ICON = {
-  selection: 'cube',
-  layer: 'layers',
-  view: 'camera',
-  document: 'document',
-  block: 'cube',
-  grasshopper: 'graph',
-  file: 'document',
-} as const;
-
-function contextChip(ctx: PanelContext, item: ContextItem, removable?: () => void): Child {
-  return el(
-    'span',
-    { class: 'chip', title: item.detail ?? item.label },
-    icon(CONTEXT_ICON[item.kind], 12),
-    el('span', { text: item.count !== undefined ? `${item.label} (${item.count})` : item.label }),
-    removable
-      ? el(
-          'button',
-          { type: 'button', 'aria-label': () => t('chip.removeNamed', item.label), onClick: removable },
-          icon('close', 11),
-        )
-      : el(
-          'button',
-          {
-            type: 'button',
-            'aria-label': () => t('chip.revealNamed', item.label),
-            onClick: () => ctx.send({ type: 'context.reveal', id: item.id }),
-          },
-          icon('reveal', 11),
-        ),
-  );
-}
-
 function attachmentChip(attachment: Attachment): Child {
   return el(
     'span',
     { class: 'chip', title: attachment.name },
     attachment.kind === 'image' ? icon('camera', 12) : icon('document', 12),
     el('span', { text: attachment.name }),
-  );
-}
-
-const PLAN_MARKER: Record<PlanStep['state'], string> = {
-  pending: '○',
-  active: '▸',
-  done: '✓',
-  skipped: '-',
-};
-
-function planStrip(turn: TurnView): Child {
-  return when(
-    () => turn.plan().length > 0,
-    () =>
-      el(
-        'div',
-        { class: 'plan' },
-        el('div', { class: 'plan-head', text: () => t('plan.head') }),
-        each(
-          () => turn.plan(),
-          (step) => step.id,
-          (step) =>
-            el(
-              'div',
-              { class: `plan-step ${step.state}` },
-              el('span', { class: 'marker', text: PLAN_MARKER[step.state] }),
-              el('span', { class: 'label', text: step.text }),
-            ),
-        ),
-      ),
   );
 }
 
@@ -135,29 +71,6 @@ function turnFooter(ctx: PanelContext, turn: TurnView): Child {
       { type: 'button', title: () => t('turn.copy'), onClick: () => ctx.copy(replyText(turn)) },
       icon('copy', 13),
     ),
-    when(
-      () => turn.status() !== 'running',
-      () =>
-        el(
-          'button',
-          { type: 'button', title: () => t('turn.retry'), onClick: () => ctx.send({ type: 'turn.retry', turnId: turn.id }) },
-          icon('retry', 13),
-        ),
-    ),
-    when(
-      () => turn.undoable() && turn.status() !== 'running',
-      () =>
-        el(
-          'button',
-          {
-            type: 'button',
-            title: () => t('turn.undoTitle'),
-            onClick: () => ctx.send({ type: 'turn.undo', turnId: turn.id }),
-          },
-          icon('undo', 13),
-          el('span', { text: () => t('turn.undo') }),
-        ),
-    ),
   );
 }
 
@@ -166,17 +79,15 @@ function turnView(ctx: PanelContext, turn: TurnView): Child {
     'article',
     { class: () => `turn ${turn.status()}` },
     when(
-      () => turn.context.length > 0 || turn.attachments.length > 0,
+      () => turn.attachments.length > 0,
       () =>
         el(
           'div',
           { class: 'chip-row', style: { 'justify-content': 'flex-end' } },
-          ...turn.context.map((item) => contextChip(ctx, item)),
           ...turn.attachments.map(attachmentChip),
         ),
     ),
     turn.prompt ? el('div', { class: 'msg-user', text: turn.prompt }) : null,
-    planStrip(turn),
     each(
       () => turn.blocks(),
       (view) => view.id,

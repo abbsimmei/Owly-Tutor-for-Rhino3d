@@ -144,17 +144,13 @@ try {
   check('the image carries a pop-out button over its corner', picture.popOut === 1, JSON.stringify(picture));
 
   // ------------------------------------------------------- tool cards / json
-  await page.click('.tool-toggle');
-  await wait(200);
-  const json = await page.evaluate(() => ({
-    keys: document.querySelectorAll('.tool-body .tok-attr').length,
-    strings: document.querySelectorAll('.tool-body .tok-str').length,
-    preview: document.querySelectorAll('.tool-body .pv-table tbody tr').length,
+  const card = await page.evaluate(() => ({
+    cards: document.querySelectorAll('.tool.ok').length,
+    body: document.querySelectorAll('.tool .tool-body').length,
+    wire: document.querySelectorAll('.tool .wire').length,
+    code: document.querySelectorAll('.tool pre code').length,
   }));
-  check('tool arguments are highlighted as json', json.keys >= 2 && json.strings >= 1, JSON.stringify(json));
-  check('a table result renders as a table, not json', json.preview >= 3);
-  await shot('02-tool-expanded');
-  await page.click('.tool-toggle');
+  check('a settled tool card is one plain line', card.cards >= 1 && card.body === 0 && card.wire === 0 && card.code === 0, JSON.stringify(card));
 
   // ------------------------------------------------ streaming + reconciliation
   await page.evaluate(() => {
@@ -268,19 +264,6 @@ try {
   await page.keyboard.press('Escape');
   await wait(150);
 
-  await type('@');
-  await wait(250);
-  const mention = await page.evaluate(() => document.querySelectorAll('.mention-menu .menu-item').length);
-  check('at opens the context menu', mention >= 4, `${mention} items`);
-  await page.keyboard.press('Enter');
-  await wait(250);
-  const chip = await page.evaluate(() => ({
-    chips: document.querySelectorAll('.composer .chip.accent').length,
-    draft: document.querySelector('.composer textarea').value,
-  }));
-  check('picking context adds a chip and clears the token', chip.chips === 1 && !chip.draft.includes('@'), JSON.stringify(chip));
-  await shot('04-context');
-
   // ------------------------------------------------------------------- layout
   for (const [label, preset] of [['narrow', 'Narrow'], ['docked', 'Docked'], ['wide', 'Wide'], ['full', 'Full']]) {
     await page.evaluate((p) => {
@@ -339,8 +322,6 @@ try {
       focusInCard: document.querySelector('.ask').contains(document.activeElement),
       activeTag: document.activeElement?.tagName,
       activeClass: document.activeElement?.className,
-      failedCard: document.querySelectorAll('.tool.failed').length,
-      failedOpen: document.querySelectorAll('.tool.failed .tool-error').length,
       thinking: document.querySelectorAll('.status-strip').length,
     };
   });
@@ -377,7 +358,6 @@ try {
   check('Next is offered before the last page', question.nextLabel === 'Next', question.nextLabel);
   check('Next stays disabled until the page is answered', question.nextDisabled === true);
   check('every page offers "I don\'t know"', question.dontKnow === "I don't know", question.dontKnow);
-  check('a failed tool call auto-expands its error', question.failedCard === 1 && question.failedOpen === 1);
   check('no thinking cue while blocked on the question', question.thinking === 0);
   await shot('05-question');
 
@@ -677,10 +657,6 @@ try {
       toolOk: document.querySelectorAll('.tool.ok').length,
       toolFailed: document.querySelectorAll('.tool.failed').length,
       titles: [...document.querySelectorAll('.tool .title')].map((n) => n.textContent),
-      wires: [...document.querySelectorAll('.tool .wire')].map((n) => n.textContent),
-      chips: [...document.querySelectorAll('.tool-chip')].map((n) => n.textContent),
-      chipsOnRunning: document.querySelectorAll('.tool.running .tool-chip').length,
-      chipsOnSettled: document.querySelectorAll('.tool:not(.running) .tool-chip').length,
       question: document.querySelectorAll('.ask .opts label').length,
       questionPages: document.querySelectorAll('.ask-page').length,
       questionSteps: document.querySelectorAll('.ask .steps i').length,
@@ -696,8 +672,6 @@ try {
     check('streamed markdown and code render', rendered.bold >= 1 && rendered.code === 1, JSON.stringify(rendered));
     check('a tool call and its folded-in result render as one settled card',
       rendered.tools === 4 && rendered.toolOk === 1, JSON.stringify(rendered));
-    check('no tool call offers a chip, running or settled',
-      rendered.chips.length === 0 && rendered.chipsOnRunning === 0 && rendered.chipsOnSettled === 0, JSON.stringify(rendered));
     check('a result the agent flagged as an error renders as a failed card',
       rendered.toolFailed === 1 && rendered.titles.includes('selection failed'), JSON.stringify(rendered));
     check('a C#-serialised image lands as a block pointing at the host route',
@@ -710,8 +684,6 @@ try {
       !JSON.stringify(rendered).includes('mcp__'), JSON.stringify(rendered));
     check('a namespaced tool gets its real phrase',
       rendered.titles.includes('listed objects'), JSON.stringify(rendered.titles));
-    check('the wire name shows only when it adds something',
-      rendered.wires.length === 3 && !rendered.wires.includes('probe_intersection'), JSON.stringify(rendered.wires));
     check('the questions posed by the feed open one paged card',
       rendered.questionPages === 1 && rendered.questionSteps === 2 && rendered.question === 2, JSON.stringify(rendered));
     check('per-turn tokens land on the turn, not the top bar',
@@ -727,22 +699,15 @@ try {
     const ended = await host.evaluate(() => ({
       spinners: document.querySelectorAll('.tool .spinner').length,
       running: document.querySelectorAll('.tool.running').length,
-      chips: document.querySelectorAll('.tool-chip').length,
       unknown: document.querySelectorAll('.tool.unknown').length,
       ok: document.querySelectorAll('.tool.ok').length,
       failed: document.querySelectorAll('.tool.failed').length,
       dashed: getComputedStyle(document.querySelector('.tool.unknown')).borderStyle,
     }));
-    check('a call the turn ended without a result stops, without a chip and without claiming success',
-      ended.spinners === 0 && ended.running === 0 && ended.chips === 0
+    check('a call the turn ended without a result stops without claiming success',
+      ended.spinners === 0 && ended.running === 0
       && ended.unknown === 2 && ended.ok === 1 && ended.failed === 1 && ended.dashed === 'dashed',
       JSON.stringify(ended));
-
-    // Dispatched rather than clicked: the fixture's questions leave a modal overlay over the transcript.
-    await host.evaluate(() => document.querySelector('.tool.unknown .tool-toggle').click());
-    await wait(150);
-    const note = await host.evaluate(() => document.querySelector('.tool.unknown .tool-note')?.textContent ?? '');
-    check('an unknown call says as much when opened', note.includes('may or may not have run'), note);
 
     // Switching Rhino's theme sends a second theme event. The panel has to restyle from it, both
     // the host-supplied tokens and the scheme attribute that drives everything the host does not

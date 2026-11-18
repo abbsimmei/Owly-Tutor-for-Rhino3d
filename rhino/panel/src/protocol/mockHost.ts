@@ -207,7 +207,7 @@ function seeded(): ConversationSnapshot {
         startedAt: new Date(start + 120_000).toISOString(),
         status: 'ok',
         usage: usage(14_900, 2_040, 0.14),
-        undoable: true,
+        undoable: false,
         plan: [
           { id: 'p1', text: 'Measure planarity deviation per panel', state: 'done' },
           { id: 'p2', text: 'Create Facade::Panels::NonPlanar', state: 'done' },
@@ -832,7 +832,7 @@ export class MockHost implements Bridge {
   send(command: PanelCommand): void {
     switch (command.type) {
       case 'prompt':
-        void this.runTurn(command.request.text, command.request.attachments, command.request.context);
+        void this.runTurn(command.request.text, command.request.attachments, []);
         return;
 
       case 'cancel':
@@ -893,18 +893,6 @@ export class MockHost implements Bridge {
       case 'question.dismiss':
         for (const id of command.ids) this.emit({ type: 'question.clear', id });
         this.script?.answer([]);
-        return;
-
-      case 'turn.undo':
-        this.notice('info', 'Reverted every document change that turn made (one Rhino undo record).');
-        return;
-
-      case 'turn.retry':
-        this.notice('info', 'A real host would re-send that prompt to the agent.');
-        return;
-
-      case 'context.reveal':
-        this.notice('info', `Selected and zoomed to ${command.id} in the viewport.`);
         return;
 
       case 'attachments.pick':
@@ -1096,7 +1084,7 @@ export class MockHost implements Bridge {
         usage: null,
         blocks: [],
         plan: [],
-        undoable: true,
+        undoable: false,
       },
     });
 

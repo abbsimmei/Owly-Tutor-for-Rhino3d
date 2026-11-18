@@ -36,12 +36,11 @@ const ctx: PanelContext = {
     if (store.readOnly.peek() || !store.hasReadyAgent.peek()) return;
     const text = (override ?? ui.draft.peek()).trim();
     const attachments = [...ui.attachments.peek()];
-    const context = [...ui.pickedContext.peek()];
     if (text.length === 0 && attachments.length === 0) return;
 
     ui.pinned.set(true);
     ui.hasNew.set(false);
-    bridge.send({ type: 'prompt', request: { text, attachments, context } });
+    bridge.send({ type: 'prompt', request: { text, attachments } });
     ui.clearComposer();
   },
 };

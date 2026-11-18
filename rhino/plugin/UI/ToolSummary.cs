@@ -31,34 +31,31 @@ internal static class ToolSummary
         return phrase;
     }
 
-    // Per-tool phrasing. Returns null to defer to the generic fallback (unknown tool or unreadable
-    // payload). A leading failure verb is preferred over a misleading success phrase.
+    // Per-tool phrasing for the panel's tool line. Every tool gets a plain sentence and an unknown
+    // tool gets a generic one, so the raw tool name never reaches the student.
     private static string Phrase(string toolName, string argsJson, string resultJson, bool failed)
     {
-        if (failed)
-            return string.Format(Localization.LocalizeString("{0} failed", 176), Verb(toolName));
-
         return toolName switch
         {
-            "get_selection" => Localization.LocalizeString("read selection", 181),
-            "list_objects" => Localization.LocalizeString("listed objects", 183),
-            "get_commands" => Localization.LocalizeString("listed commands", 184),
-            "ask_user" => Localization.LocalizeString("asked a question", 190),
+            "get_selection" => failed
+                ? Localization.LocalizeString("Couldn't check your selection", 260)
+                : Localization.LocalizeString("Checked your selection", 181),
+            "get_context" => failed
+                ? Localization.LocalizeString("Couldn't look at your document", 261)
+                : Localization.LocalizeString("Looked at your document", 262),
+            "list_objects" => failed
+                ? Localization.LocalizeString("Couldn't list objects", 263)
+                : Localization.LocalizeString("Listed objects in your model", 183),
+            "get_commands" => failed
+                ? Localization.LocalizeString("Couldn't look up Rhino commands", 264)
+                : Localization.LocalizeString("Looked up Rhino commands", 184),
+            "ask_user" => failed
+                ? Localization.LocalizeString("Couldn't show the question", 265)
+                : Localization.LocalizeString("Asked you a question", 190),
 
-            null => Localization.LocalizeString("unknown tool", 200),
-
-            _ => toolName.Replace("_", ""),
-
-        };
-    }
-
-    // A short failure verb per tool family so "X failed" reads naturally.
-    private static string Verb(string rawToolName)
-    {
-        string toolName = RemoveUnderscoreUnderscoreNaming(rawToolName);
-        return toolName switch
-        {
-            _ => toolName,
+            _ => failed
+                ? Localization.LocalizeString("Something went wrong", 176)
+                : Localization.LocalizeString("Looked something up", 200),
         };
     }
 

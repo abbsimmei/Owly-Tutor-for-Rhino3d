@@ -218,7 +218,7 @@ internal partial class AIPanelViewModel : IDisposable
 
         if (!AgentHost.TryFor(doc, out IAgentRunner _))
         {
-            Bridge.Post(new NoticeEvent("error", Localization.LocalizeString("No AI agent available. Open AI settings to configure one.", 4)));
+            Bridge.Post(new NoticeEvent("error", Localization.LocalizeString("Owly isn't set up. Install Claude Code and sign in, or open Owly settings.", 4)));
             return false;
         }
 
@@ -285,7 +285,7 @@ internal partial class AIPanelViewModel : IDisposable
 
         if (!AgentHost.TryResume(doc, dto, out IAgentRunner _))
         {
-            Bridge.Post(new NoticeEvent("error", string.Format(Localization.LocalizeString("Cannot resume: agent '{0}' is no longer available.", 7), dto.AgentName)));
+            Bridge.Post(new NoticeEvent("error", Localization.LocalizeString("Can't continue this conversation: Claude Code is no longer available.", 7)));
             return false;
         }
 
@@ -311,12 +311,12 @@ internal partial class AIPanelViewModel : IDisposable
             return false;
         if (!AgentHost.TryFor(doc, out IAgentRunner agent))
         {
-            Bridge.Post(new NoticeEvent("error", Localization.LocalizeString("No AI agent available. Open AI settings to configure one.", 8)));
+            Bridge.Post(new NoticeEvent("error", Localization.LocalizeString("Owly isn't set up. Install Claude Code and sign in, or open Owly settings.", 8)));
             return false;
         }
         if (!AgentDispatch.TryEnsureListener(doc, out int port))
         {
-            Bridge.Post(new NoticeEvent("error", Localization.LocalizeString("Could not start an MCP server for this document.", 9)));
+            Bridge.Post(new NoticeEvent("error", Localization.LocalizeString("Owly couldn't start its connection to this document. Try reopening the panel.", 9)));
             return false;
         }
 

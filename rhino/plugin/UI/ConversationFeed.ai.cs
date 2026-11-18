@@ -108,7 +108,7 @@ internal sealed class ConversationFeed
                     Usage: null,
                     Blocks: Array.Empty<object>(),
                     Plan: Array.Empty<object>(),
-                    Undoable: true,
+                    Undoable: false,
                     Error: null)));
             }
             PumpTurn(Cursors[i], turns[i]);
