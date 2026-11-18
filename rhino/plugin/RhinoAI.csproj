@@ -18,10 +18,10 @@
     <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('Windows'))">net8.0;net48</TargetFrameworks>
     <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('Windows'))">net8.0</TargetFrameworks>
     <AssemblyName>Owly</AssemblyName>
-    <PackageId>RhinoAI.PlugIn</PackageId>
+    <PackageId>Owly.PlugIn</PackageId>
     <RootNamespace>Rhino.AI</RootNamespace>
-    <Title>Rhino AI</Title>
-    <Description>AI tools for Rhino</Description>
+    <Title>Owly</Title>
+    <Description>Owly - AI tutor for Rhino</Description>
     <TargetExt>.rhp</TargetExt>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
@@ -29,7 +29,7 @@
     <DefineConstants>$(DefineConstants);$(RhinoTarget)</DefineConstants>
     <!-- CS0436: version.cs is also compiled into referenced Rhino assemblies whose internals are visible here. -->
     <NoWarn>$(NoWarn);NU1701;CA1416;MSB3277;CS0436</NoWarn>
-    <PluginOutputDir Condition="'$(PluginOutputDir)' == '' AND '$(RhinoTarget)' == 'R9' AND '$(RhinoPlugInOutputDir)' != ''">$([MSBuild]::NormalizePath('$(RhinoPlugInOutputDir)', 'RhinoAI'))</PluginOutputDir>
+    <PluginOutputDir Condition="'$(PluginOutputDir)' == '' AND '$(RhinoTarget)' == 'R9' AND '$(RhinoPlugInOutputDir)' != ''">$([MSBuild]::NormalizePath('$(RhinoPlugInOutputDir)', 'Owly'))</PluginOutputDir>
     <PluginOutputDir Condition="'$(PluginOutputDir)' == ''">$(MSBuildProjectDirectory)/bin/$(RhinoTarget)-$(PluginOS)/$(Configuration)</PluginOutputDir>
     <OutputPath>$(PluginOutputDir)/</OutputPath>
     <!-- macOS and Linux: no target-framework subfolder, so the payload is flat in Plug-ins/RhinoAI

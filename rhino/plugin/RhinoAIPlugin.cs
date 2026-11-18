@@ -9,7 +9,7 @@ namespace Rhino.AI;
 
 public class RhinoAIPlugin : PlugIn
 {
-    private const string IconResourceName = "Rhino.AI.Panel_dark.ico";
+    private const string IconResourceName = "Rhino.AI.Panel_light.ico";
     private const string DarkIconResourceName = "Rhino.AI.Panel_dark.ico";
 
     // private CommandInterceptorHost? CommandInterceptors { get; set; }
@@ -21,7 +21,7 @@ public class RhinoAIPlugin : PlugIn
             HostUtils.LogDebugEvent($"RhinoAI: could not stage the MCP router ({stagingError}).\n");
         }
         if (!RhinoApp.IsRunningHeadless)
-            Panels.RegisterPanel(this, typeof(UI.AIPanel), Localization.LocalizeString("AI", 1), LoadPanelIcon(), PanelType.PerDoc);
+            Panels.RegisterPanel(this, typeof(UI.AIPanel), Localization.LocalizeString("Owly", 1), LoadPanelIcon(), PanelType.PerDoc);
 
 #if R9
         AIInstances.Agents.LoadAgentsFromJson();

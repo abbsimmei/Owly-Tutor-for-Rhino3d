@@ -1,10 +1,6 @@
----
 # version is appended at build time from RhinoAIPackageVersion in rhino/Directory.Build.props
-name: Rhino-MCP-Platform
+name: Owly
 authors:
-- Callum Sykes
-- Dan Cascaval
-- Claude
-description: An suite of AI Tooling, including an MCP Server for Rhino, made by McNeel.
+- Owly team (KTH)
+description: Owly - an AI tutor that teaches architecture students how to use Rhino. It never models for you.
 icon: icon.png
-url: https://mcneel.github.io/RhinoAI/

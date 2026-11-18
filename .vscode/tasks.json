@@ -100,14 +100,14 @@
     },
     {
       "label": "uninstall yak (R9)",
-      "args": ["uninstall", "Rhino-MCP-Platform"],
+      "args": ["uninstall", "Owly"],
       "osx": { "command": "/Applications/RhinoBETA.app/Contents/Resources/bin/yak" },
       "windows": { "command": "C:/Program Files/Rhino 9 WIP/System/Yak.exe" },
       "problemMatcher": []
     },
     {
       "label": "uninstall yak (R8)",
-      "args": ["uninstall", "Rhino-MCP-Platform"],
+      "args": ["uninstall", "Owly"],
       "osx": { "command": "/Applications/Rhino 8.app/Contents/Resources/bin/yak" },
       "windows": { "command": "C:/Program Files/Rhino 8/System/Yak.exe" },
       "problemMatcher": []

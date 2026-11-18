@@ -7,7 +7,7 @@ namespace Rhino.AI;
 [Commands.CommandStyle(Commands.Style.Hidden)]
 public class TestAgenticCommand : RhinoCommand
 {
-    public override string EnglishName => "TestAgentic";
+    public override string EnglishName => "OwlyTestAgentic";
 
     protected override string CommandContextHelpUrl => DocsLinks.Homepage;
 
