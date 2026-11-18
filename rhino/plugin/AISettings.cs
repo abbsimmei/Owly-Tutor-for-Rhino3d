@@ -70,8 +70,8 @@ internal static class AISettings
     public static string EffectiveModel(AgentDefinition def) =>
         AgentModel(def.Name) is { Length: > 0 } model ? model : def.DefaultModel;
 
-    public static string EffectivePrompt(AgentDefinition def) =>
-        AgentPrompt(def.Name) is { Length: > 0 } prompt ? prompt : def.DefaultPrompt;
+    // Students cannot change Owly's prompt (ADR-0005): a value saved by an older build is ignored.
+    public static string EffectivePrompt(AgentDefinition def) => def.DefaultPrompt;
 
     private static string AgentKey(string name, string field) => $"Agent_{name.ToLowerInvariant()}_{field}";
 

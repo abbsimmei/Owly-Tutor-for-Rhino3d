@@ -5,7 +5,7 @@
       "company": "Anthropic",
       "isBuiltIn": true,
       "defaultPrompt" : "",
-      "defaultModel": "opus",
+      "defaultModel": "sonnet",
       "searchPaths": {
         "win": [
           "%LOCALAPPDATA%/Packages/*laude*/LocalCache/Roaming/Claude/claude-code/**/claude.exe",
@@ -23,30 +23,9 @@
         ]
       },
       "models": [
-        { "display": "Opus (latest)", "id": "opus" },
         { "display": "Sonnet (latest)", "id": "sonnet" },
-        { "display": "Haiku (latest)", "id": "haiku" },
-        { "display": "Fable (latest)", "id": "fable" },
-        { "display": "Fable 5.1", "id": "claude-fable-5-1" },
-        { "display": "Fable 5.1 (1M context)", "id": "claude-fable-5-1[1m]" },
-        { "display": "Fable 5", "id": "claude-fable-5" },
-        { "display": "Mythos 5.1", "id": "claude-mythos-5-1" },
-        { "display": "Mythos 5", "id": "claude-mythos-5" },
-        { "display": "Opus 5", "id": "claude-opus-5" },
-        { "display": "Opus 5 (1M context)", "id": "claude-opus-5[1m]" },
-        { "display": "Opus 4.8", "id": "claude-opus-4-8" },
-        { "display": "Opus 4.8 (1M context)", "id": "claude-opus-4-8[1m]" },
-        { "display": "Opus 4.7", "id": "claude-opus-4-7" },
-        { "display": "Opus 4.6", "id": "claude-opus-4-6" },
-        { "display": "Opus 4.5", "id": "claude-opus-4-5" },
-        { "display": "Opus 4.1", "id": "claude-opus-4-1" },
-        { "display": "Opus 4", "id": "claude-opus-4" },
-        { "display": "Sonnet 5", "id": "claude-sonnet-5" },
-        { "display": "Sonnet 5 (1M context)", "id": "claude-sonnet-5[1m]" },
-        { "display": "Sonnet 4.6", "id": "claude-sonnet-4-6" },
-        { "display": "Sonnet 4.5", "id": "claude-sonnet-4-5" },
-        { "display": "Sonnet 4", "id": "claude-sonnet-4" },
-        { "display": "Haiku 4.5", "id": "claude-haiku-4-5" }
+        { "display": "Opus (latest)", "id": "opus" },
+        { "display": "Haiku (latest)", "id": "haiku" }
       ]
     }
   ]
