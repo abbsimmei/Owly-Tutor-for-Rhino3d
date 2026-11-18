@@ -61,13 +61,19 @@ export function agentMenu(ctx: PanelContext): Child {
   return el(
     'div',
     { class: 'popover', role: 'menu' },
-    el('div', { class: 'menu-head', text: () => t('agent.menuHead') }),
-    each(
-      () => store.agents(),
-      (agent) => agent.name,
-      row,
+    // Owly supports a single agent, so the selector only appears when the host reports several.
+    when(
+      () => store.agents().length > 1,
+      () => [
+        el('div', { class: 'menu-head', text: () => t('agent.menuHead') }),
+        each(
+          () => store.agents(),
+          (agent) => agent.name,
+          row,
+        ),
+        el('div', { class: 'menu-sep' }),
+      ],
     ),
-    el('div', { class: 'menu-sep' }),
     el(
       'button',
       {

@@ -67,7 +67,6 @@
   <ItemGroup>
     <EmbeddedResource Include="../../art/*.svg;../../art/*.ico" />
     <EmbeddedResource Include="Agents/Definitions.json" />
-    <EmbeddedResource Include="Agents/codex-config.toml" LogicalName="Rhino.AI.codex-config.toml" />
     <EmbeddedResource Include="../panel/dist/panel.host.html" LogicalName="Rhino.AI.panel.html" />
   </ItemGroup>
 

@@ -10,12 +10,12 @@ export const EN = {
   'empty.ready': '{0} is ready',
   'empty.theAgent': 'The agent',
   'empty.body':
-    'It can read the document, run scripts, drive Grasshopper and capture views. Mention @context to point it at something specific.',
-  'empty.starterCommand': 'Create a command that generates 100 random spheres',
-  'empty.starterTower': 'Build a twisty tower in Grasshopper',
-  'empty.starterLayers': 'Organize the objects in the active viewport into layers',
+    'Ask how to do something in Rhino. Owly explains which tools and commands to use. You do the modelling.',
+  'empty.starterCommand': 'How do I loft between curves?',
+  'empty.starterTower': "What's the difference between Join and Group?",
+  'empty.starterLayers': 'How do I make a wall with openings?',
   'empty.noAgent': 'No agent available',
-  'empty.noAgentBody': 'Install Claude Code or Codex and sign in, then pick it here.',
+  'empty.noAgentBody': 'Install Claude Code and sign in.',
   'empty.openSettings': 'Open AI settings',
   'empty.setupGuide': 'Read the setup guide',
 

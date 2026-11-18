@@ -13,7 +13,7 @@ using Rhino.Runtime;
 
 namespace Rhino.AI;
 
-// The single owner of stream-json process lifecycle for any line-framed CLI agent (Claude, Codex).
+// The single owner of stream-json process lifecycle for any line-framed CLI agent (Claude).
 // Owns the process spawn/resolve, the read loop, turn gating, error capture, Kill/respawn and
 // Dispose; composes ONE IStreamJsonParser for all CLI-specific knowledge (launch args, turn framing,
 // stdout translation). Plays the same IAcpAgent role native ACP agents do, so AgentRunner drives it
@@ -209,7 +209,7 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
         };
         CliProcess.ConfigureEncoding(psi);
         CliProcess.ConfigureFileName(psi, path);
-        Parser.ConfigureArguments(psi, McpUrl, AgentSessionIdText, ResolveMcpServers(), HasEverStarted, prompt);
+        Parser.ConfigureArguments(psi, McpUrl, AgentSessionIdText, HasEverStarted, prompt);
 
         Process proc = new() { StartInfo = psi };
         proc.ErrorDataReceived += (_, e) =>
@@ -233,36 +233,6 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
         }
         _ = Task.Run(() => ReadLoopAsync(proc.StandardOutput, proc));
 
-    }
-
-    // The runner resolves the MCP server set from AISettings (the parser stays settings-free). Each
-    // list entry is a JSON-object string of server-name -> server-config that the parser merges in.
-    // A bad textarea must never fault the launch, so this is fail-soft to an empty set.
-    private IReadOnlyList<string> ResolveMcpServers()
-    {
-        string json;
-        try
-        {
-            json = AISettings.ExtraMcpServersJson;
-        }
-        catch (Exception)
-        {
-            return [];
-        }
-
-        if (string.IsNullOrWhiteSpace(json))
-            return [];
-
-        try
-        {
-            if (JsonNode.Parse(json) is not JsonObject root || root["mcpServers"] is not JsonObject inner || inner.Count == 0)
-                return [];
-            return [inner.ToJsonString(McpSerializer.Options)];
-        }
-        catch (JsonException)
-        {
-            return [];
-        }
     }
 
     private async Task SendTurnAsync(IReadOnlyList<ContentBlock> prompt)

@@ -8,7 +8,7 @@ type Shape =
   | { circle: readonly [number, number, number]; fill?: boolean }
   | { line: readonly [number, number, number, number] }
   | { rect: readonly [number, number, number, number, number]; fill?: boolean }
-  // A wordmark rather than a drawn glyph, for marks that are already letters (GH1, C#). `width`
+  // A wordmark rather than a drawn glyph, for marks that are already letters (C#). `width`
   // squeezes the run to a fixed advance so it fills the same 24-unit box as every stroked icon
   // whatever font the host webview happens to resolve.
   | { text: string; size: number; width: number };
@@ -70,8 +70,6 @@ const ICONS = {
   layers: [{ path: 'M12 3l9 5-9 5-9-5z' }, { path: 'M3 13.2l9 5 9-5' }],
   reveal: [{ path: 'M2.5 12S6 6.2 12 6.2 21.5 12 21.5 12 18 17.8 12 17.8 2.5 12 2.5 12z' }, { circle: [12, 12, 3] }],
   bolt: [{ path: 'M13.5 3L5.5 14H11l-1 7 8-11h-5.5z' }],
-  gh1: [{ text: 'GH1', size: 11.5, width: 20 }],
-  gh2: [{ text: 'GH2', size: 11.5, width: 20 }],
   csharp: [{ text: 'C#', size: 14, width: 16.5 }],
   python: [{ text: 'py', size: 14, width: 15 }],
 } satisfies Record<string, Shape[]>;

@@ -16,12 +16,12 @@ internal static class PanelStrings
 
         ["empty.ready"] = Localization.LocalizeString("{0} is ready", 66),
         ["empty.theAgent"] = Localization.LocalizeString("The agent", 67),
-        ["empty.body"] = Localization.LocalizeString("It can read the document, run scripts, drive Grasshopper and capture views. Mention @context to point it at something specific.", 68),
-        ["empty.starterCommand"] = Localization.LocalizeString("Create a command that generates 100 random spheres", 69),
-        ["empty.starterTower"] = Localization.LocalizeString("Build a twisty tower in Grasshopper", 70),
-        ["empty.starterLayers"] = Localization.LocalizeString("Organize the objects in the active viewport into layers", 71),
+        ["empty.body"] = Localization.LocalizeString("Ask how to do something in Rhino. Owly explains which tools and commands to use. You do the modelling.", 68),
+        ["empty.starterCommand"] = Localization.LocalizeString("How do I loft between curves?", 69),
+        ["empty.starterTower"] = Localization.LocalizeString("What\'s the difference between Join and Group?", 70),
+        ["empty.starterLayers"] = Localization.LocalizeString("How do I make a wall with openings?", 71),
         ["empty.noAgent"] = Localization.LocalizeString("No agent available", 72),
-        ["empty.noAgentBody"] = Localization.LocalizeString("Install Claude Code or Codex and sign in, then pick it here.", 73),
+        ["empty.noAgentBody"] = Localization.LocalizeString("Install Claude Code and sign in.", 73),
         ["empty.openSettings"] = Localization.LocalizeString("Open AI settings", 74),
         ["empty.setupGuide"] = Localization.LocalizeString("Read the setup guide", 75),
 
@@ -102,7 +102,7 @@ internal static class PanelStrings
         ["agent.reasonMissing"] = Localization.LocalizeString("not installed", 142),
         ["agent.reasonSignin"] = Localization.LocalizeString("needs sign-in", 143),
 
-        ["composer.placeholderIdle"] = Localization.LocalizeString("Ask, or describe what you want built.  / for commands, @ for context", 144),
+        ["composer.placeholderIdle"] = Localization.LocalizeString("Ask Owly how to do something in Rhino…", 144),
         ["composer.placeholderBusy"] = Localization.LocalizeString("Type your next message…", 145),
         ["composer.ariaMessage"] = Localization.LocalizeString("Message", 146),
         ["composer.attachFile"] = Localization.LocalizeString("Attach a file", 147),

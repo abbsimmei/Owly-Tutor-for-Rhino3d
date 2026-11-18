@@ -194,17 +194,12 @@ internal static class AgentDispatch
         return true;
     }
 
-    // Bracket the whole turn in one undo record so a single Ctrl+Z reverts every mutation it made.
-    // The doc gate is already held (acquired in TryDispatch), so the record is opened only when no
-    // other turn's record is open. Open before the prompt fires (the first tool call must land inside
-    // the record); close in the finally so it is ALWAYS ended, whether the turn completes, is
-    // cancelled, or faults, and release the gate in the same finally so Open..Close is atomic.
+    // The doc gate is already held (acquired in TryDispatch); release it in the finally so it is
+    // ALWAYS freed, whether the turn completes, is cancelled, or faults.
     private static async Task RunTurnAsync(IAgentRunner agent, RhinoDoc doc, UserMessage message, string url, string cwd, SemaphoreSlim gate)
     {
-        TurnUndoCheckpoint? checkpoint = null;
         try
         {
-            checkpoint = await TurnUndoCheckpoint.OpenAsync(doc, TurnUndoCheckpoint.Describe(message.Text)).ConfigureAwait(false);
             await agent.PromptAsync(message, url, cwd).ConfigureAwait(false);
         }
         catch (ObjectDisposedException)
@@ -217,8 +212,6 @@ internal static class AgentDispatch
         }
         finally
         {
-            if (checkpoint is not null)
-                await checkpoint.CloseAsync().ConfigureAwait(false);
             gate.Release();
 
             // The gate is now free. An ask_user answer parked during this turn (the user answered the

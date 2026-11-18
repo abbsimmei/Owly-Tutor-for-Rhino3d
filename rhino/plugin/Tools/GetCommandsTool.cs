@@ -8,7 +8,7 @@ internal static class GetCommandsTool
     private const int MaxResults = 200;
 
     [McpServerTool("get_commands", "List Rhino Commands", true, false)]
-    [Description("Discover Rhino command names available to run_command. Returns English names from all registered plugins (including those not yet loaded). Use filter to narrow the list before calling run_command.")]
+    [Description("List Rhino command names (English) from all registered plugins, including ones not yet loaded. Use it to verify a command exists before recommending it to the user; you cannot run commands. Use filter to narrow the list.")]
     public static IToolResult GetCommands(
         RhinoDoc _,
         [Description("Substring filter (case-insensitive). Strongly recommended — unfiltered results can exceed 1000 commands.")] string? filter = null)

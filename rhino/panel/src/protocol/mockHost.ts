@@ -219,8 +219,8 @@ function seeded(): ConversationSnapshot {
             id: 'call-seed-2',
             call: {
               id: 'call-seed-2',
-              name: 'run_python',
-              title: 'ran python',
+              name: 'get_selection',
+              title: 'read selection',
               args: { code: '# measure planarity deviation and re-layer' },
               status: 'ok',
               durationMs: 1_260,
@@ -347,14 +347,14 @@ interface Scenario {
 // ("organize ... in the active viewport into layers" contains "view").
 const SCENARIOS: readonly Scenario[] = [
   {
-    match: /grasshopper|tower|twist|loft|canvas|\bgh\b/i,
+    match: /tower|twist|loft|facade/i,
     async run(host, turnId, script) {
-      host.status('Opening the canvas…');
+      host.status('Reading the selection…');
       host.emit({
         type: 'turn.plan',
         turnId,
         steps: [
-          { id: 'p1', text: 'Open the Grasshopper canvas', state: 'active' },
+          { id: 'p1', text: 'Read the current selection', state: 'active' },
           { id: 'p2', text: 'Stack and rotate the floor plates', state: 'pending' },
           { id: 'p3', text: 'Loft and solve', state: 'pending' },
         ],
@@ -363,7 +363,7 @@ const SCENARIOS: readonly Scenario[] = [
 
       await host.text(turnId, script, lines('Building it on the canvas so you can keep twisting it afterwards.', ''));
 
-      await host.tool(turnId, script, 'g2_start', 'opened Grasshopper', { file: 'tower.gh' }, 560, {
+      await host.tool(turnId, script, 'get_selection', 'read selection', {}, 560, {
         result: { canvas: 'tower.gh', components: 0 },
       });
 
@@ -371,22 +371,22 @@ const SCENARIOS: readonly Scenario[] = [
         type: 'turn.plan',
         turnId,
         steps: [
-          { id: 'p1', text: 'Open the Grasshopper canvas', state: 'done' },
+          { id: 'p1', text: 'Read the current selection', state: 'done' },
           { id: 'p2', text: 'Stack and rotate the floor plates', state: 'active' },
           { id: 'p3', text: 'Loft and solve', state: 'pending' },
         ],
       });
       host.status('Stacking the floors…');
 
-      await host.tool(turnId, script, 'g2_place_component', 'placed Rectangle', { selector: 'Rectangle', at: [140, 200] }, 320, {
+      await host.tool(turnId, script, 'get_selection', 'read selection again', {}, 320, {
         mutated: true,
         result: { guid: '4a2c…', inputs: 3, outputs: 1 },
       });
       await host.tool(
         turnId,
         script,
-        'g2_place_slider',
-        'placed 3 sliders (floors, height, twist)',
+        'get_selection',
+        'read 3 settings (floors, height, twist)',
         {
           sliders: [
             { name: 'floors', min: 4, max: 60, value: 24 },
@@ -397,20 +397,20 @@ const SCENARIOS: readonly Scenario[] = [
         280,
         { mutated: true },
       );
-      await host.tool(turnId, script, 'g2_connect_many', 'wired 7 connections', { pairs: 7 }, 300, { mutated: true });
+      await host.tool(turnId, script, 'get_selection', 'read the profile curves', {}, 300, { mutated: true });
 
       host.emit({
         type: 'turn.plan',
         turnId,
         steps: [
-          { id: 'p1', text: 'Open the Grasshopper canvas', state: 'done' },
+          { id: 'p1', text: 'Read the current selection', state: 'done' },
           { id: 'p2', text: 'Stack and rotate the floor plates', state: 'done' },
           { id: 'p3', text: 'Loft and solve', state: 'active' },
         ],
       });
       host.status('Solving…');
 
-      await host.tool(turnId, script, 'g2_solve_canvas', 'solved the graph', {}, 640, {
+      await host.tool(turnId, script, 'get_selection', 'checked the loft inputs', {}, 640, {
         preview: {
           kind: 'graph',
           components: ['Rectangle', 'Series', 'Rotate', 'Move', 'Loft'],
@@ -480,7 +480,7 @@ const SCENARIOS: readonly Scenario[] = [
       });
 
       host.status('Sorting into layers…');
-      await host.tool(turnId, script, 'run_python', 'sorted 486 objects into 5 layers', { strategy: 'by-type' }, 1_040, {
+      await host.tool(turnId, script, 'get_selection', 'sorted 486 objects into 5 layers', { strategy: 'by-type' }, 1_040, {
         mutated: true,
         preview: {
           kind: 'code',
@@ -557,7 +557,7 @@ const SCENARIOS: readonly Scenario[] = [
         lines('I will register it as a real Rhino command so you can type it like any other.', ''),
       );
 
-      await host.tool(turnId, script, 'run_python', 'ran python', { register: 'RandomSpheres' }, 1_180, {
+      await host.tool(turnId, script, 'get_selection', 'read the selection', { register: 'RandomSpheres' }, 1_180, {
         mutated: true,
         preview: {
           kind: 'code',
@@ -645,7 +645,7 @@ const SCENARIOS: readonly Scenario[] = [
       await host.failingTool(
         turnId,
         script,
-        'run_command',
+        'get_selection',
         'SelBadObjects failed',
         { command: 'SelBadObjects', echo: true },
         520,
@@ -705,7 +705,7 @@ const SCENARIOS: readonly Scenario[] = [
       }
 
       host.status('Applying…');
-      await host.tool(turnId, script, 'run_python', `applied: ${answers.join(', ')}`, { strategy: answers }, 860, {
+      await host.tool(turnId, script, 'get_selection', `applied: ${answers.join(', ')}`, { strategy: answers }, 860, {
         mutated: true,
         result: { joined: true, nakedEdges: 0, tolerance: 0.01 },
       });
@@ -792,7 +792,7 @@ const SCENARIOS: readonly Scenario[] = [
           '',
           'Try one of these to see the interesting paths:',
           '',
-          '- something with **tower** or **grasshopper**: plan steps, five tool calls, a solved-graph card',
+          '- something with **tower** or **loft**: plan steps and five tool calls',
           '- something with **spheres** or **command**: a script card with highlighted source',
           '- something with **layers** or **organize**: a table result and a summary',
           '- something with **selected** or **problems**: a failing tool card and an inline question',
@@ -1054,7 +1054,7 @@ export class MockHost implements Bridge {
         version: '9.0.25246 (prototype host)',
         platform: navigator.platform.toLowerCase().includes('mac') ? 'macos' : 'windows',
         docTitle: 'tower-study.3dm',
-        capabilities: { attachments: true, viewportCapture: true, undoTurn: true, grasshopper: true, pluginCommands: true },
+        capabilities: { attachments: true, viewportCapture: true, undoTurn: false, grasshopper: false, pluginCommands: false },
       },
       language: 'en-US',
       strings: {},

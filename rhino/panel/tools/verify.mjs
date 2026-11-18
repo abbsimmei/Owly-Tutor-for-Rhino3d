@@ -163,7 +163,7 @@ try {
   });
   const before = await page.evaluate(() => document.querySelectorAll('.turn').length);
 
-  await type('Build a parametric facade in Grasshopper');
+  await type('How do I loft a parametric facade');
   await page.keyboard.press('Enter');
 
   // Catch the caret while the first assistant run is still arriving, and tag that exact element so
@@ -557,7 +557,7 @@ try {
   check('a repeat restarts the countdown', alive === 1, `count ${alive}`);
   await until(page, `document.querySelectorAll('.notice').length === 0 ? { gone: true } : null`, 7000);
 
-  await type('Build a parametric facade in Grasshopper');
+  await type('How do I loft a parametric facade');
   await page.keyboard.press('Enter');
   const strip = await until(
     page,
@@ -696,11 +696,10 @@ try {
     check('streamed markdown and code render', rendered.bold >= 1 && rendered.code === 1, JSON.stringify(rendered));
     check('a tool call and its folded-in result render as one settled card',
       rendered.tools === 4 && rendered.toolOk === 1, JSON.stringify(rendered));
-    check('a running run_command offers a cancel chip and a settled call offers none',
-      rendered.chips.length === 1 && rendered.chips[0] === 'Cancel'
-      && rendered.chipsOnRunning === 1 && rendered.chipsOnSettled === 0, JSON.stringify(rendered));
+    check('no tool call offers a chip, running or settled',
+      rendered.chips.length === 0 && rendered.chipsOnRunning === 0 && rendered.chipsOnSettled === 0, JSON.stringify(rendered));
     check('a result the agent flagged as an error renders as a failed card',
-      rendered.toolFailed === 1 && rendered.titles.includes('python failed'), JSON.stringify(rendered));
+      rendered.toolFailed === 1 && rendered.titles.includes('selection failed'), JSON.stringify(rendered));
     check('a C#-serialised image lands as a block pointing at the host route',
       rendered.images === 1 && rendered.imageSrc === '/image/a3f1c09e42b7', JSON.stringify(rendered));
     check('an image the host cannot serve drops the picture and keeps its caption',

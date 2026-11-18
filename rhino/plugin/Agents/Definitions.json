@@ -48,37 +48,6 @@
         { "display": "Sonnet 4", "id": "claude-sonnet-4" },
         { "display": "Haiku 4.5", "id": "claude-haiku-4-5" }
       ]
-    },
-    {
-      "name": "Codex",
-      "company": "OpenAI",
-      "defaultModel": "",
-      "isBuiltIn": true,
-      "defaultPrompt" : "",
-      "searchPaths": {
-        "win": [
-          "%LOCALAPPDATA%/OpenAI/Codex/bin/**/codex.exe",
-          "%APPDATA%/npm/codex.cmd"
-        ],
-        "mac": [
-          "/Applications/ChatGPT.app/Contents/Resources/codex",
-          "/Applications/ChatGPT.app/Contents/Resources/**/codex",
-          "%USERPROFILE%/.nvm/versions/node/**/bin/codex",
-          "/opt/homebrew/bin/codex",
-          "/usr/local/bin/codex"
-        ]
-      },
-      "models": [
-        { "display": "GPT 6 Astra", "id": "gpt-6-astra" },
-        { "display": "GPT 6.1 Sol", "id": "gpt-6.1-sol" },
-        { "display": "GPT 6.1 Terra", "id": "gpt-6.1-terra" },
-        { "display": "GPT 6 Sol", "id": "gpt-6-sol" },
-        { "display": "GPT 6 Luna", "id": "gpt-6-luna" },
-        { "display": "GPT 5.6 Sol", "id": "gpt-5.6-sol" },
-        { "display": "GPT 5.6 Terra", "id": "gpt-5.6-terra" },
-        { "display": "GPT 5.6 Luna", "id": "gpt-5.6-luna" },
-        { "display": "GPT 5.5", "id": "gpt-5.5" }
-      ]
     }
   ]
 }

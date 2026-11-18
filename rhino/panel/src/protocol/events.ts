@@ -83,7 +83,7 @@ export interface ToolChip {
 
 export interface ToolCall {
   id: string;
-  /** Wire name, e.g. `g2_place_component`. */
+  /** Wire name, e.g. `get_selection`. */
   name: string;
   /** Host-authored human phrase, e.g. "placed Circle". */
   title: string;

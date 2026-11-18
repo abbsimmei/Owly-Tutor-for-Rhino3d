@@ -6,7 +6,7 @@ using Rhino.AI.Resources;
 
 namespace Rhino.AI.Tools;
 
-// One-shot grounding snapshot: selection + active viewport + doc summary in a single round-trip, so the agent can orient before acting without
+// One-shot grounding snapshot: selection + active viewport + doc summary in a single round-trip, so the agent can orient before advising without
 // chaining get_selection / list_objects / view calls. Pull-only, read-only.
 [McpServerToolType]
 internal static partial class GetContextTool

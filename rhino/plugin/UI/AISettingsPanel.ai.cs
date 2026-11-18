@@ -24,17 +24,12 @@ internal sealed class AISettingsPanel : Panel
     private TextArea SearchPathsBox { get; } = new() { Wrap = false, Height = 70, ReadOnly = true };
     private TextArea SystemPromptBox { get; } = new() { Wrap = true, Height = 90 };
 
-    private TextArea McpJsonBox { get; } = new() { Wrap = false, Font = Eto.Drawing.Fonts.Monospace(11) };
-    private Label McpErrorLabel { get; } = new() { TextColor = Colors.Red, Visible = false };
-
     private CheckBox AutoLoadMcpBox { get; } = new() { Text = Localization.LocalizeString("Load MCP server at startup", 14) };
 
     // Leaf tool rows in the Tools tree, kept flat so Commit can read each checkbox back
     // without re-walking the grouped tree.
     private List<ToolNode> ToolLeaves { get; } = [];
 
-    private static JsonSerializerOptions IndentedJson { get; } = new() { WriteIndented = true };
-    private const string EmptyMcpJson = "{\n  \"mcpServers\": {}\n}";
 
     // Sentinel shown in the grid's Model dropdown for an empty model. Picking it stores an empty
     // string, i.e. "pass no --model, let the CLI choose its own default".
@@ -56,7 +51,6 @@ internal sealed class AISettingsPanel : Panel
             {
                 // Human written pages
                 AddPage(tabs, Localization.LocalizeString("AI Agents", 17), new AIAgentDefinitionsPage());
-                tabs.Pages.Add(new TabPage { Text = Localization.LocalizeString("MCP Servers", 18), Content = McpServersTab() });
                 tabs.Pages.Add(new TabPage { Text = Localization.LocalizeString("Loading", 20), Content = LoadingTab() }); // TODO : Use UserPreferences
                 AddPage(tabs, LOC.STR("Usage"), new AIUsagePage());
                 AddPage(tabs, LOC.STR("PlugIns"), new AIPluginPage());
@@ -66,7 +60,6 @@ internal sealed class AISettingsPanel : Panel
 #endif
             {
                 tabs.Pages.Add(new TabPage { Text = Localization.LocalizeString("AI Agents", 17), Content = AgentsTab() });
-                tabs.Pages.Add(new TabPage { Text = Localization.LocalizeString("MCP Servers", 18), Content = McpServersTab() });
                 tabs.Pages.Add(new TabPage { Text = Localization.LocalizeString("Tools", 19), Content = ToolsTab() });
                 tabs.Pages.Add(new TabPage { Text = Localization.LocalizeString("Loading", 20), Content = LoadingTab() });
             }
@@ -97,20 +90,11 @@ internal sealed class AISettingsPanel : Panel
         Pages.Add((name, page));
     }
 
-    // Persists every tab back to AISettings. Returns false (and shows the MCP error inline) when the
-    // MCP JSON is invalid, so the hosting dialog/page can keep itself open; true once everything is saved.
+    // Persists every tab back to AISettings. Returns false when a page is invalid, so the
+    // hosting dialog/page can keep itself open; true once everything is saved.
     public bool TryCommit(out string error)
     {
         error = string.Empty;
-
-        if (!TryValidateMcpJson(McpJsonBox.Text, out string normalizedJson, out string validationError))
-        {
-            McpErrorLabel.Text = validationError;
-            McpErrorLabel.Visible = true;
-            error = validationError;
-            return false;
-        }
-        McpErrorLabel.Visible = false;
 
         foreach ((string name, AIPage page) in Pages)
         {
@@ -136,7 +120,6 @@ internal sealed class AISettingsPanel : Panel
         if (Rows.FirstOrDefault(r => r.IsDefault) is AgentRow defaultRow)
             AISettings.DefaultAgentName = defaultRow.Name;
 
-        AISettings.ExtraMcpServersJson = normalizedJson;
         AISettings.AutoLoadMCP = AutoLoadMcpBox.Checked == true;
 
         if (ToolLeaves.Count == 0)
@@ -391,30 +374,6 @@ internal sealed class AISettingsPanel : Panel
         AgentGrid.ReloadData(new Eto.Forms.Range<int>(0, Rows.Count - 1));
     }
 
-    private Control McpServersTab()
-    {
-        McpJsonBox.Text = PrettyJson(AISettings.ExtraMcpServersJson);
-
-        Label help = new()
-        {
-            Wrap = WrapMode.Word,
-            Text = Localization.LocalizeString("Extra MCP servers merged into every agent alongside the built-in \"rhino\" server.", 31),
-            TextColor = Colors.Gray,
-        };
-
-        return new TableLayout
-        {
-            Padding = new Padding(8),
-            Spacing = new Size(0, 8),
-            Rows =
-            {
-                new TableRow(help),
-                new TableRow(McpJsonBox) { ScaleHeight = true },
-                new TableRow(McpErrorLabel),
-            },
-        };
-    }
-
     private Control ToolsTab()
     {
         HashSet<string> disabled = new(AISettings.DisabledTools, StringComparer.OrdinalIgnoreCase);
@@ -566,55 +525,6 @@ internal sealed class AISettingsPanel : Panel
     {
         try { return assembly.GetTypes(); }
         catch (ReflectionTypeLoadException ex) { return ex.Types.Where(t => t is not null)!; }
-    }
-
-    private static string PrettyJson(string json)
-    {
-        if (string.IsNullOrWhiteSpace(json))
-            return EmptyMcpJson;
-        try
-        {
-            using JsonDocument doc = JsonDocument.Parse(json);
-            return JsonSerializer.Serialize(doc.RootElement, IndentedJson);
-        }
-        catch (JsonException)
-        {
-            return json;
-        }
-    }
-
-    private static bool TryValidateMcpJson(string json, out string normalized, out string error)
-    {
-        normalized = EmptyMcpJson;
-        error = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(json))
-            return true;
-
-        try
-        {
-            using JsonDocument doc = JsonDocument.Parse(json);
-            if (doc.RootElement.ValueKind != JsonValueKind.Object)
-            {
-                error = Localization.LocalizeString("MCP config must be a JSON object.", 40);
-                return false;
-            }
-            if (!doc.RootElement.EnumerateObject().Any())
-                return true;
-            if (!doc.RootElement.TryGetProperty("mcpServers", out JsonElement servers)
-                || servers.ValueKind != JsonValueKind.Object)
-            {
-                error = Localization.LocalizeString("MCP config must contain an \"mcpServers\" object.", 41);
-                return false;
-            }
-            normalized = JsonSerializer.Serialize(doc.RootElement, IndentedJson);
-            return true;
-        }
-        catch (JsonException ex)
-        {
-            error = string.Format(Localization.LocalizeString("Invalid JSON: {0}", 42), ex.Message);
-            return false;
-        }
     }
 
     // Immutable scan result for one tool row in the Tools tree.

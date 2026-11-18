@@ -86,13 +86,6 @@ internal static class AISettings
         set => Settings.SetString(nameof(ScriptPluginName), value ?? string.Empty);
     }
 
-    // External MCP servers merged into each agent's own config beside `rhino` (Part 4).
-    public static string ExtraMcpServersJson
-    {
-        get => Settings.GetString(nameof(ExtraMcpServersJson), "{\"mcpServers\":{}}");
-        set => Settings.SetString(nameof(ExtraMcpServersJson), value);
-    }
-
     // Per-session conversation history lives under its own child node (Part 6).
     public static PersistentSettings Conversations =>
         Settings.TryGetChild(nameof(Conversations), out PersistentSettings child)
@@ -125,12 +118,6 @@ internal static class AISettings
     {
         get => Settings.GetString(nameof(ClaudeCommandFileName), "claude");
         set => Settings.SetString(nameof(ClaudeCommandFileName), value);
-    }
-
-    public static string CodexCommandFileName
-    {
-        get => Settings.GetString(nameof(CodexCommandFileName), "codex");
-        set => Settings.SetString(nameof(CodexCommandFileName), value);
     }
 
     public static TimeSpan AgentStartupTimeout
