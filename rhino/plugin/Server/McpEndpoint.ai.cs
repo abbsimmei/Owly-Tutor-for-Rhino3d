@@ -140,9 +140,6 @@ internal sealed class McpDispatcher
 
     private Task<JsonRpcResponse> HandleToolsList()
     {
-        HashSet<string> disabled = Filtered
-            ? new HashSet<string>(Rhino.AI.AISettings.DisabledTools, StringComparer.OrdinalIgnoreCase)
-            : [];
         // In-panel-only tools (e.g. ask_user) are hidden from the external `/`
         // endpoint; only the in-panel `/agent` endpoint (Filtered) lists them.
         return Task.FromResult(new JsonRpcResponse
@@ -151,7 +148,6 @@ internal sealed class McpDispatcher
             {
                 Tools = _tools.All
                     .Where(t => Filtered || !t.InPanelOnly)
-                    .Where(t => !disabled.Contains(t.Name))
                     .Select(t => new ToolDescriptor
                 {
                     Name = t.Name,
@@ -246,16 +242,6 @@ internal sealed class McpDispatcher
                             $"'{p.Name}' is only available to the in-Rhino AI panel agent; "
                             + "use your own client's question UI."),
                     },
-                }
-            };
-
-        if (Filtered && Rhino.AI.AISettings.DisabledTools.Contains(p.Name, StringComparer.OrdinalIgnoreCase))
-            return new JsonRpcResponse
-            {
-                Error = new JsonRpcError
-                {
-                    Code = JsonRpcErrorCode.MethodNotFound,
-                    Message = $"Tool '{p.Name}' is not available.",
                 }
             };
 

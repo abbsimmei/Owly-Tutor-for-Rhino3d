@@ -10,7 +10,7 @@ internal sealed class AISettingsDialog : Dialog
 
     public AISettingsDialog()
     {
-        Title = Localization.LocalizeString("AI Settings", 10);
+        Title = Localization.LocalizeString("Owly Settings", 10);
         Padding = new Padding(12);
         Size = new Size(720, 680);
         MinimumSize = new Size(560, 440);

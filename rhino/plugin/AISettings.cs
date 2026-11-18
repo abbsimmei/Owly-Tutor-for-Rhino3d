@@ -21,20 +21,6 @@ internal static class AISettings
         set => Settings.SetString(nameof(DefaultAgentName), value);
     }
 
-    // Tools hidden from in-Rhino agents (Part 3). Empty = nothing hidden.
-    public static string[] DisabledTools
-    {
-        get => Settings.GetStringList(nameof(DisabledTools), []);
-        set => Settings.SetStringList(nameof(DisabledTools), value);
-    }
-
-    // Definitions ship read-only in Definitions.json, so user edits are stored here and layered on at use.
-    public static string[] DisabledAgents
-    {
-        get => Settings.GetStringList(nameof(DisabledAgents), []);
-        set => Settings.SetStringList(nameof(DisabledAgents), value);
-    }
-
     // The panel's text zoom as the percentage the user sees; the ladder itself lives in the panel.
     public static int ZoomLevel
     {
@@ -48,24 +34,12 @@ internal static class AISettings
         set => Settings.SetBool(nameof(AutoLoadMCP), value);
     }
 
-    public static bool IsEnabled(AgentDefinition def) =>
-        def.Enabled && !DisabledAgents.Contains(def.Name, StringComparer.OrdinalIgnoreCase);
-
-    public static void SetAgentEnabled(string name, bool enabled)
-    {
-        string[] remaining = DisabledAgents
-            .Where(n => !string.Equals(n, name, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-        DisabledAgents = enabled ? remaining : [.. remaining, name];
-    }
+    // Owly has one agent and no on/off switch (plan 008); a disabled-agents value from an older build is ignored.
+    public static bool IsEnabled(AgentDefinition def) => def.Enabled;
 
     public static string AgentModel(string name) => Settings.GetString(AgentKey(name, "Model"), string.Empty);
 
     public static void SetAgentModel(string name, string model) => Settings.SetString(AgentKey(name, "Model"), model);
-
-    public static string AgentPrompt(string name) => Settings.GetString(AgentKey(name, "Prompt"), string.Empty);
-
-    public static void SetAgentPrompt(string name, string prompt) => Settings.SetString(AgentKey(name, "Prompt"), prompt);
 
     public static string EffectiveModel(AgentDefinition def) =>
         AgentModel(def.Name) is { Length: > 0 } model ? model : def.DefaultModel;

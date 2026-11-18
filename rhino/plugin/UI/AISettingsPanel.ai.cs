@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Reflection;
 using Eto.Drawing;
 using Eto.Forms;
 using Rhino.AI.UI;
@@ -7,29 +6,23 @@ using Rhino.UI;
 
 namespace Rhino.AI;
 
-// Shared settings UI (AI Agents / MCP Servers / Tools). Hosted by both the standalone
+// Shared settings UI: in Owly, just the model choice (plan 008). Hosted by both the standalone
 // AISettingsDialog and the Rhino Options page (AIOptionsPage); neither owns the commit logic,
 // it lives here behind TryCommit so the two hosts can never drift.
 internal sealed class AISettingsPanel : Panel
 {
     private ObservableCollection<AgentRow> Rows { get; } = [];
-    private GridView AgentGrid { get; } = new() { ShowHeader = true, AllowMultipleSelection = false, AllowColumnReordering = false, AllowEmptySelection = true };
 
     // Right-hand property list for the selected agent. Model/Enabled/Available used to live in the grid;
     // they moved here so the grid stays a plain selection list and every editable property reads top-down.
     private Label NameHeader { get; } = new() { Font = Eto.Drawing.Fonts.Sans(13, FontStyle.Bold) };
     private Label AvailableLabel { get; } = new();
-    private CheckBox EnabledBox { get; } = new() { Text = Localization.LocalizeString("Enabled", 13) };
     private DropDown ModelBox { get; } = new();
     private TextArea SearchPathsBox { get; } = new() { Wrap = false, Height = 70, ReadOnly = true };
-    private TextArea SystemPromptBox { get; } = new() { Wrap = true, Height = 90 };
 
     private CheckBox AutoLoadMcpBox { get; } = new() { Text = Localization.LocalizeString("Load MCP server at startup", 14) };
 
-    // Leaf tool rows in the Tools tree, kept flat so Commit can read each checkbox back
-    // without re-walking the grouped tree.
-    private List<ToolNode> ToolLeaves { get; } = [];
-
+    private bool LoadingTabShown { get; set; }
 
     // Sentinel shown in the grid's Model dropdown for an empty model. Picking it stores an empty
     // string, i.e. "pass no --model, let the CLI choose its own default".
@@ -59,9 +52,7 @@ internal sealed class AISettingsPanel : Panel
             else
 #endif
             {
-                tabs.Pages.Add(new TabPage { Text = Localization.LocalizeString("AI Agents", 17), Content = AgentsTab() });
-                tabs.Pages.Add(new TabPage { Text = Localization.LocalizeString("Tools", 19), Content = ToolsTab() });
-                tabs.Pages.Add(new TabPage { Text = Localization.LocalizeString("Loading", 20), Content = LoadingTab() });
+                tabs.Pages.Add(new TabPage { Text = Localization.LocalizeString("Owly", 2), Content = AgentsTab() });
             }
         }
 
@@ -111,89 +102,23 @@ internal sealed class AISettingsPanel : Panel
         }
 
         foreach (AgentRow row in Rows)
-        {
-            AISettings.SetAgentEnabled(row.Name, row.Enabled);
             AISettings.SetAgentModel(row.Name, row.Model);
-            AISettings.SetAgentPrompt(row.Name, row.SystemPrompt);
-        }
 
-        if (Rows.FirstOrDefault(r => r.IsDefault) is AgentRow defaultRow)
-            AISettings.DefaultAgentName = defaultRow.Name;
-
-        AISettings.AutoLoadMCP = AutoLoadMcpBox.Checked == true;
-
-        if (ToolLeaves.Count == 0)
-            return true;
-
-        // ScanTools hides router-internal underscore tools from the grid, so they have no checkbox to
-        // round-trip; carry forward any that were already disabled instead of silently dropping them.
-        IEnumerable<string> uncheckedNames = ToolLeaves
-            .Where(leaf => leaf.GetValue(0) is not true)
-            .Select(leaf => leaf.ToolName);
-        IEnumerable<string> preservedUnderscore = AISettings.DisabledTools
-            .Where(n => n.StartsWith('_'));
-        AISettings.DisabledTools = uncheckedNames
-            .Concat(preservedUnderscore)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        if (LoadingTabShown)
+            AISettings.AutoLoadMCP = AutoLoadMcpBox.Checked == true;
 
         return true;
     }
 
     private void SeedRows()
     {
-        string defaultName = AISettings.DefaultAgentName;
-        bool anyDefault = false;
         foreach (AgentDefinition def in AgentRegistry.Instance.AllDefinitions)
-        {
-            bool isDefault = string.Equals(def.Name, defaultName, StringComparison.OrdinalIgnoreCase);
-            anyDefault |= isDefault;
-            Rows.Add(AgentRow.From(def, isDefault));
-        }
-
-        if (!anyDefault && Rows.Count > 0)
-            Rows[0].IsDefault = true;
+            Rows.Add(AgentRow.From(def));
     }
 
     private Control AgentsTab()
     {
-        AgentGrid.DataStore = Rows;
-        AgentGrid.Columns.Add(new GridColumn
-        {
-            HeaderText = Localization.LocalizeString("Default", 21),
-            HeaderTextAlignment = TextAlignment.Center,
-            DataCell = new ImageViewCell { Binding = Binding.Property<AgentRow, Image?>(r => r.DefaultImage) },
-            Editable = false,
-            Resizable = false,
-            AutoSize = true,
-        });
-        AgentGrid.Columns.Add(new GridColumn
-        {
-            HeaderText = Localization.LocalizeString("Agent", 22),
-            HeaderTextAlignment = TextAlignment.Center,
-            DataCell = new TextBoxCell { Binding = Binding.Property((AgentRow r) => r.Name), TextAlignment = TextAlignment.Center },
-            Editable = false,
-            Resizable = false,
-            Expand = true
-        });
-
-        AgentGrid.SelectionChanged += (_, _) => LoadEditor();
-        AgentGrid.ContextMenu = BuildGridContextMenu();
-
-        EnabledBox.CheckedChanged += (_, _) => WriteEditor(row => row.Enabled = EnabledBox.Checked == true);
         ModelBox.SelectedValueChanged += (_, _) => WriteEditor(row => row.Model = CurrentModelValue());
-        SystemPromptBox.TextChanged += (_, _) => WriteEditor(row => row.SystemPrompt = SystemPromptBox.Text);
-
-        StackLayout left = new()
-        {
-            Width = 200,
-            Spacing = 8,
-            HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            Items =
-            {
-                new StackLayoutItem(AgentGrid, expand: true),
-            },
-        };
 
         TableLayout properties = new()
         {
@@ -202,29 +127,18 @@ internal sealed class AISettingsPanel : Panel
             {
                 new TableRow(NameHeader),
                 new TableRow(AvailableLabel),
-                new TableRow(EnabledBox),
                 new TableRow(LabeledColumn(Localization.LocalizeString("Model:", 23), ModelBox)),
                 new TableRow(LabeledColumn(Localization.LocalizeString("Found at:", 24), SearchPathsBox)),
-                new TableRow(LabeledColumn(Localization.LocalizeString("Prompt:", 25), SystemPromptBox)),
                 new TableRow { ScaleHeight = true },
             },
         };
 
-        TableLayout layout = new()
+        LoadEditor();
+        return new TableLayout
         {
             Padding = new Padding(8),
-            Spacing = new Size(12, 0),
-            Rows =
-            {
-                new TableRow(
-                    new TableCell(left),
-                    new TableCell(properties, scaleWidth: true))
-                { ScaleHeight = true },
-            },
+            Rows = { new TableRow(properties) { ScaleHeight = true } },
         };
-
-        LoadEditor();
-        return layout;
     }
 
     // Label stacked above its control, so a multi-line box gets full width instead of a left-hand label
@@ -235,47 +149,6 @@ internal sealed class AISettingsPanel : Panel
             Spacing = new Size(0, 3),
             Rows = { new TableRow(new Label { Text = label }), new TableRow(new TableCell(control, true)) },
         };
-
-    private ContextMenu BuildGridContextMenu()
-    {
-        ButtonMenuItem setDefault = new() { Text = Localization.LocalizeString("Set Default", 26) };
-        setDefault.Click += (_, _) => SetSelectedDefault();
-        ButtonMenuItem reset = new() { Text = Localization.LocalizeString("Restore Defaults", 27) };
-        reset.Click += (_, _) => ResetSelected();
-
-        ContextMenu menu = new() { Items = { setDefault, reset } };
-        menu.Opening += (_, _) =>
-        {
-            bool hasSelection = TryGetSelected(out AgentRow _);
-            setDefault.Enabled = hasSelection;
-            reset.Enabled = hasSelection;
-        };
-        return menu;
-    }
-
-    private void ResetSelected()
-    {
-        if (!TryGetSelected(out AgentRow row))
-            return;
-
-        DialogResult confirm = MessageBox.Show(
-            this,
-            string.Format(
-                Localization.LocalizeString("Reset \"{0}\" to its default settings? This clears its model and prompt, and re-enables it.", 28),
-                row.Name),
-            Localization.LocalizeString("Reset Agent", 29),
-            MessageBoxButtons.YesNo,
-            MessageBoxType.Question);
-        if (confirm != DialogResult.Yes)
-            return;
-
-        row.Model = string.Empty;
-        row.SystemPrompt = string.Empty;
-        row.Enabled = true;
-
-        ReloadGrid();
-        LoadEditor();
-    }
 
     private static string FoundString { get; } = Localization.LocalizeString("Found on search paths", 217);
     private static string NotFoundString { get; } = Localization.LocalizeString("Not found on search paths", 218);
@@ -290,20 +163,16 @@ internal sealed class AISettingsPanel : Panel
                 NameHeader.Text = row.Name;
                 AvailableLabel.Text = row.Available ? $"✓ {FoundString}" : $"✗ {NotFoundString}";
                 AvailableLabel.TextColor = row.Available ? Colors.Green : Colors.Red;
-                EnabledBox.Checked = row.Enabled;
                 LoadModelBox(row);
                 SearchPathsBox.Text = row.SearchPathsText;
-                SystemPromptBox.Text = row.SystemPrompt;
                 EnableEditor(true);
             }
             else
             {
                 NameHeader.Text = Localization.LocalizeString("No agent selected", 30);
                 AvailableLabel.Text = string.Empty;
-                EnabledBox.Checked = false;
                 ModelBox.Items.Clear();
                 SearchPathsBox.Text = string.Empty;
-                SystemPromptBox.Text = string.Empty;
                 EnableEditor(false);
             }
         }
@@ -333,9 +202,7 @@ internal sealed class AISettingsPanel : Panel
 
     private void EnableEditor(bool enabled)
     {
-        EnabledBox.Enabled = enabled;
         ModelBox.Enabled = enabled;
-        SystemPromptBox.Enabled = enabled;
     }
 
     private void WriteEditor(Action<AgentRow> apply)
@@ -346,106 +213,22 @@ internal sealed class AISettingsPanel : Panel
             apply(row);
     }
 
+    // Owly has exactly one agent (ADR-0003), so the editor always shows it.
     private bool TryGetSelected(out AgentRow row)
     {
-        if (AgentGrid.SelectedItem is AgentRow selected)
-        {
-            row = selected;
-            return true;
-        }
-        row = default!;
-        return false;
-    }
-
-    private void SetSelectedDefault()
-    {
-        if (!TryGetSelected(out AgentRow row))
-            return;
-        foreach (AgentRow other in Rows)
-            other.IsDefault = false;
-        row.IsDefault = true;
-        ReloadGrid();
-    }
-
-    private void ReloadGrid()
-    {
-        if (Rows.Count == 0)
-            return;
-        AgentGrid.ReloadData(new Eto.Forms.Range<int>(0, Rows.Count - 1));
-    }
-
-    private Control ToolsTab()
-    {
-        HashSet<string> disabled = new(AISettings.DisabledTools, StringComparer.OrdinalIgnoreCase);
-
-        TreeGridItemCollection roots = [];
-        foreach (IGrouping<string, ToolInfo> group in ScanTools()
-                     .GroupBy(t => t.Category)
-                     .OrderBy(g => CategoryOrder(g.Key)))
-        {
-            ToolNode groupNode = new(CategoryLabel(group.Key)) { Expanded = true };
-            foreach (ToolInfo tool in group.OrderBy(t => t.Title, StringComparer.OrdinalIgnoreCase))
-            {
-                ToolNode leaf = new(tool.Name, !disabled.Contains(tool.Name), tool.Title, tool.Description)
-                {
-                    Parent = groupNode,
-                };
-                groupNode.Children.Add(leaf);
-                ToolLeaves.Add(leaf);
-            }
-            SyncGroupState(groupNode);
-            roots.Add(groupNode);
-        }
-
-        TreeGridView tree = new() { ShowHeader = true, DataStore = roots };
-        tree.Columns.Add(new GridColumn { HeaderText = Localization.LocalizeString("On", 32), DataCell = new CheckBoxCell(0), Editable = true, Width = 44 });
-        tree.Columns.Add(new GridColumn { HeaderText = Localization.LocalizeString("Tool", 33), DataCell = new TextBoxCell(1), Width = 210 });
-        tree.Columns.Add(new GridColumn { HeaderText = Localization.LocalizeString("Description", 34), DataCell = new TextBoxCell(2), Width = 380 });
-        tree.CellEdited += (_, e) =>
-        {
-            if (e.Column != 0 || e.Item is not ToolNode node)
-                return;
-            if (node.IsGroup)
-            {
-                bool on = node.GetValue(0) is true;
-                foreach (ToolNode child in node.Children.OfType<ToolNode>())
-                    child.SetValue(0, on);
-                tree.ReloadItem(node);
-            }
-            else if (node.Parent is ToolNode group)
-            {
-                SyncGroupState(group);
-                tree.ReloadItem(group);
-            }
-        };
-
-        Label help = new()
-        {
-            Wrap = WrapMode.Word,
-            Text = Localization.LocalizeString("Tools the built-in \"rhino\" server exposes, grouped by behavior. Unchecking a tool hides it from in-Rhino agents only; external clients still see every tool.", 35),
-            TextColor = Colors.Gray,
-        };
-
-        return new TableLayout
-        {
-            Padding = new Padding(8),
-            Spacing = new Size(0, 8),
-            Rows =
-            {
-                new TableRow(help),
-                new TableRow(tree) { ScaleHeight = true },
-            },
-        };
+        row = Rows.FirstOrDefault()!;
+        return row is not null;
     }
 
     private Control LoadingTab()
     {
+        LoadingTabShown = true;
         AutoLoadMcpBox.Checked = AISettings.AutoLoadMCP;
 
         Label help = new()
         {
             Wrap = WrapMode.Word,
-            Text = Localization.LocalizeString("What RhinoAI starts when Rhino launches. Changes take effect the next time Rhino starts.", 36),
+            Text = Localization.LocalizeString("What Owly starts when Rhino launches. Changes take effect the next time Rhino starts.", 36),
             TextColor = Colors.Gray,
         };
 
@@ -462,97 +245,7 @@ internal sealed class AISettingsPanel : Panel
         };
     }
 
-    private static int CategoryOrder(string category) => category switch
-    {
-        "Read-only" => 0,
-        "Modify" => 1,
-        "Destructive" => 2,
-        _ => 3,
-    };
-
-    private static string CategoryLabel(string category) => category switch
-    {
-        "Read-only" => Localization.LocalizeString("Read-only", 37),
-        "Modify" => Localization.LocalizeString("Modify", 38),
-        "Destructive" => Localization.LocalizeString("Destructive", 39),
-        _ => category,
-    };
-
-    // A group checkbox is checked only when every tool under it is on; toggling it cascades to all
-    // children. Mixed groups read as unchecked (no tri-state) to keep the model free of nulls.
-    private static void SyncGroupState(ToolNode group)
-    {
-        List<ToolNode> children = group.Children.OfType<ToolNode>().ToList();
-        bool allOn = children.Count > 0 && children.All(c => c.GetValue(0) is true);
-        group.SetValue(0, allOn);
-    }
-
-    // Mirror of ToolRegistry.Scan that reads name/title/description/behaviour without instantiating
-    // tools or needing an IServiceProvider (Scan does the latter to build full schemas, which we must
-    // not do here). Router-internal tools (leading underscore) are excluded so they can't be hidden.
-    private static IReadOnlyList<ToolInfo> ScanTools()
-    {
-        const BindingFlags flags =
-            BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly;
-
-        List<ToolInfo> tools = [];
-        Assembly assembly = typeof(McpSerializer).Assembly;
-        foreach (Type type in SafeGetTypes(assembly))
-        {
-            if (type.GetCustomAttribute<McpServerToolTypeAttribute>() is null)
-                continue;
-
-            foreach (MethodInfo method in type.GetMethods(flags))
-            {
-                if (method.GetCustomAttribute<McpServerToolAttribute>() is not McpServerToolAttribute toolAttr)
-                    continue;
-
-                string name = toolAttr.Name ?? method.Name;
-                if (name.StartsWith('_'))
-                    continue;
-
-                string title = string.IsNullOrWhiteSpace(toolAttr.Title) ? name : toolAttr.Title!;
-                string description = method.GetCustomAttribute<DescriptionAttribute>()?.Description ?? string.Empty;
-                string category = toolAttr.ReadOnly ? "Read-only" : toolAttr.Destructive ? "Destructive" : "Modify";
-                tools.Add(new ToolInfo(name, title, description, category));
-            }
-        }
-
-        return tools;
-    }
-
-    private static IEnumerable<Type> SafeGetTypes(Assembly assembly)
-    {
-        try { return assembly.GetTypes(); }
-        catch (ReflectionTypeLoadException ex) { return ex.Types.Where(t => t is not null)!; }
-    }
-
-    // Immutable scan result for one tool row in the Tools tree.
-    private record struct ToolInfo(string Name, string Title, string Description, string Category);
-
-    // TreeGridView node for the Tools tab. Group nodes carry the category label in column 1 and a
-    // roll-up checkbox in column 0; leaf nodes carry [enabled, title, description] and the tool name.
-    private sealed class ToolNode : TreeGridItem
-    {
-        public string ToolName { get; }
-        public bool IsGroup { get; }
-
-        public ToolNode(string toolName, bool enabled, string title, string description)
-            : base(enabled, title, description)
-        {
-            ToolName = toolName;
-            IsGroup = false;
-        }
-
-        public ToolNode(string category)
-            : base(false, category, string.Empty)
-        {
-            ToolName = string.Empty;
-            IsGroup = true;
-        }
-    }
-
-    // Only Model, SystemPrompt, Enabled and IsDefault are user-editable; the rest mirrors the definition.
+    // Only Model is user-editable; the rest mirrors the definition.
     private sealed class AgentRow
     {
         public string Name { get; }
@@ -562,20 +255,10 @@ internal sealed class AISettingsPanel : Panel
         public string DefaultModel { get; }
 
         public string Model { get; set; }
-        public string SystemPrompt { get; set; }
-        public bool Enabled { get; set; }
-        public bool IsDefault { get; set; }
-
-        //public string DefaultGlyph => IsDefault ? "✓" : string.Empty;
-
-        private static Image DefaultCheckIcon =>
-            Rhino.Resources.Assets.Rhino.Eto.Icons.TryGet(Rhino.Resources.ResourceIds.CheckSvg, new Size(16, 16));
-
-        public Image? DefaultImage => IsDefault ? DefaultCheckIcon : null;
 
         public AgentRow(
             string name, bool available, string searchPathsText, IReadOnlyList<ModelSpec> models,
-            string defaultModel, string model, string systemPrompt, bool enabled, bool isDefault)
+            string defaultModel, string model)
         {
             Name = name;
             Available = available;
@@ -583,21 +266,15 @@ internal sealed class AISettingsPanel : Panel
             Models = models;
             DefaultModel = defaultModel;
             Model = model;
-            SystemPrompt = systemPrompt;
-            Enabled = enabled;
-            IsDefault = isDefault;
         }
 
-        public static AgentRow From(AgentDefinition def, bool isDefault) =>
+        public static AgentRow From(AgentDefinition def) =>
             new(
                 def.Name,
                 def.Available,
                 string.Join(Environment.NewLine, def.SearchPaths.GetPaths()),
                 def.Models,
                 def.DefaultModel,
-                AISettings.AgentModel(def.Name),
-                AISettings.AgentPrompt(def.Name),
-                AISettings.IsEnabled(def),
-                isDefault);
+                AISettings.AgentModel(def.Name));
     }
 }
