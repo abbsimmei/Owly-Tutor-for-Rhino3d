@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-File-naming rules for AI-authored C# (`*.ai.cs`) are in @AGENTS.md. Follow them.
+File-naming rule for AI-authored C#: a new C# file written by an AI agent is named `*.ai.cs`. Editing an existing file does not rename it. (There is no `AGENTS.md` in this repo.)
 
 ## Project: Owly
 
@@ -19,6 +19,7 @@ Read the relevant ADR before changing something it covers. If a change overturns
 Rules for code changes:
 - **Every agent tool must be read-only** (ADR-0002). The AI can see exactly five tools: `get_commands`, `get_context`, `get_selection`, `list_objects` and `ask_user`. Code that executes, mutates or touches Grasshopper was deleted, not disabled. Don't bring it back.
 - **The Claude Code CLI is the only AI backend** (ADR-0003). It is launched with `--tools ""`, `--setting-sources ""`, `--strict-mcp-config`, `--system-prompt` (Owly's prompt replaces Claude Code's default, ADR-0005) and only the `rhino` MCP server (`Agents/Conversations/ClaudeStreamJsonParser.ai.cs`). Keep all of that.
+- **Students can't edit Owly's prompt, tools or on/off state** (ADR-0005, plan 008). The settings dialog offers only the model. After changing `AgentPrompts.cs`, run the manual checklist in [docs/owly/prompt-checks.md](docs/owly/prompt-checks.md). Commands in answers are inline code with a leading underscore, such as `_Loft`; Phase 4's copy buttons will rely on that format.
 - **Owly is used only from its in-Rhino panel** (ADR-0001). There is no router and no external MCP endpoint, only `/agent` on localhost.
 - Make small, targeted changes. Reuse the working systems and don't rewrite them. Ask the user before making a decision that changes the architecture or the product's behaviour.
 - Only user-visible identifiers say Owly: the panel GUID, the `Owly` command, the yak package and the `Owly.rhp` assembly (ADR-0004). The csproj file name, the `Rhino.AI` namespace and class names like `RhinoAIPlugin` deliberately keep RhinoAI. If you add a command, give it an `Owly` prefix so it can't clash with the RhinoAI plugin built into Rhino 9.
@@ -53,6 +54,7 @@ How a message travels: panel → `PanelBridge` → `AgentDispatch` → Claude Co
   - `Server/` + `Tools/`: the in-process MCP server. Tools are classes marked `[McpServerToolType]`/`[McpServerTool]` that `ToolRegistry` finds by reflection; there is no central list.
   - `src/Resources/`: MCP resources. `command_help` fetches pages from docs.mcneel.com. The Claude CLI probably can't read resources, so Phase 5 should turn this into a tool.
   - `UI/`: the docked WebView panel. `PanelBridge` and the `PanelEvents`/`PanelCommands` records carry the protocol between C# and TypeScript. `PanelStrings.ai.cs` holds the panel's user-facing text.
+  - The C# panel records (`PanelEvents.ai.cs`, `PanelCommands*.cs`) still carry fields the panel no longer shows, such as plan, chips and context. They are kept on purpose because Server.Tests compiles them. Remove both sides together or not at all.
   - `AISettings.cs`: settings stored in Rhino's PersistentSettings, keyed by the plugin GUID. That GUID is written by hand in both this file and `Properties/AssemblyInfo.cs`, and the two must match.
 - **`rhino/panel/`**: the chat UI as a dependency-free TypeScript web app. `src/protocol/events.ts` defines the protocol between panel and host.
 - **`rhino/acp/`**: the Agent Client Protocol library that the agent runner uses. `src/Generated/` is codegen output.
