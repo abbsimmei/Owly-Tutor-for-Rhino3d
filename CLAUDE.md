@@ -19,13 +19,11 @@ The .NET 8 SDK is required. In Release builds, warnings are errors.
 
 ```sh
 dotnet build rhino/plugin/RhinoAI.csproj -p:RhinoTarget=R9   # plugin (R8 also supported)
-dotnet build rhino/router/Router.csproj
-dotnet test tests/Router.Tests/Router.Tests.csproj
 dotnet test tests/Server.Tests/Server.Tests.csproj
 dotnet test tests/Server.Tests/Server.Tests.csproj --filter "FullyQualifiedName~SomeTest"  # single test
 ```
 
-`tests/Integration.Tests` needs a running Rhino, and CI does not run it. In VS Code, **Run and Debug** builds the plugin, launches Rhino and starts the MCP server. Tasks for packing and installing the yak package are in [.vscode/tasks.json](.vscode/tasks.json).
+In VS Code, **Run and Debug** builds the plugin, launches Rhino and starts the MCP server. Tasks for packing and installing the yak package are in [.vscode/tasks.json](.vscode/tasks.json).
 
 Panel (TypeScript, in `rhino/panel/`):
 ```sh
@@ -42,6 +40,5 @@ Rebuild the panel before building the plugin if `rhino/panel/src` has changed.
   - `Server/` + `Tools/` + `Resources/`: Rhino's in-process MCP server. Tools are attribute-annotated classes that `ToolRegistry` discovers. This is the toolset the agent sees.
   - `UI/`: the docked panel. `PanelBridge` and `PanelEvents`/`PanelCommands` host the web panel in a WebView and pass events between C# and TypeScript.
 - **`rhino/panel/`**: the chat UI as a dependency-free TypeScript web app. `src/protocol/events.ts` defines the wire protocol between panel and host.
-- **`rhino/router/`**: a stdio MCP router (`rhino-mcp-router`). The agent CLI connects to the router, and the router proxies to one or more Rhino instances, launching them if needed.
 - **`rhino/sdk/`**, **`rhino/acp/`**: an R9-only agent and model SDK, and the Agent Client Protocol library. `acp/src/Generated/` is codegen output.
-- `cc-plugin/`, `connector/`, `docs/` and the `.github/workflows` are inherited RhinoAI distribution. They are not core to Owly.
+- `.github/workflows` is partly inherited RhinoAI CI and packaging. It is not core to Owly.

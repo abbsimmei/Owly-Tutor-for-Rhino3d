@@ -5,9 +5,11 @@ namespace Rhino.AI;
 /// </summary>
 internal static class AgentPrompts
 {
+    private const string ServerName = "rhino";
+
     public static string AskUserSteer =>
         "To ask the user a question or have them choose between options, always call the "
-        + $"mcp__{RouterMcpConfig.ServerName}__ask_user tool. On success, STOP and end your turn. On failure, follow its guidance and retry; do not wait for answers. It takes a "
+        + $"mcp__{ServerName}__ask_user tool. On success, STOP and end your turn. On failure, follow its guidance and retry; do not wait for answers. It takes a "
         + "LIST of questions, so put every question you need answered into that ONE call rather than "
         + "asking them one turn at a time; they are shown together and answered together. The tool "
         + "does NOT return the answers: the user's reply arrives as their next message, and you "

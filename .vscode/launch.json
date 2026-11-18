@@ -75,28 +75,6 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "console": "internalConsole"
-    },
-    {
-      "name": "Router",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "register router with claude",
-      "program": "${workspaceFolder}/rhino/router/bin/Debug/net8.0/rhino-mcp-router.dll",
-      "cwd": "${workspaceFolder}/rhino/router",
-      "stopAtEntry": false,
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Docs",
-      "type": "node-terminal",
-      "request": "launch",
-      "command": "hugo server --buildDrafts --disableFastRender",
-      "cwd": "${workspaceFolder}/docs",
-      "serverReadyAction": {
-        "pattern": "Web Server is available at (https?://\\S+)",
-        "uriFormat": "%s",
-        "action": "openExternally"
-      }
     }
   ],
   "inputs": [

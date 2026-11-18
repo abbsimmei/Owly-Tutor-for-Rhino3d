@@ -7,11 +7,6 @@
     <PluginOS Condition="'$(PluginOS)' == '' AND $([MSBuild]::IsOSPlatform('Windows'))">win</PluginOS>
     <PluginOS Condition="'$(PluginOS)' == '' AND $([MSBuild]::IsOSPlatform('Linux'))">linux</PluginOS>
     <PluginOS Condition="'$(PluginOS)' == ''">osx</PluginOS>
-    <RouterRids Condition="'$(RouterRids)' == '' AND '$(PluginOS)' == 'win'">win-x64;win-arm64</RouterRids>
-    <RouterRids Condition="'$(RouterRids)' == '' AND '$(PluginOS)' == 'osx'">osx-arm64</RouterRids>
-    <!-- Linux has no default router: the router is NativeAOT, which needs clang and only links
-         for the build host's architecture, and the headless RhinoCore hosts (Rhino.Compute) reach
-         the plug-in over HTTP without it. Pass -p:RouterRids=linux-x64 or linux-arm64 to bundle one. -->
   </PropertyGroup>
 
   <PropertyGroup>
@@ -32,13 +27,9 @@
     <PluginOutputDir Condition="'$(PluginOutputDir)' == '' AND '$(RhinoTarget)' == 'R9' AND '$(RhinoPlugInOutputDir)' != ''">$([MSBuild]::NormalizePath('$(RhinoPlugInOutputDir)', 'Owly'))</PluginOutputDir>
     <PluginOutputDir Condition="'$(PluginOutputDir)' == ''">$(MSBuildProjectDirectory)/bin/$(RhinoTarget)-$(PluginOS)/$(Configuration)</PluginOutputDir>
     <OutputPath>$(PluginOutputDir)/</OutputPath>
-    <!-- macOS and Linux: no target-framework subfolder, so the payload is flat in Plug-ins/RhinoAI
-         (RhinoAI.rhp + dependencies + router/) exactly like Plug-ins/Grasshopper2. The Mac
-         app-bundle install step in src4/BuildSolutions/MacDotNetMakefile copies that folder
-         straight into ManagedPlugIns/RhinoAI.rhp, which is the layout the Mac plug-in loader
-         expects (<Name>.rhp/<Name>.rhp). On Linux the RhinoCore deploy and the deb ship the
-         folder as is and the headless folder scan loads Plug-ins/RhinoAI/RhinoAI.rhp. Windows
-         keeps the net8.0 subfolder that installer/msi/Features/Plug-ins/RhinoAI.wxs harvests from. -->
+    <!-- macOS and Linux: no target-framework subfolder, so the payload (Owly.rhp + dependencies) is flat
+         in Plug-ins/Owly, which is the <Name>.rhp/<Name>.rhp layout the Mac plug-in loader expects.
+         Windows keeps the net8.0 subfolder. -->
     <AppendTargetFrameworkToOutputPath Condition="'$(PluginOS)' != 'win'">false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
@@ -50,7 +41,6 @@
   <ItemGroup>
     <ProjectReference Include="../acp/Acp.csproj" />
     <ProjectReference Include="../sdk/sdk.csproj" Condition="'$(RhinoTarget)' == 'R9'" />
-    <Compile Include="../router/RouterPaths.ai.cs" Link="RouterPaths.ai.cs" />
     <Compile Include="../../../../../version.cs" Condition="'$(IsInRhino)' == 'true'">
       <Link>Properties\version.cs</Link>
     </Compile>
@@ -121,15 +111,6 @@
     </ReadLinesFromFile>
     <WriteLinesToFile File="$(PluginOutputDir)/manifest.yml" Lines="@(_ManifestLine);version: $(RhinoAIPackageVersion)" Overwrite="true" WriteOnlyWhenDifferent="true" />
     <Copy SourceFiles="$(MSBuildProjectDirectory)/icon.png" DestinationFolder="$(PluginOutputDir)" SkipUnchangedFiles="true" />
-  </Target>
-
-  <Target Name="BundleRouter" AfterTargets="Build" Condition="'$(TargetFramework)' == 'net8.0' AND '$(RouterRids)' != ''">
-    <ItemGroup>
-      <_RouterRid Include="$([MSBuild]::Unescape($(RouterRids)))" />
-    </ItemGroup>
-    <Exec Command="dotnet publish Router.csproj -c $(Configuration) -r %(_RouterRid.Identity) -p:RhinoTarget=$(RhinoTarget) -p:IsInRhino=$(IsInRhino) -p:UseSharedCompilation=false -o &quot;$(PluginOutputDir)/router/%(_RouterRid.Identity)&quot; --nologo" WorkingDirectory="$(MSBuildProjectDirectory)/../router" />
-    <RemoveDir Directories="@(_RouterRid->'$(PluginOutputDir)/router/%(Identity)/rhino-mcp-router.dsym')" />
-    <Delete Files="@(_RouterRid->'$(PluginOutputDir)/router/%(Identity)/rhino-mcp-router.pdb')" />
   </Target>
 
 </Project>

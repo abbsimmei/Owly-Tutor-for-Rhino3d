@@ -1,37 +1,16 @@
-<div align="center">
+# Owly
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="art/logo-dark.svg">
-  <img alt="Rhino MCP" src="art/logo.svg" width="180">
-</picture>
+Owly is an AI-powered educational plugin for Rhino that helps architecture students understand and use Rhino's tools and commands, while the student always does the modelling. It is built on McNeel's RhinoAI.
 
-# RhinoAI
+- [PRD.md](PRD.md): product requirements
+- [docs/owly/phase1-investigation.md](docs/owly/phase1-investigation.md): Phase 1 investigation
 
-**An AI Integration for Rhino3d**
+## Build
 
-[**Read the docs →**](https://mcneel.github.io/RhinoAI/docs/)
+The .NET 8 SDK is required.
 
-</div>
-
----
-
-# Documentation
-
-Full guides live at **[mcneel.github.io/RhinoAI](https://mcneel.github.io/RhinoAI/docs/)**:
-
-- [Getting Started](https://mcneel.github.io/RhinoAI/docs/getting-started/) - Install the plugin and wire up an AI assistant (Claude Desktop, Claude Code, GitHub Copilot, OpenAI Codex, Gemini CLI, or a local model).
-- [Try It Out](https://mcneel.github.io/RhinoAI/docs/try-it-out/) - Confirm everything works with a first prompt, then browse the recipes and examples.
-- [Advanced](https://mcneel.github.io/RhinoAI/docs/advanced/) - Advanced workflows
-- [Developers](https://mcneel.github.io/RhinoAI/docs/developers/) - Use the Rhino MCP in your development cycle.
-
-# Quick start
-
-The fastest path is [Claude Desktop](https://mcneel.github.io/RhinoAI/docs/getting-started/connector/): install the [Rhino3d connector](https://github.com/mcneel/RhinoAI/releases/download/connector-v0.1.6/connector.mcpb) and let it install the Rhino plugin for you. For other assistants, see [Getting Started](https://mcneel.github.io/RhinoAI/docs/getting-started/).
-
-# Building & Debugging
-
-Use **Run and Debug** from within VSCode to build, launch Rhino, and start the MCP Server all in one click.
-
-# Getting Help
-
-Ask questions, post discussions and ideas to the [Rhino Discourse forums](https://discourse.mcneel.com/c/rhino/artificial-intelligence-rhino/162), or [open an issue](https://github.com/mcneel/RhinoAI/issues).
+```sh
+dotnet build rhino/plugin/RhinoAI.csproj -p:RhinoTarget=R9 -clp:NoSummary
+dotnet build rhino/plugin/RhinoAI.csproj -p:RhinoTarget=R8 -clp:NoSummary   # on Windows this also builds net48
+dotnet test tests/Server.Tests/Server.Tests.csproj
+```
