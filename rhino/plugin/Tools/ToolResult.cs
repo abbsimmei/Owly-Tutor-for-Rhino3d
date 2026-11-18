@@ -111,15 +111,6 @@ internal abstract record ToolResult : IToolResult
         ToolError.RH_Nothing_Visible => "There is nothing to show",
         ToolError.RH_Write_Failed => "Could not write the file",
 
-        // GH
-        ToolError.GH_Document_NotFound => "Could not get or create GH document",
-        ToolError.GH_NotAvailable => "Grasshopper is not available",
-        ToolError.GH_Canvas_Empty => "The canvas has no active objects",
-        ToolError.GH_Object_NotFound => "Canvas object was not found",
-        ToolError.GH_Param_NotFound => "Parameter was not found",
-        ToolError.GH_Component_NotFound => "Component was not found",
-        ToolError.GH_Component_Failed => "Component could not be created",
-        ToolError.GH_Solution_Failed => "The solution reported errors",
 
         _ => "Unknown Error",
     };
@@ -140,14 +131,4 @@ internal enum ToolError
     RH_File_NotFound,
     RH_Write_Failed,
     RH_Nothing_Visible,
-
-    // GH
-    GH_Document_NotFound,
-    GH_NotAvailable,
-    GH_Canvas_Empty,
-    GH_Object_NotFound,
-    GH_Param_NotFound,
-    GH_Component_NotFound,
-    GH_Component_Failed,
-    GH_Solution_Failed,
 }

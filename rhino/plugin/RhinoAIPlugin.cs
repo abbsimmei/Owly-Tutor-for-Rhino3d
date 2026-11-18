@@ -26,7 +26,6 @@ public class RhinoAIPlugin : PlugIn
         // CommandInterceptors = new CommandInterceptorHost();
         RhinoAIHost.RegisterDocumentWatcher();
 
-        ScriptProjects.ScriptProjectStartup.ReloadWhenIdle();
 
         return base.OnLoad(ref errorMessage);
     }
@@ -62,7 +61,6 @@ public class RhinoAIPlugin : PlugIn
     {
         // CommandInterceptors?.Dispose();
         AgentHost.Shutdown();
-        ScriptProjects.ScriptProjectStartup.DeleteRegistryCache();
     }
 
     public override PlugInLoadTime LoadTime => PlugInLoadTime.AtStartup;

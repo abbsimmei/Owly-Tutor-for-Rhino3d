@@ -15,5 +15,6 @@ internal static class ToolChips
     public static IReadOnlyList<PanelToolChip> For(string toolName, bool isRunning) =>
         isRunning && IsCancellable(toolName) ? CancelOnly : None;
 
-    private static bool IsCancellable(string toolName) => toolName is "run_command";
+    // No remaining tool is cancellable from the chip row.
+    private static bool IsCancellable(string toolName) => false;
 }

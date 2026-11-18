@@ -28,7 +28,6 @@ internal sealed class AISettingsPanel : Panel
     private Label McpErrorLabel { get; } = new() { TextColor = Colors.Red, Visible = false };
 
     private CheckBox AutoLoadMcpBox { get; } = new() { Text = Localization.LocalizeString("Load MCP server at startup", 14) };
-    private CheckBox AutoLoadScriptPlugInBox { get; } = new() { Text = Localization.LocalizeString("Load AI-created script plug-in at startup", 15) };
 
     // Leaf tool rows in the Tools tree, kept flat so Commit can read each checkbox back
     // without re-walking the grouped tree.
@@ -139,7 +138,6 @@ internal sealed class AISettingsPanel : Panel
 
         AISettings.ExtraMcpServersJson = normalizedJson;
         AISettings.AutoLoadMCP = AutoLoadMcpBox.Checked == true;
-        AISettings.AutoLoadScriptPlugIn = AutoLoadScriptPlugInBox.Checked == true;
 
         if (ToolLeaves.Count == 0)
             return true;
@@ -484,7 +482,6 @@ internal sealed class AISettingsPanel : Panel
     private Control LoadingTab()
     {
         AutoLoadMcpBox.Checked = AISettings.AutoLoadMCP;
-        AutoLoadScriptPlugInBox.Checked = AISettings.AutoLoadScriptPlugIn;
 
         Label help = new()
         {
@@ -501,7 +498,6 @@ internal sealed class AISettingsPanel : Panel
             {
                 new TableRow(help),
                 new TableRow(AutoLoadMcpBox),
-                new TableRow(AutoLoadScriptPlugInBox),
                 new TableRow { ScaleHeight = true },
             },
         };

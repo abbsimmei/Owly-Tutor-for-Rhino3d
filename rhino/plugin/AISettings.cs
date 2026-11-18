@@ -48,12 +48,6 @@ internal static class AISettings
         set => Settings.SetBool(nameof(AutoLoadMCP), value);
     }
 
-    public static bool AutoLoadScriptPlugIn
-    {
-        get => Settings.GetBool(nameof(AutoLoadScriptPlugIn), true);
-        set => Settings.SetBool(nameof(AutoLoadScriptPlugIn), value);
-    }
-
     public static bool IsEnabled(AgentDefinition def) =>
         def.Enabled && !DisabledAgents.Contains(def.Name, StringComparer.OrdinalIgnoreCase);
 
@@ -181,19 +175,4 @@ internal static class AISettings
         get => Settings.GetInteger(nameof(DefaultObjectListLimit), 1000);
         set => Settings.SetInteger(nameof(DefaultObjectListLimit), value);
     }
-
-    public static int DefaultViewportImageWidth
-    {
-        get => Settings.GetInteger(nameof(DefaultViewportImageWidth), 480);
-        set => Settings.SetInteger(nameof(DefaultViewportImageWidth), value);
-    }
-
-    public static int DefaultViewportImageHeight
-    {
-        get => Settings.GetInteger(nameof(DefaultViewportImageHeight), 270);
-        set => Settings.SetInteger(nameof(DefaultViewportImageHeight), value);
-    }
-
-    public const int MaxViewportImageWidth = 1280;
-    public const int MaxViewportImageHeight = 720;
 }

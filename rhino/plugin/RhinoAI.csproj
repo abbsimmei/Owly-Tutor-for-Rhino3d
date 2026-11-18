@@ -55,8 +55,6 @@
   <!-- 8.19 is the first Rhino 8 package with .NET Core assets. -->
   <ItemGroup Condition="'$(RhinoTarget)' == 'R8'">
     <PackageReference Include="RhinoCommon" Version="8.19.25132.1001" ExcludeAssets="runtime" />
-    <PackageReference Include="Grasshopper" Version="8.19.25132.1001" ExcludeAssets="runtime" />
-    <Compile Remove="Tools/GH2/**/*.cs;Resources/GH2/**/*.cs" />
     <!-- R8 does not ship the SDK, so the helpers it owns are compiled in directly. -->
     <Compile Include="../sdk/ProcessArguments.ai.cs" Link="ProcessArguments.ai.cs" />
     <Compile Include="../sdk/NetFrameworkPolyfills.ai.cs" Link="NetFrameworkPolyfills.ai.cs" Condition="'$(TargetFramework)' == 'net48'" />
@@ -64,9 +62,6 @@
 
   <ItemGroup Condition="'$(RhinoTarget)' == 'R9'">
     <PackageReference Include="RhinoCommon" Version="9.0.26132.12305-wip" ExcludeAssets="runtime" />
-    <PackageReference Include="Grasshopper" Version="9.0.26132.12305-wip" ExcludeAssets="runtime" />
-    <PackageReference Include="Grasshopper2" Version="9.0.26132.12305-wip" ExcludeAssets="runtime" />
-    <PackageReference Include="RhinoCode" Version="9.0.26244.12303-beta" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>
