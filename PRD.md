@@ -247,16 +247,3 @@ The initial version is considered functional when:
 **ONLY HELP.**
 
 &nbsp;
-
----
-gdoc_comments:
-  c1:
-    status: ACTIVE
-    token: AX5pRSnW16RyX9LwssGBUNwqmJ_mU8sr7jwTPI79AXvbglVkiqWzPjl0KYDd1sLLdLhRcy0UiuRuFZRAxXapIuASjn8Fdbuas2tXhACNd0kkDqZBKnEPeG0fd5KfL3R1J-bP45PQ3Gcg6KMlMCyNqH0NUv9qWDmB1X42oHlKqu5xhhC-1oP2NO5yVGHQhLMnElD4s6vL5fHS7Mnj_wUyUrvaVK2iIQUsmQWdqJpZYsbVwaiwHt_dmcaoSUZm3ysuWRPPRytkbXVdBN6U3nxe5XE5HczJdf4UUJdV4t3RlbQK_1yzkvnpnt5d0YDyup2E8KXZJ1k2koQYLhSlmo6gjS6jX44tHsmOWjeOBRh__l-6fONl1-DrMNq0FicXdAZU_cvMTcRYTkCHhouOE6Mj3b4KPPgWsg
-    head:
-      author: Leonard Timeus
-      time: '2026-11-16T18:22:55.198Z'
-      body: Möjlighet att spara gamla chattar. Alternativt spara historiken. Inte
-        nödvändigt men en poteniell utveckling
-      quote: Conversation Interface
----
