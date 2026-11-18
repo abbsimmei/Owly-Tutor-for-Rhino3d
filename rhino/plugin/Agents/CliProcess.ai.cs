@@ -10,7 +10,7 @@ namespace Rhino.AI;
 // every agent that spawns a line/ACP CLI so they resolve and launch identically. Two Windows realities
 // drive it: a real .exe must beat a .cmd/.bat shim (CreateProcess can't exec a batch file, and cmd.exe
 // re-parsing can mangle a newline-bearing arg like Claude's system prompt), yet the shim path is not
-// optional because some CLIs ship only a .cmd on Windows (Gemini is node-only).
+// optional because some CLIs ship only a .cmd on Windows.
 internal static class CliProcess
 {
     // Two passes so a real .exe wins over an npm .cmd shim even when the shim's directory comes first

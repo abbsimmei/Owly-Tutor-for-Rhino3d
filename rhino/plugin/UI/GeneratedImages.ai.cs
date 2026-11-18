@@ -2,7 +2,7 @@ using System.IO;
 
 namespace Rhino.AI.UI;
 
-// Codex's image generator saves a render under the CODEX_HOME the plug-in hands it and the model is free never to say so, which is the whole of RH-98659.
+// An agent's image generator may save a render under a folder the plug-in hands it and the model is free never to say so, which is the whole of RH-98659.
 internal sealed class GeneratedImages
 {
     private static TimeSpan ListingLife { get; } = TimeSpan.FromMilliseconds(500);

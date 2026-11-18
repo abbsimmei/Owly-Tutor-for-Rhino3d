@@ -5,7 +5,7 @@ namespace Rhino.AI;
 
 internal interface IAgentRunner : IDisposable
 {
-    /// <summary>The agent's name (its registry key, e.g. claude/codex/gemini).</summary>
+    /// <summary>The agent's name (its registry key, e.g. claude).</summary>
     public string Name { get; }
 
     /// <summary>Prompts the agent with a user message (text + inline attachments).</summary>

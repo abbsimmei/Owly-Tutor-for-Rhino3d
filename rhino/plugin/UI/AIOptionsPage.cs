@@ -16,7 +16,7 @@ internal sealed class AIOptionsPage : OptionsDialogPage
     private Image? LightCachedImage { get; set; }
     private Image? DarkCachedImage { get; set; }
 
-    public AIOptionsPage() : base(Localization.LocalizeString("AI", 2))
+    public AIOptionsPage() : base(Localization.LocalizeString("Owly", 2))
     {
         Panel.Width = 800;
         Panel.UseRhinoStyle();

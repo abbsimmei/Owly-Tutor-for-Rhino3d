@@ -4,8 +4,8 @@ using Eto.Forms;
 
 namespace Rhino.AI.UI;
 
-// Inherited from the Eto panel this replaced, so saved Rhino layouts still resolve the AI panel.
-[Guid("fb948c98-5987-45a3-8dcb-2814ed77ee3b")]
+// Owly's own panel id; must differ from the built-in RhinoAI panel (fb948c98-...).
+[Guid("c1007700-9e29-467f-9a9c-225c49f37887")]
 public partial class AIPanel : Panel
 {
 

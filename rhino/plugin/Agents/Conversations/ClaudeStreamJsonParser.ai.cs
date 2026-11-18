@@ -54,25 +54,20 @@ internal sealed class ClaudeStreamJsonParser : IStreamJsonParser
         }
     }
 
-    public void ConfigureArguments(ProcessStartInfo psi, string mcpUrl, string agentSessionId, IReadOnlyList<string> mcpServers, bool resume, IReadOnlyList<ContentBlock> prompt)
+    public void ConfigureArguments(ProcessStartInfo psi, string mcpUrl, string agentSessionId, bool resume, IReadOnlyList<ContentBlock> prompt)
     {
         // Same {"mcpServers":{...}} shape Claude Code expects; rhino points at this doc's HTTP
-        // listener (not the router) so the agent always operates on the exact doc. Extra servers the
-        // runner resolved are merged in, but never the reserved 'rhino' key.
+        // listener (not the router) so the agent always operates on the exact doc. Only the rhino server is
+        // configured; user-configured MCP servers are never merged in.
         JsonObject servers = new()
         {
             ["rhino"] = new JsonObject { ["type"] = "http", ["url"] = mcpUrl },
         };
-        foreach (string entry in mcpServers)
-            if (JsonNode.Parse(entry) is JsonObject obj)
-                foreach (KeyValuePair<string, JsonNode?> kvp in obj)
-                    if (kvp.Key != "rhino" && kvp.Value is JsonNode node)
-                        servers[kvp.Key] = node.DeepClone();
 
         string mcpConfig = new JsonObject { ["mcpServers"] = servers }.ToJsonString(McpSerializer.Options);
 
-        // Claude Code drops an allow rule whose server segment is a glob, leaving nothing approved.
-        string allowedTools = string.Join(",", servers.Select(server => $"mcp__{server.Key}__*"));
+        // Claude Code drops an allow rule whose server segment is a glob, so name the server literally.
+        const string allowedTools = "mcp__rhino__*";
 
         // Raise Claude Code's per-tool-call timeout to one hour so a genuinely slow tool (a heavy
         // geometry op, a long script) isn't aborted at Claude's 60s default. MCP_TOOL_TIMEOUT is read
@@ -94,7 +89,9 @@ internal sealed class ClaudeStreamJsonParser : IStreamJsonParser
         psi.AddArgument("--mcp-config");
         psi.AddArgument(mcpConfig);
         psi.AddArgument("--strict-mcp-config");
-        // The agent's cwd is the folder holding the user's .3dm, so Bash/Write/Edit point at it.
+        psi.AddArgument("--setting-sources");
+        psi.AddArgument(string.Empty);
+        // No built-in tools: the agent can only use Owly's read-only MCP tools.
         psi.AddArgument("--tools");
         psi.AddArgument(string.Empty);
         psi.AddArgument("--allowedTools");

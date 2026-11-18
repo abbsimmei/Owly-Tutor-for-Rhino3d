@@ -2,15 +2,11 @@ using Rhino.Display;
 using Rhino.DocObjects;
 using Rhino.Geometry;
 
-using Grasshopper;
-using Grasshopper.Kernel;
-
 using Rhino.AI.Resources;
 
 namespace Rhino.AI.Tools;
 
-// One-shot grounding snapshot: selection + active viewport + doc/Grasshopper
-// summary in a single round-trip, so the agent can orient before acting without
+// One-shot grounding snapshot: selection + active viewport + doc summary in a single round-trip, so the agent can orient before advising without
 // chaining get_selection / list_objects / view calls. Pull-only, read-only.
 [McpServerToolType]
 internal static partial class GetContextTool
@@ -32,12 +28,11 @@ internal static partial class GetContextTool
         IEnumerable<SelectedObject> Selection,
         ViewportSummary? ActiveViewport,
         DocSummary Document,
-        IEnumerable<GrasshopperSummary> Grasshopper,
         // Per-section failures, so one throwing section never nukes the snapshot.
         string[]? Warnings);
 
     [McpServerTool("get_context", "Get Context Snapshot", true, false)]
-    [Description("One round-trip grounding snapshot of current state: the active-doc selection (ids/types/layers), the active viewport (name + camera summary), a doc summary (object/layer counts), and one Grasshopper summary per version (Version 'GH1' or 'GH2', each with component/wire counts when that canvas is open). Read-only; pulls everything you need to orient before acting, and never opens a canvas that is not already open.")]
+    [Description("One round-trip grounding snapshot of current state: the active-doc selection (ids/types/layers), the active viewport (name + camera summary), and a doc summary (object/layer counts). Read-only; pulls everything you need to orient in one call.")]
     public static IToolResult GetContext(RhinoDoc doc)
     {
         List<string> warnings = [];
@@ -45,17 +40,11 @@ internal static partial class GetContextTool
         SelectedObject[] selection = Try(() => SelectionOf(doc), [], "selection", warnings);
         ViewportSummary? viewport = Try(() => SummarizeViewport(doc), null, "viewport", warnings);
         DocSummary document = Try(() => SummarizeDocument(doc), new DocSummary(0, 0), "document", warnings);
-        List<GrasshopperSummary> grasshopper =
-        [Try(SummarizeGrasshopper1, new GrasshopperSummary("GH1", false, 0, 0), "grasshopper1", warnings)];
-#if R9
-        grasshopper.Add(SummarizeGrasshopper2());
-#endif
 
         ContextSnapshot snapshot = new(
             selection,
             viewport,
             document,
-            grasshopper,
             warnings.Count == 0 ? null : [.. warnings]);
 
         return Success(snapshot);
@@ -78,8 +67,7 @@ internal static partial class GetContextTool
             ? doc.Layers[layerIndex].FullPath
             : string.Empty;
 
-    // Shared viewport-to-summary projection: also the source of truth for
-    // GetViewportImageTool's camera metadata.
+    // Shared viewport-to-summary projection.
     public static ViewportSummary? SummarizeViewport(RhinoDoc doc)
     {
         RhinoView? view = doc.Views.ActiveView;
@@ -128,47 +116,6 @@ internal static partial class GetContextTool
         int objectCount = doc.Objects.GetObjectList(settings).Count();
         return new DocSummary(objectCount, doc.Layers.Count);
     }
-
-    // GH1 only: it is the canvas compiled in every Rhino target (GH2 is R9-only and
-    // excluded from this build). A one-line component/wire count, no per-object detail.
-    private static GrasshopperSummary SummarizeGrasshopper1()
-    {
-        GH_Document? ghDoc = Grasshopper.Instances.ActiveCanvas?.Document;
-        if (ghDoc is null)
-            return new GrasshopperSummary("GH1", false, 0, 0);
-
-        int components = 0;
-        int wires = 0;
-        foreach (IGH_DocumentObject obj in ghDoc.Objects)
-        {
-            components++;
-            if (obj is IGH_Component comp)
-            {
-                foreach (IGH_Param input in comp.Params.Input)
-                    wires += GH1_Utils.WireSources(ghDoc, input).Count();
-            }
-            else if (obj is IGH_Param param)
-            {
-                wires += GH1_Utils.WireSources(ghDoc, param).Count();
-            }
-        }
-
-        return new GrasshopperSummary("GH1", true, components, wires);
-    }
-
-#if R9
-    private static GrasshopperSummary SummarizeGrasshopper2()
-    {
-        try
-        {
-            return Grasshopper2.Summarize();
-        }
-        catch
-        {
-            return new GrasshopperSummary("GH2", false, 0, 0);
-        }
-    }
-#endif
 
     public static double[] XYZ(Point3d p) => [p.X, p.Y, p.Z];
 }

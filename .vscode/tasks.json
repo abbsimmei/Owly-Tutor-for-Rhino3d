@@ -22,11 +22,6 @@
       "group": "build"
     },
     {
-      "label": "build router",
-      "args": ["build", "rhino/router/Router.csproj", "-clp:NoSummary"],
-      "group": "build"
-    },
-    {
       "label": "build release (R9)",
       "hide": true,
       "args": ["build", "rhino/plugin/RhinoAI.csproj", "-c", "Release", "-p:RhinoTarget=R9", "-p:IsInRhino=false", "-clp:NoSummary"]
@@ -100,42 +95,16 @@
     },
     {
       "label": "uninstall yak (R9)",
-      "args": ["uninstall", "Rhino-MCP-Platform"],
+      "args": ["uninstall", "Owly"],
       "osx": { "command": "/Applications/RhinoBETA.app/Contents/Resources/bin/yak" },
       "windows": { "command": "C:/Program Files/Rhino 9 WIP/System/Yak.exe" },
       "problemMatcher": []
     },
     {
       "label": "uninstall yak (R8)",
-      "args": ["uninstall", "Rhino-MCP-Platform"],
+      "args": ["uninstall", "Owly"],
       "osx": { "command": "/Applications/Rhino 8.app/Contents/Resources/bin/yak" },
       "windows": { "command": "C:/Program Files/Rhino 8/System/Yak.exe" },
-      "problemMatcher": []
-    },
-    {
-      "label": "register router with claude",
-      "dependsOn": "build router",
-      "command": "claude mcp remove rhino-mcp-router-dev 2>/dev/null; claude mcp add rhino-mcp-router-dev \"${workspaceFolder}/rhino/router/bin/Debug/net8.0/rhino-mcp-router\" -- --default-version BETA",
-      "windows": {
-        "command": "claude mcp remove rhino-mcp-router-dev 2>$null; claude mcp add rhino-mcp-router-dev \"${workspaceFolder}/rhino/router/bin/Debug/net8.0/rhino-mcp-router.exe\" -- --default-version BETA"
-      },
-      "problemMatcher": []
-    },
-    {
-      "label": "pack connector",
-      "command": "node",
-      "args": ["build.mjs"],
-      "options": { "cwd": "${workspaceFolder}/connector" },
-      "problemMatcher": []
-    },
-    {
-      "label": "install connector",
-      "dependsOn": "pack connector",
-      "command": "open",
-      "args": ["connector.mcpb"],
-      "linux": { "command": "xdg-open" },
-      "windows": { "command": "explorer" },
-      "options": { "cwd": "${workspaceFolder}/connector" },
       "problemMatcher": []
     }
   ]

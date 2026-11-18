@@ -5,12 +5,12 @@ namespace Rhino.AI;
 
 // A dumb immutable result of parsing one CLI stdout line.
 // Updates: the ACP session/update payloads to forward (may be empty).
-// IsTurnComplete: true exactly on the CLI's terminal event (Claude 'result', Codex 'turn.completed').
+// IsTurnComplete: true exactly on the CLI's terminal event (Claude 'result').
 // Reason: the StopReason to resolve the turn with when complete (EndTurn on normal completion).
 // Usage: the turn's token/cost accounting, carried ONLY on the terminal event (TokenUsage.Empty
 // otherwise). Token usage is a stream-json `result` concept, not an ACP session/update one, so it
 // rides the completion shape rather than the Updates list.
-// SessionId is set only by a CLI that mints its own id (Codex) rather than accepting the one we pass.
+// SessionId is set only by a CLI that mints its own id rather than accepting the one we pass.
 internal record struct ParsedLine(
     IReadOnlyList<SessionUpdate> Updates,
     bool IsTurnComplete,

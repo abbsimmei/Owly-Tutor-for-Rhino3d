@@ -101,15 +101,7 @@ The totals are not smaller, and it would be dishonest to imply they are. `rhino/
 
 ## Wiring it to Rhino
 
-The C# side is not written. What it would need:
-
-1. A panel hosting a WebView (`Eto.Forms.WebView`, or the platform control directly) that loads `dist/panel.html` from an embedded resource.
-2. A `PanelBridge` that serialises `HostEvent` to the view (`window.rhinoAI.receive(...)`) and deserialises `PanelCommand` from it. `bridge.ts` already accepts both WebView2's message channel and WKWebView's `messageHandlers.rhinoAI`.
-3. An adapter that turns `Conversation` mutations into incremental events instead of a bare `Changed`. `StreamJsonAgent` already knows which block it is appending to and which tool call it is completing, so this is a narrowing of what it reports, not new bookkeeping.
-4. `ToolSummary.Describe` moves behind `ToolCall.title`, and gains a `ToolPreview` for the tools worth showing properly.
-5. A context provider for `@` mentions (selection, layers, views, document, Grasshopper) and `context.reveal` to select and zoom.
-
-Everything below the bridge stays as it is: `AgentHost`, `AgentDispatch`, `AgentRegistry`, `ConversationStore`, `AskUserPicker`, `TurnUndoCheckpoint`.
+The C# host exists: `rhino/plugin/UI/PanelBridge.cs` and `AIPanelViewModel*.cs` drive the panel, and the panel is embedded in the plug-in as `dist/panel.host.html`.
 
 ## Engine floor
 
@@ -128,11 +120,3 @@ The only real constraint is macOS WebKit, since WKWebView is the system WebKit a
 - Container queries are probed at startup (`CSS.supports('(container-type: inline-size)')`). Failing that, the panel shows an "update your OS" notice with a **Show it anyway** override, rather than rendering a docked panel at the wide layout and looking broken.
 
 The plugin is Apple Silicon only, and every Apple Silicon Mac can run a current macOS, so an old-WebKit machine is a pending-update situation rather than a hardware dead end.
-
-## Not done
-
-- No C# host, so nothing runs inside Rhino yet.
-- Settings stays an Eto options page; only the panel is re-imagined.
-- The mock host's replies are scripted. Streaming, ordering, cancellation and the question round-trip are real; the words are not.
-- `markdown.ts` is a subset: no footnotes, no nested blockquotes, no HTML passthrough (deliberately).
-- No virtualised transcript. A very long conversation will hold a lot of DOM; worth measuring before it matters.

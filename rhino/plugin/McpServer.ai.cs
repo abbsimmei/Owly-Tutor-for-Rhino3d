@@ -9,14 +9,12 @@ namespace Rhino.AI;
 
 internal sealed class McpServer : IDisposable
 {
-    private const string ExternalRoute = "/";
     private const string AgentRoute = "/agent";
 
-    private HttpListener? ExternalListener { get; set; }
     private HttpListener? AgentListener { get; set; }
     private CancellationTokenSource Cts { get; } = new CancellationTokenSource();
 
-    public bool HasStarted => ExternalListener is not null;
+    public bool HasStarted => AgentListener is not null;
 
     public int Port { get; private set; }
 
@@ -31,10 +29,8 @@ internal sealed class McpServer : IDisposable
         {
             DocumentServices services = new(doc);
 
-            ExternalListener = Listen(port, ExternalRoute);
             AgentListener = Listen(port, $"{AgentRoute}/");
 
-            _ = AcceptAsync(ExternalListener, new McpDispatcher(services, filtered: false), ExternalRoute);
             _ = AcceptAsync(AgentListener, new McpDispatcher(services, filtered: true), AgentRoute);
 
             StartTime = DateTime.UtcNow;
@@ -115,7 +111,7 @@ internal sealed class McpServer : IDisposable
 
     private static string NormalizePath(Uri? url)
     {
-        string path = url?.AbsolutePath ?? ExternalRoute;
+        string path = url?.AbsolutePath ?? AgentRoute;
         return path.Length > 1 ? path.TrimEnd('/') : path;
     }
 
@@ -142,9 +138,7 @@ internal sealed class McpServer : IDisposable
         { Cts.Cancel(); }
         catch { }
 
-        CloseListener(ExternalListener);
         CloseListener(AgentListener);
-        ExternalListener = null;
         AgentListener = null;
     }
 

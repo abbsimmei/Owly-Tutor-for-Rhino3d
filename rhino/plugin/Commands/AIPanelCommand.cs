@@ -5,7 +5,7 @@ namespace Rhino.AI;
 
 public class AIPanelCommand : RhinoCommand
 {
-    public override string EnglishName => LOC.COMMANDNAME("AI");
+    public override string EnglishName => LOC.COMMANDNAME("Owly");
 
     protected override string CommandContextHelpUrl => DocsLinks.Homepage;
 
@@ -24,11 +24,11 @@ public class AIPanelCommand : RhinoCommand
 [Commands.CommandStyle(Commands.Style.Hidden | Commands.Style.ScriptRunner)]
 public class AIPanelAliasCommand : RhinoCommand
 {
-    public override string EnglishName => LOC.COMMANDNAME("AIPanel");
+    public override string EnglishName => LOC.COMMANDNAME("OwlyPanel");
 
     protected override string CommandContextHelpUrl => DocsLinks.Homepage;
 
     protected override Commands.Result RunCommand(RhinoDoc doc, Commands.RunMode mode)
-        => RhinoApp.RunScript(doc.RuntimeSerialNumber, "AI", false)
+        => RhinoApp.RunScript(doc.RuntimeSerialNumber, "Owly", false)
          ? Commands.Result.Success : Commands.Result.Cancel;
 }

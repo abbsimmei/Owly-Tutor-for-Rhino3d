@@ -35,7 +35,7 @@
       "console": "internalConsole"
     },
     {
-      "name": "Rhino 9 BETA",
+      "name": "Rhino 9",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build (R9)",
@@ -46,7 +46,7 @@
         "env": { "RHINO_PACKAGE_DIRS": "${workspaceFolder}/rhino/plugin/bin/R9-osx/Debug" }
       },
       "windows": {
-        "program": "C:\\Program Files\\Rhino 9 WIP\\System\\Rhino.exe",
+        "program": "C:\\Program Files\\Rhino 9\\System\\Rhino.exe",
         "targetArchitecture": "x86_64",
         "args": ["/netcore", "/nosplash"],
         "env": { "RHINO_PACKAGE_DIRS": "${workspaceFolder}/rhino/plugin/bin/R9-win/Debug" }
@@ -75,28 +75,6 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "console": "internalConsole"
-    },
-    {
-      "name": "Router",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "register router with claude",
-      "program": "${workspaceFolder}/rhino/router/bin/Debug/net8.0/rhino-mcp-router.dll",
-      "cwd": "${workspaceFolder}/rhino/router",
-      "stopAtEntry": false,
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Docs",
-      "type": "node-terminal",
-      "request": "launch",
-      "command": "hugo server --buildDrafts --disableFastRender",
-      "cwd": "${workspaceFolder}/docs",
-      "serverReadyAction": {
-        "pattern": "Web Server is available at (https?://\\S+)",
-        "uriFormat": "%s",
-        "action": "openExternally"
-      }
     }
   ],
   "inputs": [

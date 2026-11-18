@@ -167,7 +167,7 @@ public class ToolResultFormatterTests
     public void Failure_envelope_leads_the_attachments()
     {
         CallToolResult result = ToolResultFormatter.Format(ToolResult.Failure(
-            ToolError.GH_Solution_Failed,
+            ToolError.Failed,
             ContentBlock.CreateJson(new { failed = 2 }),
             "The solution reported component errors"));
 
@@ -226,12 +226,12 @@ public class ToolResultFormatterTests
     [Test]
     public void Code_survives_on_the_result_for_callers_to_branch_on()
     {
-        IToolResult failure = ToolResult.Failure(ToolError.GH_Document_NotFound, guidance: "Start Grasshopper");
+        IToolResult failure = ToolResult.Failure(ToolError.NotFound, guidance: "Try again");
         IToolResult success = ToolResult.Success();
 
         Assert.Multiple(() =>
         {
-            Assert.That(failure.Code, Is.EqualTo(ToolError.GH_Document_NotFound));
+            Assert.That(failure.Code, Is.EqualTo(ToolError.NotFound));
             Assert.That(failure.IsFailure, Is.True);
             Assert.That(success.Code, Is.Null);
             Assert.That(success.IsFailure, Is.False);

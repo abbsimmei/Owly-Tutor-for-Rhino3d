@@ -10,7 +10,7 @@ namespace Rhino.AI;
 // access (the runner reads settings and resolves the MCP server set). RhinoApp-free so it can be
 // Compile Include'd into a test project (mirrors Server.Tests). Pure + deterministic.
 //
-// Earned by two real impls: ClaudeStreamJsonParser, CodexStreamJsonParser.
+// Earned by two real impls: ClaudeStreamJsonParser.
 internal interface IStreamJsonParser
 {
     // The human label used only in [name:...] log lines and not-found messages.
@@ -19,11 +19,11 @@ internal interface IStreamJsonParser
     // The message thrown when the CLI binary is not found at any SearchPath.
     public string NotFoundMessage { get; }
 
-    // `codex exec` emits nothing until stdin hits EOF, so the runner closes stdin after the turn.
+    // A CLI that emits nothing until stdin hits EOF needs the runner to close stdin after the turn.
     public bool IsOneTurnPerProcess { get; }
 
     // The arguments that ask the CLI whether it is signed in, WITHOUT any interaction or side
-    // effect (`auth status --json` for Claude Code, `login status` for Codex). Empty for a CLI that
+    // effect (`auth status --json` for Claude Code). Empty for a CLI that
     // cannot be asked, which leaves it permanently Unknown and off the sign-in path.
     public IReadOnlyList<string> AuthStatusArguments { get; }
 
@@ -39,13 +39,13 @@ internal interface IStreamJsonParser
     // Append all launch args for one process spawn. 'resume' is false on the first spawn (open the
     // session fresh, e.g. --session-id <id>) and true on a respawn after cancel/crash (continue it,
     // e.g. --resume <id>). mcpUrl is this doc's HTTP listener. agentSessionId is the stable
-    // continuity token. mcpServers is the resolved MCP server set the runner read from AISettings.
+    // continuity token.
     // The parser owns the resume-vs-fresh flag names so the session/resume contract is one CLI's
     // concern, not the runner's.
-    public void ConfigureArguments(ProcessStartInfo psi, string mcpUrl, string agentSessionId, IReadOnlyList<string> mcpServers, bool resume, IReadOnlyList<Acp.ContentBlock> prompt);
+    public void ConfigureArguments(ProcessStartInfo psi, string mcpUrl, string agentSessionId, bool resume, IReadOnlyList<Acp.ContentBlock> prompt);
 
     // The single newline-framed stdin line that carries one user turn (a JSON envelope for Claude,
-    // plain text for Codex). Pure: built only from the ACP prompt blocks the runner already has.
+    // plain text for a simpler CLI). Pure: built only from the ACP prompt blocks the runner already has.
     public string FormatTurn(IReadOnlyList<Acp.ContentBlock> prompt);
 
     // Translate one stdout line into zero or more ACP events for THIS turn, plus whether the turn is

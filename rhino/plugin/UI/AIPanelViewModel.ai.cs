@@ -259,7 +259,7 @@ internal partial class AIPanelViewModel : IDisposable
         }
 
         Unsubscribe();
-        Review = new ConversationFeed(Conversation.Restore(dto), Bridge.Post, CodexHome.GeneratedImages);
+        Review = new ConversationFeed(Conversation.Restore(dto), Bridge.Post);
         Review.Replay(readOnly: true);
         return true;
     }
@@ -296,19 +296,11 @@ internal partial class AIPanelViewModel : IDisposable
         return true;
     }
 
+    // Owly supports a single agent (ADR-0003); an old panel page may still send agent.select.
     private bool SelectAgent(string name)
     {
-        if (Document is not { } doc)
-            return false;
-        if (AgentRegistry.Instance.AllDefinitions.FirstOrDefault(r => r.Name == name) is not { Available: true } picked
-            || !AISettings.IsEnabled(picked))
-            return false;
-
-        PinnedAgentName = name;
-        AgentHost.SetActive(doc, name);
-        ShowLive();
-        SendAgents();
-        return true;
+        HostUtils.LogDebugEvent($"[panel] agent.select '{name}' ignored: Owly has a single agent.\n");
+        return false;
     }
 
     private bool Login()
@@ -377,7 +369,6 @@ internal partial class AIPanelViewModel : IDisposable
 
         return chip.ChipId switch
         {
-            ToolChips.CancelId => RhinoApp.RunScript(doc.RuntimeSerialNumber, "!_Cancel", false),
             _ => false,
         };
     }
@@ -483,12 +474,6 @@ internal partial class AIPanelViewModel : IDisposable
 
 #region TO THE PANEL
 
-#if R9 && NETCOREAPP
-    private const bool PluginCommandsAvailable = true;
-#else
-    private const bool PluginCommandsAvailable = false;
-#endif
-
     private void SendEnvironment()
     {
         Bridge.Post(new HelloEvent(
@@ -497,7 +482,7 @@ internal partial class AIPanelViewModel : IDisposable
                 RhinoApp.Version.ToString(),
                 OperatingSystem.IsWindows() ? "windows" : "macos",
                 Document is { } doc ? DocTitle(doc) : "Untitled",
-                new PanelCapabilities(Attachments: true, ViewportCapture: true, UndoTurn: false, Grasshopper: true, PluginCommands: PluginCommandsAvailable)),
+                new PanelCapabilities(Attachments: true, ViewportCapture: true, UndoTurn: false, Grasshopper: false, PluginCommands: false)),
             PanelStrings.LanguageTag(),
             PanelStrings.Localized()));
 
@@ -620,7 +605,7 @@ internal partial class AIPanelViewModel : IDisposable
 
         Action handler = () => RhinoApp.InvokeOnUiThread(new Action(PumpIfLive));
         convo.Changed += handler;
-        Subscription = new ConversationSubscription(convo, new ConversationFeed(convo, Bridge.Post, CodexHome.GeneratedImages), handler);
+        Subscription = new ConversationSubscription(convo, new ConversationFeed(convo, Bridge.Post), handler);
     }
 
     private void Unsubscribe()

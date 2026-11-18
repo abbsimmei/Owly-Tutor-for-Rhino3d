@@ -1,8 +1,3 @@
-using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
-
-using Rhino.FileIO;
 
 namespace Rhino.AI;
 
@@ -10,18 +5,6 @@ internal static class RhinoAIHost
 {
 
     private static Dictionary<uint, McpServer> Servers { get; } = new();
-
-    // UI-thread-only!
-    private static bool _heartbeatHooked;
-    private static long _lastAnnounceTick;
-
-    private static readonly Stopwatch _clock = Stopwatch.StartNew();
-
-    // Re-advertise live listeners on this interval. Lets a spuriously-reaped slot
-    // re-adopt on its own instead of staying gone until the user re-runs MCPStart.
-    // Re-dropping a already-adopted listener is a no-op.
-    private static TimeSpan HeartbeatInterval { get; } = TimeSpan.FromSeconds(15);
-    private static long HeartbeatIntervalMs { get; } = (long)HeartbeatInterval.TotalMilliseconds;
 
     // Re-bound by the replacing document, so a swap doesn't strand clients on a fixed port.
     private static int? PortFreedByLastClose { get; set; }
@@ -91,11 +74,9 @@ internal static class RhinoAIHost
         if (server is not null)
         {
             PortFreedByLastClose = server.Port;
-            WriteDeparture(server.Port);
             server.Stop();
         }
 
-        StopHeartbeatIfIdle();
     }
 
     public static bool HasStarted(RhinoDoc doc) =>
@@ -163,8 +144,6 @@ internal static class RhinoAIHost
         if (ok)
         {
             HasStartedThisSession = true;
-            WriteAnnouncement(port);
-            EnsureHeartbeat();
             return true;
         }
 
@@ -179,10 +158,8 @@ internal static class RhinoAIHost
             return;
         if (server is not null)
         {
-            WriteDeparture(server.Port);
             server.Stop();
         }
-        StopHeartbeatIfIdle();
     }
 
     public static bool RestartOnPort(RhinoDoc doc, int port)
@@ -193,8 +170,7 @@ internal static class RhinoAIHost
         return Start(doc, port);
     }
 
-    // Shared dispatch for both the interactive `MCPStart` command and the
-    // hidden `MCPSpawn` autostart path. Writes user-facing status lines.
+    // Shared start/restart dispatch. Writes user-facing status lines.
     public static bool StartOrRestart(RhinoDoc doc, int port, bool quiet = false)
     {
         if (HasStarted(doc))
@@ -222,168 +198,6 @@ internal static class RhinoAIHost
             RhinoApp.WriteLine($"[RhinoAI] MCP server failed to start. Try a different port.");
         }
         return false;
-    }
-
-
-    private static void EnsureHeartbeat()
-    {
-        if (_heartbeatHooked)
-            return;
-        _lastAnnounceTick = _clock.ElapsedMilliseconds;
-        RhinoApp.Idle += Heartbeat;
-        _heartbeatHooked = true;
-    }
-
-    private static void StopHeartbeatIfIdle()
-    {
-        if (Servers.Count > 0 || !_heartbeatHooked)
-            return;
-        RhinoApp.Idle -= Heartbeat;
-        _heartbeatHooked = false;
-    }
-
-    // Rides Rhino's idle event rather than a ThreadPool timer: announcing only
-    // needs the UI thread to read `Servers`, and a timer had to get there via
-    // InvokeOnUiThread, which on macOS blocks the pool thread until the main
-    // loop drains (performSelectorOnMainThread:waitUntilDone:YES). Ticks piled
-    // up faster than they cleared and starved the pool Kestrel runs on.
-    //
-    // Idle fires very often, so self-throttle to HeartbeatInterval. The port
-    // snapshot keeps a re-entrant WriteLine from invalidating the enumerator.
-    private static void Heartbeat(object? sender, EventArgs e)
-    {
-        long now = _clock.ElapsedMilliseconds;
-        if (now - _lastAnnounceTick < HeartbeatIntervalMs)
-            return;
-        _lastAnnounceTick = now;
-
-        foreach (int port in Servers.Values.Where(s => s.HasStarted).Select(s => s.Port).ToArray())
-            WriteAnnouncement(port);
-    }
-
-    // Drop a one-shot announcement into <temp>/rhino-mcp-listeners/ so a router
-    // running on this machine can discover and adopt this listener without us
-    // having to know whether one is up. The router consumes (probes + deletes)
-    // the file on its next scan; if no router ever sees it, temp sweep collects
-    // it eventually. See router's RhinoManager.ScanAnnouncements.
-    private static void WriteAnnouncement(int port)
-    {
-        try
-        {
-            var dir = ListenerDropDir();
-            Directory.CreateDirectory(dir);
-            var pid = Process.GetCurrentProcess().Id;
-            var version = RhinoVersion.Token;
-            var path = Path.Combine(dir, $"{pid}-{port}.json");
-            var tmp = path + ".tmp";
-            var json = JsonSerializer.Serialize(new { v = 1, pid, port, version });
-            File.WriteAllText(tmp, json);
-            if (File.Exists(path))
-                File.Delete(path);
-            File.Move(tmp, path);
-        }
-        catch (Exception ex)
-        {
-            RhinoApp.WriteLine($"[RhinoAI] Failed to write listener announcement: {ex.Message}");
-        }
-    }
-
-    // Inverse of the announcement: when a listener goes down cleanly (doc closed,
-    // MCPStart restart) drop a one-shot tombstone so a running router prunes the
-    // slot promptly and reports a user close as such, not a crash. Best-effort:
-    // if no router ever reads it, the router's own port probe reaps the slot.
-    // Filename MUST match the router's RhinoManager departure handling.
-    private static void WriteDeparture(int port)
-    {
-        try
-        {
-            string dir = ListenerDropDir();
-            Directory.CreateDirectory(dir);
-            int pid = Process.GetCurrentProcess().Id;
-            string version = RhinoVersion.Token;
-            string path = Path.Combine(dir, $"{pid}-{port}.gone");
-            string tmp = path + ".tmp";
-            string json = JsonSerializer.Serialize(new { v = 1, pid, port, version });
-            File.WriteAllText(tmp, json);
-            if (File.Exists(path))
-                File.Delete(path);
-            File.Move(tmp, path);
-        }
-        catch (Exception ex)
-        {
-            RhinoApp.WriteLine($"[RhinoAI] Failed to write listener departure: {ex.Message}");
-        }
-    }
-
-    // Shared with the router via the linked RouterPaths source file, so the
-    // drop-dir contract has one owner and can't drift between the two assemblies.
-    private static string ListenerDropDir() => Rhino.AI.Router.RouterPaths.ListenersDir;
-
-    // Stop the listener bound to the given port and close its associated doc
-    // without keeping any save artefacts. Used by the router's control channel
-    // on Mac to tear down a single slot without affecting other slots sharing
-    // the same Rhino process. The router only calls this for slots it spawned
-    // (adopted slots are refused upstream), so discarding the doc is safe.
-    //
-    // Mac's `_-Close` command matches docs by their on-disk path (see
-    // src4/rhino4/commands/cmdFileIO.cpp) and is the only way to programmatically
-    // close a non-headless doc — RhinoDoc.Dispose is a no-op for them. We give
-    // the doc a temp path via WriteFile so the command can find it, then delete
-    // that file once Cocoa's deferred close has run.
-    public static bool StopByPort(int port)
-    {
-        KeyValuePair<uint, McpServer> entry = Servers.FirstOrDefault(kv => kv.Value.Port == port);
-        if (entry.Value is null)
-            return false;
-
-        Servers.Remove(entry.Key);
-        var docSerial = entry.Key;
-        entry.Value.Stop();
-        StopHeartbeatIfIdle();
-
-        var doc = RhinoDoc.FromRuntimeSerialNumber(docSerial);
-        if (doc is null)
-            return true;
-
-        // Headless docs (RhinoDoc.CreateHeadless) are ours to dispose; the scripted close below is for UI docs.
-        if (doc.IsHeadless)
-        {
-            doc.Dispose();
-            return true;
-        }
-
-        var tempPath = Path.Combine(
-            Path.GetTempPath(),
-            $"rh-mcp-slot-close-{docSerial}-{Guid.NewGuid():N}.3dm");
-        try
-        {
-            doc.Modified = false;
-            doc.WriteFile(tempPath, new FileWriteOptions
-            {
-                SuppressDialogBoxes = true,
-                WriteUserData = true,
-                UpdateDocumentPath = true,
-            });
-            RhinoApp.RunScript(docSerial, $"_-Close \"{tempPath}\"", false);
-        }
-        catch (Exception ex)
-        {
-            RhinoApp.WriteLine($"[RhinoAI] Slot doc close failed for port {port}: {ex.Message}");
-            return true;
-        }
-
-        // Mac defers the doc close via Cocoa performSelector:afterDelay:0.1.
-        // Wait past that, then delete the temp file. Fire-and-forget — we
-        // don't want to block the router's HTTP response.
-        _ = Task.Run(async () =>
-        {
-            await Task.Delay(1000).ConfigureAwait(false);
-            try
-            { File.Delete(tempPath); }
-            catch { /* OS temp sweep will get it */ }
-        });
-
-        return true;
     }
 
     internal static void RegisterDocumentWatcher()

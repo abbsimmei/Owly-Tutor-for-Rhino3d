@@ -5,8 +5,8 @@ using Acp;
 
 namespace Rhino.AI;
 
-// Drives any ACP agent (a native connection like Gemini, or a StreamJsonAgent wrapping a stream-json
-// CLI like Claude/Codex) behind the plugin's IAgentRunner seam. One ACP session per agent instance:
+// Drives any ACP agent (a StreamJsonAgent wrapping a stream-json
+// CLI like Claude) behind the plugin's IAgentRunner seam. One ACP session per agent instance:
 // the first prompt initializes the connection and opens a session pointed at this doc's MCP
 // server; later prompts reuse it. Streaming arrives out-of-band through RhinoAcpClient on the
 // connection's read loop; the prompt response ends the turn.
@@ -70,8 +70,7 @@ internal sealed class AgentRunner : IAgentRunner
 
     public async Task LoginAsync(string mcpUrl, string cwd)
     {
-        if (!Name.Equals("claude", StringComparison.OrdinalIgnoreCase) &&
-            !Name.Equals("codex", StringComparison.OrdinalIgnoreCase))
+        if (!Name.Equals("claude", StringComparison.OrdinalIgnoreCase))
         {
             Conversation.NoteSystem($"/login is not supported for {Name}. Sign in using its CLI in a terminal.");
             return;

@@ -1,8 +1,0 @@
-{
-  "name": "rhino-mcp-launcher-tests",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "node --test"
-  }
-}

@@ -6,7 +6,7 @@ namespace Rhino.AI;
 internal static class AgentHost
 {
     // Keyed by (document serial, agent name) so each doc can drive one agent per kind
-    // (Claude, Codex, ...) at once without them colliding on a single slot.
+    // (Claude, ...) at once without them colliding on a single slot.
     private static Dictionary<(uint Doc, string Name), IAgentRunner> Agents { get; } = new();
 
     // The active agent name per document. Absent => fall back to the configured default.
@@ -103,8 +103,7 @@ internal static class AgentHost
 
     // Resume a persisted conversation: restore its transcript and seed the stream-json CLI to launch
     // with --resume <saved id> so the agent continues with its prior context. The runner drives the
-    // restored Conversation, so the prior turns stay visible. Gemini (native ACP) has no --resume seam
-    // here, so it falls back to a fresh native session while still showing the restored transcript.
+    // restored Conversation, so the prior turns stay visible.
     public static IAgentRunner CreateResumed(AgentDefinition def, ConversationDto dto)
     {
         Conversation restored = Conversation.Restore(dto);
@@ -113,17 +112,6 @@ internal static class AgentHost
         {
             case "claude":
                 return new AgentRunner(def, restored, (client, convo, cwd) => new StreamJsonAgent(def, client, convo, cwd, new ClaudeStreamJsonParser(def), resumeId));
-            case "codex":
-                return new AgentRunner(def, restored, (client, convo, cwd) => new StreamJsonAgent(def, client, convo, cwd, new CodexStreamJsonParser(def, CodexHome.Prepare()), resumeId));
-            case "gemini":
-                
-                // No native --resume seam: the prior turns are shown for the user's reference, but the
-                // fresh native session starts with no memory of them. Warn so the user doesn't assume
-                // continuity the agent doesn't have.
-                restored.NoteSystem("Gemini cannot resume prior context; the turns above are shown for reference only.");
-                
-                return new AgentRunner(def, restored, (client, _, cwd) => GeminiConnection.Connect(def, client, cwd));
-            
             default:
                 throw new NotImplementedException($"Unknown agent adapter {def.Name}");
         }

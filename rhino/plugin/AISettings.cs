@@ -48,12 +48,6 @@ internal static class AISettings
         set => Settings.SetBool(nameof(AutoLoadMCP), value);
     }
 
-    public static bool AutoLoadScriptPlugIn
-    {
-        get => Settings.GetBool(nameof(AutoLoadScriptPlugIn), true);
-        set => Settings.SetBool(nameof(AutoLoadScriptPlugIn), value);
-    }
-
     public static bool IsEnabled(AgentDefinition def) =>
         def.Enabled && !DisabledAgents.Contains(def.Name, StringComparer.OrdinalIgnoreCase);
 
@@ -92,13 +86,6 @@ internal static class AISettings
         set => Settings.SetString(nameof(ScriptPluginName), value ?? string.Empty);
     }
 
-    // External MCP servers merged into each agent's own config beside `rhino` (Part 4).
-    public static string ExtraMcpServersJson
-    {
-        get => Settings.GetString(nameof(ExtraMcpServersJson), "{\"mcpServers\":{}}");
-        set => Settings.SetString(nameof(ExtraMcpServersJson), value);
-    }
-
     // Per-session conversation history lives under its own child node (Part 6).
     public static PersistentSettings Conversations =>
         Settings.TryGetChild(nameof(Conversations), out PersistentSettings child)
@@ -131,12 +118,6 @@ internal static class AISettings
     {
         get => Settings.GetString(nameof(ClaudeCommandFileName), "claude");
         set => Settings.SetString(nameof(ClaudeCommandFileName), value);
-    }
-
-    public static string CodexCommandFileName
-    {
-        get => Settings.GetString(nameof(CodexCommandFileName), "codex");
-        set => Settings.SetString(nameof(CodexCommandFileName), value);
     }
 
     public static TimeSpan AgentStartupTimeout
@@ -181,19 +162,4 @@ internal static class AISettings
         get => Settings.GetInteger(nameof(DefaultObjectListLimit), 1000);
         set => Settings.SetInteger(nameof(DefaultObjectListLimit), value);
     }
-
-    public static int DefaultViewportImageWidth
-    {
-        get => Settings.GetInteger(nameof(DefaultViewportImageWidth), 480);
-        set => Settings.SetInteger(nameof(DefaultViewportImageWidth), value);
-    }
-
-    public static int DefaultViewportImageHeight
-    {
-        get => Settings.GetInteger(nameof(DefaultViewportImageHeight), 270);
-        set => Settings.SetInteger(nameof(DefaultViewportImageHeight), value);
-    }
-
-    public const int MaxViewportImageWidth = 1280;
-    public const int MaxViewportImageHeight = 720;
 }
