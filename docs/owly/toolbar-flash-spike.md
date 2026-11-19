@@ -2,7 +2,21 @@
 
 Question: can Owly flash or highlight a toolbar button on screen in Rhino 9 using only Rhino's **public** API (ADR-0007)?
 
-**Verdict: CANDIDATE - NEEDS IN-RHINO CHECK.** A public route to the toolbar service exists, but only down to the level of a whole toolbar control. Nothing public gives the bounds of a single button. Part A step 2 (running it inside Rhino 9) has not been done, and Part B has not been started.
+**Verdict: NOT FEASIBLE** (confirmed in Rhino 9 on 2026-11-19). The offline step found a public locator, `RhinoUiServiceLocator().GetService<IToolbarsService>()`, but it returns **null** in a running Rhino 9 session. No public route reaches even a whole toolbar control, and none reaches a single button. Part B (the flash) will not be built. The location card from plan 015 is Owly's tool highlight.
+
+## In-Rhino result (Part A step 2)
+
+The probe below was run in the "Rhino 9" debug configuration with the Owly toolbar visible, then deleted (never committed). Output:
+
+```
+[owly-probe] ---- OwlyFlashProbe (plan 016) ----
+[owly-probe] service: NULL
+[owly-probe] ---- end OwlyFlashProbe ----
+```
+
+Revisit only if a later Rhino 9 build documents a public way to get the toolbar service, or a public API for toolbar items. Reaching the service through Rhino's internal types was ruled out (ADR-0007, plan 016).
+
+The rest of this file is the original offline investigation, kept for the record.
 
 ## How this was inspected
 

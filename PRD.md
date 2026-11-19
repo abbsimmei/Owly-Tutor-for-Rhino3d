@@ -192,7 +192,7 @@ Document any unresolved privacy or security concerns.
 
 ## **Phase 4 — Rhino Integration**
 
-* Implement tool highlighting (a location card in the panel; an on-screen flash only where Rhino allows it, ADR-0007).  
+* Implement tool highlighting (a location card in the panel; an on-screen flash only where Rhino allows it, ADR-0007; on-screen flash not possible with Rhino's public API, see docs/owly/toolbar-flash-spike.md).  
 * Implement command recommendations.  
 * Implement command copy.  
 * Implement command terminal highlight (copy, then Rhino gets focus for pasting; nothing is typed into Rhino, ADR-0007)  

@@ -1,7 +1,7 @@
 # 016: Spike: flash the toolbar button on Rhino 9 (public APIs only)
 
 - **Written against:** `6571b16` on `rhino-9.x`. **Requires plan 015 to be DONE.**
-- **Status:** BLOCKED. Part A offline is done (`a8969df`); the verdict is CANDIDATE and needs the in-Rhino probe in `docs/owly/toolbar-flash-spike.md`. Part B waits for that result and an advisor revision.
+- **Status:** DONE (not feasible). The in-Rhino probe on 2026-11-19 printed `service: NULL`: the public `RhinoUiServiceLocator` doesn't supply `IToolbarsService` in a running Rhino 9. Part B is not built. The PRD note is added.
 - **Effort:** M, time-boxed. Part A is at most one working session. If Part A says "not feasible", the plan ends there.
 - **Risk:** Medium. It depends on undocumented R9 interfaces.
 - **Phase:** PRD Phase 4, "Implement tool highlighting" (PRD §3.2: "a clear visual indication (e.g. blinking, colour change or outline)"). Decision record: [ADR-0007](../docs/adr/0007-panel-ui-actions-on-student-click.md).
