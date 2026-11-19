@@ -4,7 +4,7 @@
   <tool_bar_groups>
     <tool_bar_group guid="17aac2ea-7e48-495b-9364-808b95d90eb5">
       <text><locale_1033>Owly</locale_1033></text>
-      <dock_bar_info dock_bar="False" docking="True" horz="False" visible="True" floating="False" dock_location="top" />
+      <dock_bar_info dock_bar="False" docking="True" horz="False" visible="True" floating="False" dock_location="right" />
       <tool_bar_group_item guid="0f422f56-74f4-4b80-87a2-c69827695dd3" major_version="1" minor_version="1">
         <text><locale_1033>Owly</locale_1033></text>
         <tool_bar_id>771e320b-3dc3-4d38-b6ba-661f2e77d2ab</tool_bar_id>

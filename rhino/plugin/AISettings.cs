@@ -42,6 +42,14 @@ internal static class AISettings
         set => Settings.SetBool(nameof(WelcomeShown), value);
     }
 
+    // True once Owly has placed its panel tab and toolbar on first start (plan 013). Per Rhino version,
+    // like WelcomeShown; a student who later hides either keeps that choice.
+    public static bool FirstRunLayoutDone
+    {
+        get => Settings.GetBool(nameof(FirstRunLayoutDone), false);
+        set => Settings.SetBool(nameof(FirstRunLayoutDone), value);
+    }
+
     // Owly has one agent and no on/off switch (plan 008); a disabled-agents value from an older build is ignored.
     public static bool IsEnabled(AgentDefinition def) => def.Enabled;
 

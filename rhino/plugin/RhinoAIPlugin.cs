@@ -39,6 +39,21 @@ public class RhinoAIPlugin : PlugIn
             RhinoApp.WriteLine($"[owly] could not clear old conversations: {ex.Message}");
         }
 
+        // Panel tab and toolbar, once per Rhino version (plan 013). Before the welcome popup, so its
+        // "Open Owly" selects the tab that is already in place. Flag first, so a failure can't repeat.
+        try
+        {
+            if (!RhinoApp.IsRunningHeadless && !AISettings.FirstRunLayoutDone)
+            {
+                AISettings.FirstRunLayoutDone = true;
+                FirstRunLayout.Apply();
+            }
+        }
+        catch (Exception ex)
+        {
+            RhinoApp.WriteLine($"[owly] could not place Owly on first start: {ex.Message}");
+        }
+
         // Welcome popup, once per computer and Rhino version (plan 011). The flag is set before
         // showing, so a crash inside the dialog can never make it pop up on every start.
         try
