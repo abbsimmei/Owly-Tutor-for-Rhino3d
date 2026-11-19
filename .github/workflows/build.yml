@@ -80,7 +80,7 @@ jobs:
       - name: Check net48 build
         if: matrix.plugin.os == 'win'
         shell: bash
-        run: test -f net48/Owly.rhp && test -f net8.0/Owly.rhp
+        run: test -f net48/Owly.rhp && test -f net8.0/Owly.rhp && test -f net48/Owly.rui && test -f net8.0/Owly.rui
         working-directory: rhino/plugin/bin/${{ matrix.rhino_target }}-${{ matrix.plugin.os }}/Release
 
       # R9 ships inside Rhino, so it is compiled for coverage but never packaged.

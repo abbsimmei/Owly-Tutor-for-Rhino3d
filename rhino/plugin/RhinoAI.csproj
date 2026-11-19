@@ -71,6 +71,12 @@
     <EmbeddedResource Include="../panel/dist/panel.host.html" LogicalName="Rhino.AI.panel.html" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Owly's toolbar (plan 012). Rhino loads a .rui named like the plug-in from the .rhp's own folder,
+         so it is copied next to Owly.rhp for every target framework. -->
+    <None Include="Owly.rui" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 <!-- Localization-->
 
   <ItemGroup Condition="'$(IsInRhino)' == 'true'">

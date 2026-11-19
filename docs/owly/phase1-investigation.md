@@ -74,7 +74,7 @@ The prompt steers always included (`AgentPrompts.cs`) are `AskUserSteer`, `Groun
 
 ## 4. Limitations and gaps for later phases
 
-- **Toolbar highlighting (Phase 4).** Nothing in the codebase touches toolbars (`RhinoApp.ToolbarFiles` / RUI). This is entirely new work, and its feasibility on Rhino 8 and 9 for Windows and Mac still needs a spike.
+- **Toolbar highlighting (Phase 4).** Nothing in the codebase touches toolbars (`RhinoApp.ToolbarFiles` / RUI). This is entirely new work, and its feasibility on Rhino 8 and 9 for Windows and Mac still needs a spike. Plan 012 ships Owly.rui, a one-button toolbar loaded next to Owly.rhp; highlighting other toolbars' buttons is still Phase 4 work.
 - **Command-line highlighting and insertion (Phase 4).** There is no existing code. `RhinoApp.SetCommandPrompt` is only valid inside a running command. Pre-filling the command line without running anything needs investigation. The PRD forbids auto-executing, so the fallback is copy-to-clipboard plus a visual cue.
 - **Welcome popup (Phase 3).** There is no first-run flag yet. It belongs in `AISettings` (PersistentSettings keyed by the plugin GUID). Done in plan 011: AISettings.WelcomeShown, WelcomeDialog, the OwlyWelcome command.
 - **Owl icon (Phase 3).** There is no owl artwork. The panel icon comes from `art/Panel_*.ico`. Bug: both icon constants in `RhinoAIPlugin.cs:12-13` point at the dark icon.
