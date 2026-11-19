@@ -4,6 +4,7 @@ import { t } from '../i18n/t.js';
 import type { StringKey } from '../i18n/strings.js';
 import type { PanelContext } from './context.js';
 import { icon, type IconName } from './icons.js';
+import { owl } from './owl.js';
 
 const STARTERS: readonly { icon: IconName; key: StringKey }[] = [
   { icon: 'terminal', key: 'empty.starterCommand' },
@@ -18,10 +19,10 @@ export function emptyState(ctx: PanelContext): Child {
       el(
         'div',
         { class: 'empty' },
+        owl(ctx, 64, 'empty-owl'),
         el(
           'div',
           { class: 'empty-title' },
-          icon('sparkle', 17),
           el('span', { text: () => t('empty.ready', ctx.store.activeAgent()?.label ?? t('empty.theAgent')) }),
         ),
         el('p', { text: () => t('empty.body') }),
@@ -42,7 +43,8 @@ export function emptyState(ctx: PanelContext): Child {
       el(
         'div',
         { class: 'empty' },
-        el('div', { class: 'empty-title' }, icon('agent', 17), el('span', { text: () => t('empty.noAgent') })),
+        owl(ctx, 64, 'empty-owl'),
+        el('div', { class: 'empty-title' }, el('span', { text: () => t('empty.noAgent') })),
         el('p', { text: () => t('empty.noAgentBody') }),
         el(
           'div',

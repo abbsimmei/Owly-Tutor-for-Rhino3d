@@ -3,6 +3,7 @@ import type { Child } from '../core/dom.js';
 import { t } from '../i18n/t.js';
 import type { PanelContext } from './context.js';
 import { icon } from './icons.js';
+import { owl } from './owl.js';
 
 export function header(ctx: PanelContext): Child {
   const { store, ui } = ctx;
@@ -38,6 +39,7 @@ export function header(ctx: PanelContext): Child {
   return el(
     'header',
     { class: 'header' },
+    owl(ctx, 20, 'header-owl'),
     agentButton,
     el(
       'button',

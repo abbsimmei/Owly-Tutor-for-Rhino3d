@@ -10,7 +10,7 @@ import { hostMenu } from './hostMenu.js';
 import type { PanelContext } from './context.js';
 import { header } from './header.js';
 import { questionOverlay } from './question.js';
-import { icon } from './icons.js';
+import { owl } from './owl.js';
 import { transcript } from './transcript.js';
 
 function statusStrip(ctx: PanelContext): Child {
@@ -49,7 +49,7 @@ function statusStrip(ctx: PanelContext): Child {
       el(
         'div',
         { class: 'status-strip', role: 'status' },
-        el('span', { class: 'spark' }, icon('sparkle', 14)),
+        owl(ctx, 16, 'spark'),
         el('span', {
           class: 'shimmer',
           'aria-hidden': () => (hosted() === null ? 'true' : false),

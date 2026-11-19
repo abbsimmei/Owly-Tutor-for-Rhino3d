@@ -74,6 +74,17 @@ const browser = await puppeteer.launch({
 try {
   const page = await browser.newPage();
   page.setDefaultTimeout(8000);
+
+  // Plan 010: the owl must never sit on a backdrop of our own making, so transparent art just works.
+  const owlsClear = (scope) => page.evaluate((sel) => {
+    const owls = [...document.querySelectorAll(sel)];
+    const bad = owls.filter((o) => {
+      const s = getComputedStyle(o);
+      return !(s.backgroundColor === 'rgba(0, 0, 0, 0)' || s.backgroundColor === 'transparent')
+        || s.backgroundImage !== 'none' || s.filter !== 'none' || s.mixBlendMode !== 'normal' || s.borderRadius !== '0px';
+    });
+    return { count: owls.length, bad: bad.length };
+  }, scope);
   await page.setViewport({ width: 1180, height: 880, deviceScaleFactor: shots ? 2 : 1 });
 
   const consoleProblems = [];
@@ -151,6 +162,9 @@ try {
     code: document.querySelectorAll('.tool pre code').length,
   }));
   check('a settled tool card is one plain line', card.cards >= 1 && card.body === 0 && card.wire === 0 && card.code === 0, JSON.stringify(card));
+  const owlsSeeded = await owlsClear('.header .owl, .agent-head .owl');
+  check('the owl shows in the header and on each answer, with nothing painted behind it',
+    owlsSeeded.count >= 2 && owlsSeeded.bad === 0, JSON.stringify(owlsSeeded));
 
   // ------------------------------------------------ streaming + reconciliation
   await page.evaluate(() => {
@@ -194,6 +208,8 @@ try {
   check('a new turn is appended', mid.turns === before + 1, `${before} -> ${mid.turns}`);
   check('earlier turns are not rebuilt', mid.probesKept === before, `${mid.probesKept}/${before} survived`);
   check('a status strip reports progress', mid.thinking === 1);
+  const owlStrip = await owlsClear('.status-strip .owl');
+  check('the thinking strip shows the owl', owlStrip.count === 1 && owlStrip.bad === 0, JSON.stringify(owlStrip));
   check('send becomes stop while running', mid.stopButton === 1);
   await shot('03-streaming');
 
@@ -295,6 +311,8 @@ try {
     turns: document.querySelectorAll('.turn').length,
   }));
   check('a new conversation shows the empty state', empty.turns === 0 && empty.starters === 3, JSON.stringify(empty));
+  const owlEmpty = await owlsClear('.empty .owl');
+  check('the empty state shows the owl', owlEmpty.count === 1 && owlEmpty.bad === 0, JSON.stringify(owlEmpty));
 
   await type('audit the selected objects');
   await page.keyboard.press('Enter');
@@ -325,6 +343,8 @@ try {
       thinking: document.querySelectorAll('.status-strip').length,
     };
   });
+  const owlAsk = await owlsClear('.ask-head .owl');
+  check('the question card shows the owl', owlAsk.count === 1 && owlAsk.bad === 0, JSON.stringify(owlAsk));
   // A batch is paged, not stacked: one card showing one question at a time.
   check('a batch of questions opens one paged card',
     question.scrims === 1 && question.cards === 1 && question.pages === 1

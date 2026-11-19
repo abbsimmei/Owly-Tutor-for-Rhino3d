@@ -65,7 +65,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="../../art/*.svg;../../art/*.ico" />
+    <!-- Owly's owl (plan 010). Resource names: Rhino.AI.owly.png, Rhino.AI.owly-dark.png, Rhino.AI.owly-small.png, Rhino.AI.owly-small-dark.png -->
+    <EmbeddedResource Include="../../art/owly*.png" />
     <EmbeddedResource Include="Agents/Definitions.json" />
     <EmbeddedResource Include="../panel/dist/panel.host.html" LogicalName="Rhino.AI.panel.html" />
   </ItemGroup>
@@ -104,7 +105,7 @@
       <Output TaskParameter="Lines" ItemName="_ManifestLine" />
     </ReadLinesFromFile>
     <WriteLinesToFile File="$(PluginOutputDir)/manifest.yml" Lines="@(_ManifestLine);version: $(RhinoAIPackageVersion)" Overwrite="true" WriteOnlyWhenDifferent="true" />
-    <Copy SourceFiles="$(MSBuildProjectDirectory)/icon.png" DestinationFolder="$(PluginOutputDir)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(MSBuildProjectDirectory)/../../art/owly.png" DestinationFiles="$(PluginOutputDir)/icon.png" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

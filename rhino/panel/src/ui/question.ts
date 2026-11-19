@@ -3,7 +3,7 @@ import type { Child } from '../core/dom.js';
 import { t } from '../i18n/t.js';
 import type { PendingQuestion } from '../protocol/events.js';
 import type { PanelContext } from './context.js';
-import { icon } from './icons.js';
+import { owl } from './owl.js';
 
 interface Draft {
   picked: Set<string>;
@@ -230,7 +230,7 @@ function overlay(ctx: PanelContext, questions: readonly PendingQuestion[]): Chil
     el(
       'div',
       { class: 'ask-head' },
-      el('span', { class: 'glyph', 'aria-hidden': 'true' }, icon('question', 12)),
+      owl(ctx, 16),
       steps,
       el('span', { class: 'spacer' }),
       count,

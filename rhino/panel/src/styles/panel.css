@@ -202,6 +202,8 @@ a:hover { text-decoration: underline; }
 [hidden] { display: none !important; }
 
 .icon { flex: none; display: block; }
+/* Owly's owl (plan 010). No background, filter, blend mode or rounded clipping: the art's own alpha must show. */
+.owl { flex: none; display: block; object-fit: contain; }
 
 .sr-only {
   position: absolute;
@@ -312,17 +314,10 @@ a:hover { text-decoration: underline; }
   border-top: 1px solid var(--accent-line);
   min-height: 0;
 }
-.status-strip .spark { color: var(--accent); flex: none; }
-.status-strip .spark path {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: twinkle 1.9s ease-in-out infinite;
-}
-/* A quarter turn brings a four-point star back onto itself, so this twinkles rather than spins. */
-.status-strip .spark path:nth-child(2) { animation-delay: -.95s; }
-@keyframes twinkle {
-  0%, 100% { transform: scale(.72) rotate(0deg); opacity: .45; }
-  50% { transform: scale(1.15) rotate(90deg); opacity: 1; }
+.status-strip .owl.spark { animation: owl-bob 1.9s ease-in-out infinite; }
+@keyframes owl-bob {
+  0%, 100% { opacity: .55; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-1px); }
 }
 .status-strip .spacer { flex: 1; }
 .status-strip .elapsed {
@@ -429,6 +424,7 @@ a:hover { text-decoration: underline; }
   min-width: 0;
 }
 
+.agent-head { display: flex; align-items: center; gap: 5.4px; font-size: var(--fs-sm); font-weight: 600; color: var(--text-dim); }
 .msg-agent {
   font-size: var(--fs-md);
   line-height: 1.55;
@@ -773,16 +769,6 @@ a:hover { text-decoration: underline; }
 @keyframes ask-in { from { opacity: 0; transform: translateY(9px); } }
 
 .ask-head { display: flex; align-items: center; gap: 6.3px; }
-.ask-head .glyph {
-  inline-size: 15.3px;
-  block-size: 15.3px;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--accent);
-  display: grid;
-  place-items: center;
-  flex: none;
-}
 .ask-head .spacer { flex: 1; }
 .ask-count { font-size: var(--fs-xs); color: var(--text-faint); font-variant-numeric: tabular-nums; }
 
@@ -852,6 +838,7 @@ a:hover { text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) {
   .ask, .ask-scrim, .ask-page.turning { animation: none; }
   .ask-body { transition: none; }
+  .status-strip .owl.spark { animation: none; }
 }
 
 .btn {
@@ -1033,7 +1020,6 @@ a:hover { text-decoration: underline; }
   margin: auto 0;
 }
 .empty-title { display: flex; gap: 6.3px; align-items: center; font-size: var(--fs-md); font-weight: 600; }
-.empty-title .icon { color: var(--accent); }
 .empty p { margin: 0; color: var(--text-dim); font-size: var(--fs); }
 
 .starters { display: flex; flex-direction: column; gap: 3.6px; }

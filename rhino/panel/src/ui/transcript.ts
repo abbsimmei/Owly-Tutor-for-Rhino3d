@@ -9,6 +9,7 @@ import { emptyState } from './empty.js';
 import { icon } from './icons.js';
 import { imageBlock } from './imageBlock.js';
 import { notices } from './notices.js';
+import { owl } from './owl.js';
 import { agentMessage } from './message.js';
 import { toolCard } from './toolCard.js';
 
@@ -88,6 +89,10 @@ function turnView(ctx: PanelContext, turn: TurnView): Child {
         ),
     ),
     turn.prompt ? el('div', { class: 'msg-user', text: turn.prompt }) : null,
+    when(
+      () => turn.blocks().length > 0,
+      () => el('div', { class: 'agent-head' }, owl(ctx, 16), el('span', { text: () => t('turn.agentName') })),
+    ),
     each(
       () => turn.blocks(),
       (view) => view.id,

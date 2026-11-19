@@ -1,6 +1,3 @@
-using System.IO;
-using System.Reflection;
-
 using Rhino.PlugIns;
 using Rhino.Runtime;
 using Rhino.UI;
@@ -9,15 +6,13 @@ namespace Rhino.AI;
 
 public class RhinoAIPlugin : PlugIn
 {
-    private const string IconResourceName = "Rhino.AI.Panel_light.ico";
-    private const string DarkIconResourceName = "Rhino.AI.Panel_dark.ico";
-
     // private CommandInterceptorHost? CommandInterceptors { get; set; }
 
     protected override LoadReturnCode OnLoad(ref string errorMessage)
     {
         if (!RhinoApp.IsRunningHeadless)
-            Panels.RegisterPanel(this, typeof(UI.AIPanel), Localization.LocalizeString("Owly", 1), LoadPanelIcon(), PanelType.PerDoc);
+            Panels.RegisterPanel(this, typeof(UI.AIPanel), Localization.LocalizeString("Owly", 1),
+                typeof(RhinoAIPlugin).Assembly, OwlyArt.ResourceName(OwlyArtSize.Small, OwlyArt.DarkTheme), PanelType.PerDoc);
 
 #if R9
         AIInstances.Agents.LoadAgentsFromJson();
@@ -50,26 +45,6 @@ public class RhinoAIPlugin : PlugIn
     protected override void OptionsDialogPages(List<OptionsDialogPage> pages)
     {
         pages.Add(new AIOptionsPage());
-    }
-
-    // GetHicon isn't guaranteed on every platform, so fall back to no icon rather than fail OnLoad.
-    private static System.Drawing.Icon? LoadPanelIcon()
-    {
-        try
-        {
-            Assembly assembly = typeof(RhinoAIPlugin).Assembly;
-
-            string resourceName = HostUtils.RunningInDarkMode ? DarkIconResourceName : IconResourceName;
-            using Stream? resourceStream = assembly.GetManifestResourceStream(resourceName);
-            if (resourceStream is null)
-                return null;
-
-            return new System.Drawing.Icon(resourceStream);
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     protected override void OnShutdown()

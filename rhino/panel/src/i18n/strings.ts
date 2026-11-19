@@ -20,6 +20,7 @@ export const EN = {
 
   'turn.copy': 'Copy the reply',
   'turn.stopped': 'stopped',
+  'turn.agentName': 'Owly',
   'transcript.newOutput': 'New output',
   'chip.removeNamed': 'Remove {0}',
 

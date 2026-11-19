@@ -25,6 +25,7 @@ internal static class PanelStrings
         ["empty.setupGuide"] = Localization.LocalizeString("How to install Claude Code", 75),
 
         ["turn.copy"] = Localization.LocalizeString("Copy the reply", 77),
+        ["turn.agentName"] = Localization.LocalizeString("Owly", 266),
         ["turn.stopped"] = Localization.LocalizeString("stopped", 81),
         ["transcript.newOutput"] = Localization.LocalizeString("New output", 82),
         ["chip.removeNamed"] = Localization.LocalizeString("Remove {0}", 83),

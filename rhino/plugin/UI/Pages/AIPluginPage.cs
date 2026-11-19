@@ -209,14 +209,19 @@ internal sealed class AgenticPlugInInfo
         Skills = skills ?? [];
     }
 
-    // TODO : Method to get an icon from a .ico --> Check the PlugIn.cs
     private Bitmap? GetIcon(System.Reflection.Assembly assembly, string iconResource)
     {
         if (string.IsNullOrEmpty(iconResource)) return null;
-        Stream? stream = assembly.GetManifestResourceStream(iconResource);
+        using Stream? stream = assembly.GetManifestResourceStream(iconResource);
         if (stream is null) return null;
 
-        return new System.Drawing.Icon(stream).ToBitmap().ToEto();
+        if (iconResource.EndsWith(".ico", StringComparison.OrdinalIgnoreCase))
+            return new System.Drawing.Icon(stream).ToBitmap().ToEto();
+
+        MemoryStream copy = new();
+        stream.CopyTo(copy);
+        copy.Position = 0;
+        return new Bitmap(copy);   // PNG: Eto keeps the alpha channel
     }
 }
 

@@ -605,8 +605,6 @@ internal sealed class UIAgentDefinition : SimpleViewModel
         }
     }
 
-    private const string PreferredIconResourceName = "Rhino.AI.Panel_light.svg";
-    private const string PreferredDarkIconResourceName = "Rhino.AI.Panel_dark.svg";
     private static Bitmap? PreferredLightImage { get; set; }
     private static Bitmap? PreferredDarkImage { get; set; }
 
@@ -616,16 +614,12 @@ internal sealed class UIAgentDefinition : SimpleViewModel
         {
             if (!Preferred) return null;
             return HostUtils.RunningInDarkMode
-                ? PreferredDarkImage ??= LoadPreferredImage(PreferredDarkIconResourceName)
-                : PreferredLightImage ??= LoadPreferredImage(PreferredIconResourceName);
+                ? PreferredDarkImage ??= OwlyArt.EtoBitmap(OwlyArtSize.Small, 32, dark: true)
+                : PreferredLightImage ??= OwlyArt.EtoBitmap(OwlyArtSize.Small, 32, dark: false);
         }
     }
 
     public string PreferredToolTip => Localization.LocalizeString("Preferred Agent", 257);
-
-    // The light and dark artwork are separate files, so the svg needs no dark-mode adjustment.
-    private static Bitmap? LoadPreferredImage(string resourceName)
-        => Rhino.UI.ImageResources.CreateEtoBitmap(resourceName, typeof(UIAgentDefinition).Assembly, 32, 32, false);
 
     private string defaultModelId = string.Empty;
     public string DefaultModelId { get => defaultModelId; set => SetProperty(ref defaultModelId, value); }

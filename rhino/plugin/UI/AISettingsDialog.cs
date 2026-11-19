@@ -15,6 +15,7 @@ internal sealed class AISettingsDialog : Dialog
         Size = new Size(720, 680);
         MinimumSize = new Size(560, 440);
         Resizable = true;
+        Icon = OwlyArt.WindowIcon();
 
         this.UseRhinoStyle();
 
