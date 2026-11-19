@@ -28,15 +28,22 @@ _Avoid_: script, macro
 A button in Rhino's interface that starts a Rhino command.
 _Avoid_: icon, widget
 
+**Command option**:
+A setting a Rhino command asks for while it runs (for example Loft's *Style*). Owly never invents one.
+_Avoid_: parameter, argument
+
 **Tool highlight**:
-A temporary visual cue (blink, colour or outline) on a toolbar tool that Owly is recommending.
+Showing the student where a recommended toolbar tool is: a location card in the panel, plus a brief on-screen flash of the button where Rhino allows it. It never shows, hides or changes a toolbar.
+
+**Location card**:
+A note under Owly's answer naming the toolbar, tab and button that start a recommended command, or saying it is on no open toolbar.
 
 **Command copy**:
-Placing a recommended Rhino command, optionally with parameters the student configured in the chat, on the clipboard or command line *without executing it*.
+The student clicks a recommended Rhino command in the chat and it is placed on the clipboard. Nothing is typed into Rhino and nothing runs.
 _Avoid_: command insertion (implies execution), run
 
 **Command-line highlight**:
-A visual cue drawing the student's attention to Rhino's command line.
+Drawing the student to Rhino's command line after a command copy: Rhino's window takes focus and Owly says to paste and press Enter. The student always presses Enter.
 
 **Conversation**:
 One continuous exchange of questions and answers between a student and Owly. When it ends, it is gone: Owly keeps no record of past conversations.

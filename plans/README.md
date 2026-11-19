@@ -88,6 +88,45 @@ Decisions the product owner made in the grilling session (each plan repeats the 
 - **Out of Phase 3.** Clickable follow-up suggestions are deferred to Phase 4/5.
 - **PRD.md** §3.3 and the Phase 3 bullet are edited by plan 009 to say "transcript".
 
+## Phase 4: Rhino Integration
+
+Written by an advisor pass (`/improve` + `/grill-with-docs`) against commit `6571b16` on `rhino-9.x`. New decision: [ADR-0007](../docs/adr/0007-panel-ui-actions-on-student-click.md) (panel actions touch Rhino's UI only on a student's click, never the model). Glossary updated: **Command option**, **Tool highlight**, **Location card**, **Command copy**, **Command-line highlight**.
+
+Facts that shaped Phase 4 (RhinoCommon 8.19 and 9.0):
+- No public API flashes a toolbar button, gives its screen position or lists its macros. Only the `.rui` XML on disk can be read.
+- No API returns the command line's bounds.
+- No API lists a command's options without running it.
+
+```
+014 command chips ──► 015 toolbar location card ──► 017 prompt + PRD notes ──► 016 R9 flash spike (may end "not feasible")
+```
+
+The order is linear:
+- 015 extends 014's chip.
+- 017 tells the model about both buttons.
+- 016 hooks into 015's handler and is last because it may produce no code.
+
+| # | Plan | Status | Depends on |
+|---|---|---|---|
+| 014 | [Command chips: click a command to copy it](014-command-chips.md) | DONE: `50204fe`, merged into `rhino-9.x`. Advisor review approved. R9 and R8 build with 0 errors, Server.Tests 158 (148 + 10), panel typecheck clean, 42/42 tests, verify all passed, rebuilt `panel.host.html` is reproducible. IDs 277-279. Approved deviations: the switch-arm variable is named `chip` (`command` clashes with the parameter, CS0136), and the C# regex ends in `\z`, not `$` (.NET `$` accepts a trailing newline, so the plan's own `"_Loft\n"` test failed). The manual Rhino check is still open, in particular whether the focus call behaves | 013 |
+| 015 | [Toolbar location card](015-toolbar-location-card.md) | DONE: `980aa7f`, merged into `rhino-9.x`. Advisor review approved. R9 and R8 build with 0 warnings, Server.Tests 176 (158 + 18), panel typecheck clean, 46/46 tests, verify all passed, rebuild is reproducible. IDs 280-289. The real R9 `.rui` matched the plan's rules (structure recorded in the plan).<br>Approved deviations:<ul><li>the card list is keyed on name + places, so a newer answer rebuilds the card (a plan bug)</li><li>an extra verify check confirms a card exists before the replay clears it</li><li>the structure record was written to a side file and merged into the plan by the advisor</li><li>the `PanelStrings.SidebarWord()` accessor</li></ul>Open:<ul><li>step 2.4 and the whole manual Rhino check, including the first-lookup time and "hidden"</li><li>the R8 `.rui`, as R8 isn't installed</li><li>follow-up: `platforms` on `tool_bar` is not filtered (Mac only)</li><li>plan bug: the `NonPublic` done-criteria grep also hits `bin/` DLLs, so use `git grep`</li></ul> | 014 |
+| 017 | [Tell Owly about the command buttons, and update the PRD](017-phase4-prompt-and-docs.md) | DONE: `926637a`, merged into `rhino-9.x`. Advisor review approved. R9 and R8 build with 0 warnings, Server.Tests 177 (176 + 1). The `CommandSteer` change is append-only, and the PRD diff is limited to the planned lines. Approved deviation: the criteria-4/5 notes sit after the sentence's full stop, keeping the markdown line break. Open: the prompt-checks run (rows 1-12, especially 1 and 12) in Rhino | 015 |
+| 016 | [Spike: flash the toolbar button on Rhino 9](016-r9-toolbar-flash-spike.md) | BLOCKED (needs a person in Rhino 9). Part A offline done: `a8969df`, merged into `rhino-9.x`, adds only `docs/owly/toolbar-flash-spike.md`. Advisor review approved.<br>Verdict: CANDIDATE.<ul><li>Public `Rhino.UI.Runtime.RhinoUiServiceLocator().GetService<IToolbarsService>()` → `GetToolbar(Guid)` → `GetControl(uint, bool)` reaches a whole-toolbar Eto control.</li><li>**No public per-button rectangle.** One is possible only if the control's `VisualControls` are the buttons.</li></ul>Next: run the read-only `OwlyFlashProbe` from the spike doc in a Rhino 9 debug session.<ul><li>Any null, or no per-button bounds: NOT FEASIBLE. Add the PRD note from Part A step 4 and mark this plan DONE (not feasible).</li><li>Per-button bounds exist: the advisor revises Part B before anyone builds it.</li></ul> | 015 (run after 017) |
+
+Decisions the product owner made in the grilling session (each plan repeats the ones it needs):
+- **Platforms.** Windows Rhino 8 and 9 are required. On Mac the features degrade safely and never crash.
+- **Who acts.** Only the student's click. No new agent tool; the AI keeps its five read-only tools (ADR-0007).
+- **Command chips.** Every `` `_Name` `` in an answer is a clickable chip with a copy symbol. One click copies it (with the underscore), shows a tick, focuses Rhino's window, and shows a hint to paste with Ctrl+V (⌘V on Mac) and press Enter. Other inline code stays plain. The host doesn't re-verify the command.
+- **Command line.** Nothing is ever typed into it (no `SendKeystrokes`). "Command terminal highlight" = copy plus focus.
+- **Toolbar.**
+  - A second icon on each chip shows a text-only location card under the answer: group or tab, toolbar, button tooltip, left/right click, and "hidden" if the group is hidden. Otherwise it says "not on any open toolbar".
+  - The `.rui` files are read as saved, with no images and no menu paths.
+  - Toolbars are never shown, hidden or changed.
+- **Flash.** An R9-only spike using public types only. If that isn't possible, it is recorded as not feasible and no code ships.
+- **Command options** (PRD "configurable parameters") move to Phase 5, built on verified documentation.
+- **Follow-up suggestions** move to Phase 5.
+- **Prompt.** The model tells the student to click a command to copy it, and never claims it typed, ran or highlighted anything. A new prompt-checks row covers this.
+
 ## Shared verification gates
 
 Every plan must leave these passing. Run them from the repo root.
@@ -121,3 +160,9 @@ Expected: `Build succeeded` with 0 errors, and all tests passing. Debug builds a
 - **Scripting the white/black background out of the owl PNGs.** Rejected: it machine-edits the team's art. The team will re-export transparent PNGs when they want them.
 - **Changing the student's global toolbar button size.** Rejected: it changes all of Rhino. Only the Owly toolbar's own size is set.
 - **One conversation shared across all open files.** Rejected: it means redesigning the per-document agent and listener (ADR-0006).
+- **A highlight agent tool the AI calls itself.** Rejected in ADR-0007. The AI would act on Rhino's UI, and the five-tool rule would break.
+- **Typing the command into the command line (`SendKeystrokes`, no Enter).** Rejected by the product owner (ADR-0007). A space acts as Enter in Rhino, so any options could run the command.
+- **Switching on a hidden toolbar to show the button.** Rejected: it changes the student's layout (ADR-0007, plans 012/013).
+- **An end-of-answer "Commands" strip instead of inline chips.** Rejected by the product owner. Commands are clickable where they appear.
+- **AI-proposed command options in an editable macro now.** Rejected for Phase 4: they can't be verified before the command runs. Moved to Phase 5 with verified docs.
+- **Reflection into Rhino's internal toolbar types for the flash.** Rejected (plan 016): it is fragile across Rhino updates.
