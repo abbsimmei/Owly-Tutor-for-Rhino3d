@@ -27,7 +27,22 @@ public class RhinoAIPlugin : PlugIn
         RhinoAIHost.RegisterDocumentWatcher();
 
 
+        RhinoApp.Idle += OnFirstIdle;
         return base.OnLoad(ref errorMessage);
+    }
+
+    // One-shot work that needs the plugin fully loaded (AISettings resolves it with PlugIn.Find).
+    private void OnFirstIdle(object? sender, EventArgs e)
+    {
+        RhinoApp.Idle -= OnFirstIdle;
+        try
+        {
+            AISettings.DeleteLegacyConversations();
+        }
+        catch (Exception ex)
+        {
+            RhinoApp.WriteLine($"[owly] could not clear old conversations: {ex.Message}");
+        }
     }
 
     // Adds the "AI" settings page to the Rhino Options dialog. Called each time Options is opened, so a

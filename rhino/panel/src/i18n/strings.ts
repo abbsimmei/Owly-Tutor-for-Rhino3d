@@ -3,8 +3,7 @@ export const EN = {
   'header.switchAgent': 'Owly',
   'header.noAgent': "Owly isn't set up",
   'header.nothingConfigured': 'nothing configured',
-  'header.history': 'Conversation history',
-  'header.newConversation': 'New conversation  (Ctrl+Shift+N)',
+  'header.newConversation': 'New conversation (clears this one)  (Ctrl+Shift+N)',
   'header.settings': 'Owly settings',
 
   'empty.ready': '{0} is ready',
@@ -61,19 +60,8 @@ export const EN = {
   'busy.honing': 'Honing',
   'busy.whirring': 'Whirring',
 
-  'review.readOnlyAtTime': 'Read-only · {0}',
-  'review.backToLive': 'Back to live',
-  'review.resumeTitle': 'Continue this conversation',
-  'review.resume': 'Resume',
 
-  'history.title': 'Conversations',
-  'history.close': 'Close',
-  'history.search': 'Search conversations…',
-  'history.empty': 'No saved conversations yet',
-  'history.noMatch': 'Nothing matches',
-  'history.turnCountOne': '{0} turn',
-  'history.turnCountMany': '{0} turns',
-  'history.tokenCount': '{0} tok',
+  'turn.tokenCount': '{0} tok',
 
   'agent.menuHead': 'Agent',
   'agent.settings': 'Owly settings…',
@@ -94,7 +82,6 @@ export const EN = {
   'composer.overAttachmentLimit': '{0} is {1}, over the {2} attachment limit.',
 
   'cmd.newHint': 'Start a fresh conversation',
-  'cmd.historyHint': 'Browse past conversations',
   'cmd.stopHint': "Stop Owly's answer",
   'cmd.settingsHint': 'Open Owly settings',
 

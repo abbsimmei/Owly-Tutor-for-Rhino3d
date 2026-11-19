@@ -28,18 +28,10 @@ internal sealed class AgentRunner : IAgentRunner
     private bool Started { get; set; }
 
     public AgentRunner(AgentDefinition def, string docTitle, Func<IAcpClient, Conversation, string, IAcpAgent> connect)
-        : this(def, new Conversation(Guid.NewGuid(), def.Name, docTitle), connect)
-    {
-    }
-
-    // Resume path: drive a restored past Conversation (its prior turns are already shown) rather than
-    // a fresh one. The connection factory is expected to seed the CLI's --resume id from the restored
-    // conversation's AgentSessionId, so the next prompt continues the agent's prior context.
-    public AgentRunner(AgentDefinition def, Conversation conversation, Func<IAcpClient, Conversation, string, IAcpAgent> connect)
     {
         Definition = def;
         Connect = connect;
-        Conversation = conversation;
+        Conversation = new Conversation(Guid.NewGuid(), def.Name, docTitle);
         Client = new RhinoAcpClient(Conversation);
     }
 
@@ -63,7 +55,6 @@ internal sealed class AgentRunner : IAgentRunner
         finally
         {
             Conversation.CompleteTurn();
-            PersistTurn();
             TurnGate.Release();
         }
     }
@@ -150,18 +141,6 @@ internal sealed class AgentRunner : IAgentRunner
         {
             (connection as IDisposable)?.Dispose();
             throw;
-        }
-    }
-
-    private void PersistTurn()
-    {
-        try
-        {
-            ConversationStore.Save(Conversation);
-        }
-        catch (Exception)
-        {
-            // A settings hiccup must never fault the turn the user just ran.
         }
     }
 }

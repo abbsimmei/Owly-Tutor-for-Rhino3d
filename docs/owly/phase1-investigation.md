@@ -60,7 +60,7 @@ The prompt steers always included (`AgentPrompts.cs`) are `AskUserSteer`, `Groun
 |---|---|---|
 | Agent pipeline (`AgentDispatch`, `AgentHost`, `AgentRunner`, `StreamJsonAgent`, `ClaudeStreamJsonParser`) | **Reuse** | Works; the CLI's built-in tools are already off |
 | WebView panel and bridge | **Reuse**, then simplify (Phases 2-3) | Markdown, code blocks with copy buttons, and clipboard (`AIPanelViewModel.ai.cs:470-474`) already exist, which covers the base of "copy command" |
-| `ConversationStore` (history) | **Reuse** | Suggested by the team in a PRD comment |
+| `ConversationStore` (history) | **Removed** | The product owner chose no saved conversations ([ADR-0006](../adr/0006-no-saved-conversations.md)) |
 | `ask_user` | **Reuse** | Follow-up questions, quizzes |
 | Read-only tools | **Reuse** | Context for advice. `get_context` needs its GH parts removed |
 | `command_help` resource (docs.mcneel.com fetch) | **Reuse, modify** in Phase 5 | Basis for PRD §5.1. It is a resource, and the Claude CLI with `--tools ""` probably can't read resources, so it should become a tool |
@@ -87,8 +87,8 @@ The prompt steers always included (`AgentPrompts.cs`) are `AskUserSteer`, `Groun
 
 | Data | Where | Concern |
 |---|---|---|
-| Conversations: prompts, answers, tool arguments and results, token cost | Rhino plugin settings (`ConversationStore.ai.cs`), newest 50 kept, no expiry | Retention is unbounded in time. A retention/clear option is still to do |
-| CLI transcripts | Claude's own store under the user's profile | Outside Owly's control. Must be disclosed |
+| Conversations: prompts, answers, tool arguments and results, token cost | In memory only, discarded when the conversation ends (plan 009) | Resolved by ADR-0006. Old builds' saved conversations are deleted on load |
+| CLI transcripts | Claude's own store under the user's profile | Outside Owly's control; Claude Code deletes them after about 30 days by default. Must be disclosed (welcome popup, plan 011). Phase 5 option: --no-session-persistence (ADR-0006) |
 | Content sent to the AI provider | Prompts, attachments (inline base64), tool results (object lists, selection), host OS and Rhino version, installed plugin list | Must be disclosed. Removing `get_viewport_image` stops viewport images being sent |
 | User's own Claude settings and hooks | Loaded because `--setting-sources ""` isn't passed | A student's hooks could run inside Owly's agent. Fixed in plan 005 |
 | Codex temp images, `auth.json` copy | `%TEMP%/rhinoai-*.png` (never deleted), `%APPDATA%/RhinoAI/Codex` | Removed along with Codex |

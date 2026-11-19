@@ -38,7 +38,6 @@
   <ItemGroup>
     <Compile Include="../../rhino/plugin/Agents/AgentPrompts.cs" LinkBase="PluginSources" />
     <Compile Include="../../rhino/plugin/Agents/Conversation.ai.cs" LinkBase="PanelSources" />
-    <Compile Include="../../rhino/plugin/Agents/ConversationDto.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/Agents/TokenUsage.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/ToolSummary.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/Agents/Attachment.ai.cs" LinkBase="PanelSources" />

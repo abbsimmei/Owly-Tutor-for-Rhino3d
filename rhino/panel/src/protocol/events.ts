@@ -3,7 +3,7 @@
 // The Eto panel subscribed to Conversation.Changed, re-read the whole graph, flattened it, and
 // diffed the result against what it had already drawn. Every interesting bug lived in that loop.
 // Here the host says what changed: a text delta names the block it extends, a tool result names the
-// call it completes. `conversation` (a full snapshot) exists only for load / resume / reconnect.
+// call it completes. `conversation` (a full snapshot) exists only for attach and reconnect.
 
 import type { IconName } from '../ui/icons.js';
 
@@ -120,17 +120,6 @@ export interface PendingQuestion {
   allowOther: boolean;
 }
 
-export interface HistoryEntry {
-  sessionId: string;
-  title: string;
-  agent: string;
-  docTitle: string;
-  startedAt: string;
-  turns: number;
-  usage: TokenUsage;
-  resumable: boolean;
-}
-
 // ---------------------------------------------------------------- transcript
 
 export type BlockSnapshot =
@@ -160,8 +149,6 @@ export interface ConversationSnapshot {
   docTitle: string;
   startedAt: string;
   turns: TurnSnapshot[];
-  /** A reviewed past conversation: the composer is replaced by Resume. */
-  readOnly: boolean;
 }
 
 export interface HostInfo {
@@ -185,7 +172,6 @@ export type HostEvent =
   | { type: 'theme'; scheme: 'light' | 'dark'; tokens?: Record<string, string> }
   | { type: 'agents'; agents: AgentInfo[]; active: string | null }
   | { type: 'context'; items: ContextItem[] }
-  | { type: 'history'; entries: HistoryEntry[] }
   | { type: 'conversation'; snapshot: ConversationSnapshot }
   | { type: 'turn.begin'; turn: TurnSnapshot }
   | { type: 'turn.text'; turnId: string; blockId: string; delta: string }
@@ -224,9 +210,6 @@ export type PanelCommand =
   | { type: 'prompt'; request: PromptRequest }
   | { type: 'cancel' }
   | { type: 'conversation.new' }
-  | { type: 'conversation.load'; sessionId: string }
-  | { type: 'conversation.resume'; sessionId: string }
-  | { type: 'conversation.exitReview' }
   | { type: 'agent.select'; name: string }
   | { type: 'agent.login' }
   | { type: 'question.answer'; items: QuestionAnswer[] }

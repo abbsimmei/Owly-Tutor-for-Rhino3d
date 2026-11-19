@@ -72,51 +72,6 @@ internal static class AgentHost
         return probe;
     }
 
-    // Adopt a runner restored from a past conversation as the doc's active agent for its kind,
-    // replacing (and disposing) any runner already pooled for (doc, agent name) so the panel and
-    // dispatch both pick up the resumed session. Pins the active name so dispatch resolves to it.
-    // Returns false when the saved conversation's agent is no longer registered.
-    public static bool TryResume(RhinoDoc doc, ConversationDto dto, out IAgentRunner agent)
-    {
-        if (!AgentRegistry.Instance.TryGet(dto.AgentName, out AgentDefinition def))
-        {
-            agent = default!;
-            return false;
-        }
-
-        if (!def.Enabled)
-        {
-            agent = default!;
-            return false;
-        }
-
-        (uint, string) key = (doc.RuntimeSerialNumber, def.Name);
-        if (Agents.Remove(key, out IAgentRunner? prior))
-            SafeDispose(prior);
-
-        IAgentRunner resumed = CreateResumed(def, dto);
-        Agents[key] = resumed;
-        SetActive(doc, def.Name);
-        agent = resumed;
-        return def.Enabled;
-    }
-
-    // Resume a persisted conversation: restore its transcript and seed the stream-json CLI to launch
-    // with --resume <saved id> so the agent continues with its prior context. The runner drives the
-    // restored Conversation, so the prior turns stay visible.
-    public static IAgentRunner CreateResumed(AgentDefinition def, ConversationDto dto)
-    {
-        Conversation restored = Conversation.Restore(dto);
-        Guid resumeId = restored.AgentSessionId;
-        switch (def.Name.ToLowerInvariant())
-        {
-            case "claude":
-                return new AgentRunner(def, restored, (client, convo, cwd) => new StreamJsonAgent(def, client, convo, cwd, new ClaudeStreamJsonParser(def), resumeId));
-            default:
-                throw new NotImplementedException($"Unknown agent adapter {def.Name}");
-        }
-    }
-
     // The active pooled agent for the doc, so a control verb (cancel/stop) acts on the running
     // turn rather than an arbitrary idle agent the doc happened to drive earlier. Resolves the
     // active definition's name and looks up only that pooled entry; false when none is pooled.

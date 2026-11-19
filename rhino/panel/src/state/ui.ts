@@ -3,13 +3,12 @@
 import { computed, signal, type ReadSignal } from '../core/signal.js';
 import type { Attachment } from '../protocol/events.js';
 
-export type Overlay = 'none' | 'history' | 'agents' | 'context';
+export type Overlay = 'none' | 'agents' | 'context';
 
 export class UiState {
   readonly draft = signal('');
   readonly attachments = signal<readonly Attachment[]>([]);
   readonly overlay = signal<Overlay>('none');
-  readonly historyQuery = signal('');
   /** False once the user scrolls away from the tail; new output then shows a jump affordance. */
   readonly pinned = signal(true);
   /** Output landed while the user was scrolled away from the tail. */

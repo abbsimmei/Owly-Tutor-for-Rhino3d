@@ -260,7 +260,7 @@ try {
   await type('/');
   await wait(250);
   const slash = await page.evaluate(() => document.querySelectorAll('.mention-menu .menu-item').length);
-  check('slash opens the command menu', slash >= 4, `${slash} commands`);
+  check('slash opens the command menu', slash >= 3, `${slash} commands`);
   await page.keyboard.press('Escape');
   await wait(150);
 
@@ -287,7 +287,7 @@ try {
 
   // -------------------------------------------------------------- question card
   await page.evaluate(() => {
-    [...document.querySelectorAll('.header .icon-btn')][1].click();
+    [...document.querySelectorAll('.header .icon-btn')][0].click();
   });
   await wait(300);
   const empty = await page.evaluate(() => ({
@@ -401,7 +401,7 @@ try {
   await wait(250);
   check('Escape cancels from the keyboard', (await page.evaluate(() => document.querySelectorAll('.ask').length)) === 0);
 
-  await page.evaluate(() => [...document.querySelectorAll('.header .icon-btn')][1].click());
+  await page.evaluate(() => [...document.querySelectorAll('.header .icon-btn')][0].click());
   await wait(300);
   await type('audit the selected objects');
   await page.keyboard.press('Enter');
@@ -423,48 +423,6 @@ try {
   }));
   check('answering closes the overlay and the turn continues', answered.scrims === 0 && answered.tools >= 3, JSON.stringify(answered));
   await shot('06-answered');
-
-  // ------------------------------------------------------------------- history
-  // Leave the transcript scrolled up first: the resume below must not inherit that position.
-  const seat = await page.evaluate(() => {
-    const r = document.querySelector('.transcript').getBoundingClientRect();
-    return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
-  });
-  await page.mouse.move(seat.x, seat.y);
-  await page.mouse.wheel({ deltaY: -3000 });
-  await wait(300);
-
-  await page.evaluate(() => [...document.querySelectorAll('.header .icon-btn')][0].click());
-  await wait(300);
-  const history = await page.evaluate(() => document.querySelectorAll('.convo').length);
-  check('history lists saved conversations', history === 3, `${history} rows`);
-  await page.type('.drawer input', 'renaming');
-  await wait(250);
-  const filtered = await page.evaluate(() => document.querySelectorAll('.convo').length);
-  check('history search filters', filtered === 1, `${filtered} rows`);
-  await page.evaluate(() => document.querySelector('.convo').click());
-  await wait(400);
-  const review = await page.evaluate(() => ({
-    reviewBar: document.querySelectorAll('.review-bar').length,
-    composer: document.querySelectorAll('.composer').length,
-  }));
-  check('loading a saved conversation swaps the composer for a review bar', review.reviewBar === 1 && review.composer === 0);
-  await shot('07-review');
-
-  // A resumed conversation is a different transcript, so where the user had scrolled to in the last
-  // one means nothing: it has to land on the newest message, not halfway up.
-  await page.evaluate(() =>
-    [...document.querySelectorAll('.review-bar .btn')].find((b) => b.textContent.trim() === 'Resume')?.click());
-  const resumed = await until(
-    page,
-    `(() => {
-       const t = document.querySelector('.transcript');
-       return document.querySelectorAll('.composer').length === 1 &&
-         t.scrollHeight - t.scrollTop - t.clientHeight < 30 ? { back: true } : null;
-     })()`,
-    3000,
-  );
-  check('resuming a conversation starts at the newest message', resumed !== null);
 
   // -------------------------------------------------- too-old engine fallback
   const old = await browser.newPage();
@@ -502,8 +460,7 @@ try {
       .some((rule) => rule.cssText.includes('color-mix')))));
 
   // --------------------------------------------------------- notices / status
-  // Resume above already left review, so the composer is back.
-  await page.evaluate(() => [...document.querySelectorAll('.header .icon-btn')][2].click());
+  await page.evaluate(() => [...document.querySelectorAll('.header .icon-btn')][1].click());
   await wait(300);
   const placement = await page.evaluate(() => {
     const notice = document.querySelector('.notice');
@@ -523,7 +480,7 @@ try {
   const cleared = await until(page, `document.querySelectorAll('.notice').length === 0 ? { gone: true } : null`, 7000);
   check('a notice clears itself without being dismissed', cleared !== null);
 
-  const settings = () => page.evaluate(() => [...document.querySelectorAll('.header .icon-btn')][2].click());
+  const settings = () => page.evaluate(() => [...document.querySelectorAll('.header .icon-btn')][1].click());
   await settings();
   await wait(1200);
   await settings();
@@ -903,14 +860,14 @@ try {
     check('a sent prompt clears the composer of its attachments',
       (await host.evaluate(() => document.querySelectorAll('.composer .attach').length)) === 0);
 
-    // ------------------------------------------------- resume, the way Rhino replays it
+    // ------------------------------------------------- replay, the way Rhino replays it
     // ConversationFeed.Replay posts an empty snapshot and then the turns one event at a time, each
     // its own ExecuteScriptAsync, and every agent message renders its markdown a frame later. So
-    // the transcript is still growing long after the snapshot lands: a resume that scrolls once
+    // the transcript is still growing long after the snapshot lands: a replay that scrolls once
     // stops halfway up. Fed here the same way, with the panel left scrolled up beforehand.
     const line = 'The facade layer holds 148 surfaces, most of them planar panels on the south elevation. ';
     const replay = (session, count) => {
-      const out = [{ type: 'conversation', snapshot: { sessionId: session, agent: 'claude', docTitle: 'tower-study.3dm', startedAt: '2026-01-01T09:00:00.0000000+00:00', turns: [], readOnly: false } }];
+      const out = [{ type: 'conversation', snapshot: { sessionId: session, agent: 'claude', docTitle: 'tower-study.3dm', startedAt: '2026-01-01T09:00:00.0000000+00:00', turns: [] } }];
       for (let i = 0; i < count; i++) {
         const id = `${session}-turn-${i}`;
         out.push({ type: 'turn.begin', turn: { id, prompt: `Question ${i}`, attachments: [], context: [], startedAt: '2026-01-01T09:00:00.0000000+00:00', status: 'running', blocks: [], plan: [], undoable: true } });

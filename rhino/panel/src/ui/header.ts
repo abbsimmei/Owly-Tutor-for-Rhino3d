@@ -42,16 +42,6 @@ export function header(ctx: PanelContext): Child {
     el(
       'button',
       {
-        class: () => `icon-btn${ui.overlay() === 'history' ? ' on' : ''}`,
-        type: 'button',
-        title: () => t('header.history'),
-        onClick: () => ui.openOverlay('history'),
-      },
-      icon('history'),
-    ),
-    el(
-      'button',
-      {
         class: 'icon-btn',
         type: 'button',
         title: () => t('header.newConversation'),

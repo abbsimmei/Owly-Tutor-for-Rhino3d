@@ -65,7 +65,7 @@ The user must remain in control of all modelling operations.
 
 * Accessible through an Owly owl icon in Rhino's interface.  
 * Opens a chat panel, preferably on the right-hand side.  
-* Displays conversation history and AI responses.  
+* Displays the transcript of the current conversation and the AI's responses. Owly keeps no saved conversations (ADR-0006).  
 * Includes a text input field.  
 * Supports suggested follow-up questions.
 
@@ -187,7 +187,7 @@ Document any unresolved privacy or security concerns.
 
 * Implement Owly's icon.&nbsp;  
 * Create the chat panel.  
-* Implement conversation history and message input.  
+* Implement the conversation transcript and message input (no saved history, ADR-0006).  
 * Add the welcome popup.
 
 ## **Phase 4 — Rhino Integration**

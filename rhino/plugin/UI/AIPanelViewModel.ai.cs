@@ -21,8 +21,6 @@ internal partial class AIPanelViewModel : IDisposable
 
     private ConversationFeed? Feed => Subscription?.Feed;
 
-    private ConversationFeed? Review { get; set; }
-
     private string? PinnedAgentName { get; set; }
 
     private Conversation? ActiveConversation =>
@@ -35,7 +33,7 @@ internal partial class AIPanelViewModel : IDisposable
         RhinoDoc.DeselectObjects += OnSelectionChanged;
         RhinoDoc.DeselectAllObjects += OnSelectionChanged;
 
-        ShowCurrent();
+        ShowLive();
     }
 
     public void Detach()
@@ -173,9 +171,6 @@ internal partial class AIPanelViewModel : IDisposable
             PromptCommand prompt => Prompt(prompt.Request),
             CancelCommand => CancelCurrentAgentTurn(),
             NewConversationCommand => NewConversation(),
-            LoadConversationCommand load => LoadConversation(load.SessionId),
-            ResumeConversationCommand resume => ResumeConversation(resume.SessionId),
-            ExitReviewCommand => ExitReview(),
             SelectAgentCommand select => SelectAgent(select.Name),
             LoginCommand => Login(),
             AnswerQuestionCommand answer => Answer(answer.Items),
@@ -197,7 +192,7 @@ internal partial class AIPanelViewModel : IDisposable
     private bool Ready()
     {
         SendEnvironment();
-        ShowCurrent();
+        ShowLive();
         return true;
     }
 
@@ -236,8 +231,6 @@ internal partial class AIPanelViewModel : IDisposable
 
     private bool NewConversation()
     {
-        Persist();
-
         if (Document is { } doc)
         {
             AgentHost.Stop(doc);
@@ -246,53 +239,6 @@ internal partial class AIPanelViewModel : IDisposable
         }
 
         ShowLive();
-        SendHistory();
-        return true;
-    }
-
-    private bool LoadConversation(string sessionId)
-    {
-        if (!ConversationStore.TryLoad(sessionId, out ConversationDto dto))
-        {
-            Bridge.Post(new NoticeEvent("error", Localization.LocalizeString("That conversation could not be loaded.", 5)));
-            return false;
-        }
-
-        Unsubscribe();
-        Review = new ConversationFeed(Conversation.Restore(dto), Bridge.Post);
-        Review.Replay(readOnly: true);
-        return true;
-    }
-
-    private bool ExitReview()
-    {
-        ShowLive();
-        return true;
-    }
-
-    private bool ResumeConversation(string sessionId)
-    {
-        if (Document is not { } doc || !ConversationStore.TryLoad(sessionId, out ConversationDto dto))
-            return false;
-
-        if (IsTurnRunning)
-        {
-            Bridge.Post(new NoticeEvent("warn", Localization.LocalizeString("Stop the running turn before resuming another conversation.", 6)));
-            return false;
-        }
-
-        Persist();
-
-        if (!AgentHost.TryResume(doc, dto, out IAgentRunner _))
-        {
-            Bridge.Post(new NoticeEvent("error", Localization.LocalizeString("Can't continue this conversation: Claude Code is no longer available.", 7)));
-            return false;
-        }
-
-        PinnedAgentName = dto.AgentName;
-        ShowLive();
-        SendAgents();
-        SendHistory();
         return true;
     }
 
@@ -320,7 +266,6 @@ internal partial class AIPanelViewModel : IDisposable
             return false;
         }
 
-        ExitReview();
         string workingDirectory = !string.IsNullOrEmpty(doc.Path)
             ? Path.GetDirectoryName(doc.Path) ?? Path.GetTempPath()
             : Path.GetTempPath();
@@ -364,7 +309,7 @@ internal partial class AIPanelViewModel : IDisposable
 
     private bool RunToolChip(ToolChipCommand chip)
     {
-        if (Review is not null || Feed is null || !Feed.IsCallRunning(chip.CallId) || Document is not { } doc)
+        if (Feed is null || !Feed.IsCallRunning(chip.CallId) || Document is not { } doc)
             return false;
 
         return chip.ChipId switch
@@ -432,7 +377,6 @@ internal partial class AIPanelViewModel : IDisposable
         dialog.ShowModal(View);
         SendAgents();
         SendContext();
-        SendHistory();
         return true;
     }
 
@@ -490,7 +434,6 @@ internal partial class AIPanelViewModel : IDisposable
 
         SendAgents();
         SendContext();
-        SendHistory();
     }
 
     private void SendContext()
@@ -526,43 +469,6 @@ internal partial class AIPanelViewModel : IDisposable
         Bridge.Post(new AgentsEvent(agents, active));
     }
 
-    private void SendHistory()
-    {
-        List<PanelHistoryEntry> entries = new();
-        foreach (ConversationDto convo in ConversationStore.List())
-        {
-            if (convo.Turns.Count == 0)
-                continue;
-
-            TokenUsage total = TokenUsage.Empty;
-            foreach (TurnDto turn in convo.Turns)
-                total += turn.Usage;
-
-            entries.Add(new PanelHistoryEntry(
-                convo.SessionId,
-                Title(convo),
-                convo.AgentName,
-                convo.DocTitle,
-                convo.StartedAt.ToString("O"),
-                convo.Turns.Count,
-                new PanelUsage(total.InputTokens, total.OutputTokens, total.CostUsd),
-                Resumable(convo.AgentName)));
-        }
-        Bridge.Post(new HistoryEvent(entries));
-    }
-
-    private static string Title(ConversationDto convo)
-    {
-        string prompt = convo.Turns.Count > 0 ? convo.Turns[0].Prompt : string.Empty;
-        string line = prompt.Split('\n').FirstOrDefault(static l => l.Trim().Length > 0)?.Trim() ?? string.Empty;
-        if (line.Length == 0)
-            return "(no prompt)";
-        return line.Length > 80 ? line.Substring(0, 80).TrimEnd() + "…" : line;
-    }
-
-    private static bool Resumable(string agentName) =>
-        AgentRegistry.Instance.AllDefinitions.Any(r => r.Name == agentName && r.Available && AISettings.IsEnabled(r));
-
     private static string DocTitle(RhinoDoc doc) =>
         string.IsNullOrEmpty(doc.Path) ? "Untitled" : Path.GetFileName(doc.Path);
 
@@ -570,21 +476,8 @@ internal partial class AIPanelViewModel : IDisposable
 
 #region CONVERSATION
 
-    // A tab change unloads and reloads the panel, and a conversation opened from history is not the live one.
-    private void ShowCurrent()
-    {
-        if (Review is { } review)
-        {
-            review.Replay(readOnly: true);
-            return;
-        }
-
-        ShowLive();
-    }
-
     private void ShowLive()
     {
-        Review = null;
         Resubscribe();
         Feed?.Replay();
     }
@@ -617,18 +510,9 @@ internal partial class AIPanelViewModel : IDisposable
 
     private void PumpIfLive()
     {
-        if (View.Loaded && Review is null)
+        if (View.Loaded)
             Feed?.Pump();
     }
-
-    private void Persist()
-    {
-        if (ActiveConversation is { Turns.Count: > 0 } current)
-            ConversationStore.Save(current);
-    }
-
-    private bool IsTurnRunning =>
-        ActiveConversation?.Turns is { Count: > 0 } turns && !turns[turns.Count - 1].Completed;
 
 #endregion
 

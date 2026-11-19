@@ -60,11 +60,14 @@ internal static class AISettings
         set => Settings.SetString(nameof(ScriptPluginName), value ?? string.Empty);
     }
 
-    // Per-session conversation history lives under its own child node (Part 6).
-    public static PersistentSettings Conversations =>
-        Settings.TryGetChild(nameof(Conversations), out PersistentSettings child)
-            ? child
-            : Settings.AddChild(nameof(Conversations));
+    // Owly keeps no saved conversations (ADR-0006). Older builds stored them under this child node;
+    // delete it once so nothing from those builds stays on the student's computer.
+    public static void DeleteLegacyConversations()
+    {
+        const string legacyNode = "Conversations";
+        if (Settings.TryGetChild(legacyNode, out _))
+            Settings.DeleteChild(legacyNode);
+    }
 
     public static int StartingPort
     {

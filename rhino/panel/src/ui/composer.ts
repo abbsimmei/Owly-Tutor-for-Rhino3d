@@ -19,7 +19,6 @@ interface Command {
 
 const COMMANDS: readonly Command[] = [
   { key: 'new', label: '/new', hint: 'cmd.newHint', icon: 'plus', run: (c) => c.send({ type: 'conversation.new' }) },
-  { key: 'history', label: '/history', hint: 'cmd.historyHint', icon: 'history', run: (c) => c.ui.openOverlay('history') },
   { key: 'stop', label: '/stop', hint: 'cmd.stopHint', icon: 'stop', run: (c) => c.send({ type: 'cancel' }) },
   { key: 'settings', label: '/settings', hint: 'cmd.settingsHint', icon: 'settings', run: (c) => c.send({ type: 'settings.open' }) },
 ];

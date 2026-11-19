@@ -1023,65 +1023,6 @@ a:hover { text-decoration: underline; }
 }
 .menu-sep { height: 1px; background: var(--border); margin: 3.6px 1.8px; }
 
-.drawer {
-  position: absolute;
-  inset: 0;
-  z-index: 10;
-  background: var(--bg);
-  display: grid;
-  grid-template-rows: auto auto 1fr;
-  animation: slide .16s ease;
-}
-@keyframes slide { from { transform: translateY(7.2px); opacity: 0; } }
-
-.drawer-head {
-  display: flex;
-  align-items: center;
-  gap: 5.4px;
-  padding: 5.4px var(--pad);
-  border-bottom: 1px solid var(--border);
-  background: var(--control);
-}
-.drawer-head b { flex: 1; font-size: var(--fs-md); font-weight: 600; }
-
-.search {
-  display: flex;
-  align-items: center;
-  gap: 5.4px;
-  margin: var(--gap) var(--pad);
-  padding: 3.6px 7.2px;
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  background: var(--field);
-  color: var(--text-faint);
-}
-.search input {
-  font: inherit;
-  color: var(--text);
-  background: none;
-  border: 0;
-  outline: none;
-  width: 100%;
-}
-
-.drawer-list { overflow-y: auto; scrollbar-gutter: stable; padding: 0 var(--pad) var(--pad); display: flex; flex-direction: column; gap: 3.6px; }
-
-.convo {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 1.8px 7.2px;
-  padding: 6.3px 8.1px;
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  background: var(--surface);
-  text-align: start;
-  min-width: 0;
-}
-.convo:hover { border-color: var(--border-strong); background: var(--surface-2); }
-.convo .title { font-size: var(--fs); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.convo .when { font-size: var(--fs-xs); color: var(--text-faint); white-space: nowrap; }
-.convo .sub { grid-column: 1 / -1; display: flex; gap: 5.4px; align-items: center; font-size: var(--fs-xs); color: var(--text-faint); }
-
 /* ------------------------------------------------------------ empty state */
 
 .empty {
@@ -1186,18 +1127,6 @@ a:hover { text-decoration: underline; }
 }
 
 .stage { position: relative; flex: 1; min-height: 0; display: grid; grid-template-rows: 1fr; }
-
-.review-bar {
-  display: flex;
-  align-items: center;
-  gap: 5.4px;
-  padding: var(--gap) var(--pad);
-  border-top: 1px solid var(--border);
-  background: var(--control);
-  font-size: var(--fs-sm);
-  color: var(--text-dim);
-}
-.review-bar .spacer { flex: 1; }
 
 .mention-menu {
   position: absolute;

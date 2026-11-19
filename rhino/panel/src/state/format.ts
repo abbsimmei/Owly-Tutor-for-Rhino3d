@@ -64,7 +64,7 @@ export function prettyJson(value: unknown): string {
   }
 }
 
-/** First meaningful line of a prompt, for a turn header or a history row. */
+/** First meaningful line of a prompt, for a turn header. */
 export function summarize(prompt: string, max = 64): string {
   const line = prompt.split('\n').find((candidate) => candidate.trim().length > 0)?.trim() ?? '';
   return line.length > max ? `${line.slice(0, max).trimEnd()}…` : line;

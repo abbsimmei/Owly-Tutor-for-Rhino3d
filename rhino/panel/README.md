@@ -40,7 +40,7 @@ flowchart LR
   K --> T[one tool card]
 ```
 
-`turn.text` names the block it extends. `turn.tool.patch` names the call it completes. A full `conversation` snapshot exists only for load, resume and reconnect. Nothing re-flattens, nothing re-diffs, no row is rebuilt, no width is measured.
+`turn.text` names the block it extends. `turn.tool.patch` names the call it completes. A full `conversation` snapshot exists only for attach and reconnect. Nothing re-flattens, nothing re-diffs, no row is rebuilt, no width is measured.
 
 ## Layout
 
@@ -59,7 +59,7 @@ src/
               format.ts      time / tokens / cost / duration / bytes
               tools.ts       tool name -> family -> icon
   ui/         app header transcript message toolCard previews question composer
-              history empty notices agentMenu icons context
+              empty notices agentMenu icons context
   dev/        frame.ts       review chrome, mock host only
   styles/     panel.css      design tokens, light + dark, container queries
 tools/        verify.mjs     black-box browser checks
@@ -89,10 +89,9 @@ The totals are not smaller, and it would be dishonest to imply they are. `rhino/
 - **Markdown with highlighted code.** Headings, lists, tables, blockquotes, inline code, and fenced code with a language label and a copy button. The old panel put raw text in a `Label`.
 - **Tool results rendered as the thing they are.** A capture shows the image inline without a click. A layer listing shows a table. A selection shows a clickable object list that reveals in the viewport. A solve shows component and diagnostic chips. Raw JSON is still one click away, syntax-highlighted.
 - **`@` context.** Mention the selection, a layer, the active view, the document or the open Grasshopper file, and it rides along with the prompt as a chip. This is the affordance a CAD agent most obviously wants and Eto made awkward.
-- **`/` commands** in the composer: new, history, agent, stop, settings.
+- **`/` commands** in the composer: new, stop, settings.
 - **Per-turn revert.** `TurnUndoCheckpoint` already makes a turn one undo record; the turn footer now exposes it.
 - **A plan strip** for agents that emit one.
-- **Searchable history** as a drawer, instead of a dropdown of truncated labels.
 - **Agent switching** that shows *why* an agent is unavailable rather than appending `(not found)` to a name Eto cannot disable.
 - **Honest scroll behaviour.** Pinned to the tail until you scroll away, then a "New output" pill, and only while a turn is actually running.
 - **Drag-and-drop and pasted attachments** with thumbnails.

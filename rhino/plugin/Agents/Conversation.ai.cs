@@ -91,8 +91,8 @@ internal sealed class Conversation
     private Turn? Current { get; set; }
 
     // Transient UI state, not transcript history: the panel renders these inline while posed
-    // ask_user questions are unanswered. Deliberately kept out of Render() and any persistence so a
-    // half-asked question is never serialized. Appended by the ask_user tool body; cleared by the
+    // ask_user questions are unanswered. Deliberately kept out of Render() so a
+    // half-asked question never appears in the transcript. Appended by the ask_user tool body; cleared by the
     // panel once the answer prompt is dispatched. A list because one call can pose several questions
     // and a later call adds to the set rather than replacing it.
     private List<PendingQuestion> PendingQuestionList { get; } = new();
@@ -105,41 +105,7 @@ internal sealed class Conversation
         StartedAt = DateTimeOffset.UtcNow;
     }
 
-    // Rebuild a live conversation from a persisted transcript so a resumed session shows its prior
-    // turns and carries the saved AgentSessionId (the CLI's --resume token). The original StartedAt is
-    // kept (not reset to now) so the recents ordering and header stay truthful, and the restored turns
-    // are marked complete. A malformed SessionId degrades to a fresh GUID so a corrupt store can never
-    // throw here.
-    public static Conversation Restore(ConversationDto dto)
-    {
-        Guid sessionId = Guid.TryParse(dto.SessionId, out Guid parsed) ? parsed : Guid.NewGuid();
-        Conversation convo = new(sessionId, dto.AgentName, dto.DocTitle)
-        {
-            StartedAt = dto.StartedAt,
-        };
-
-        foreach (TurnEventDto ev in dto.Lifecycle)
-            convo.LifecycleList.Add(new TurnEvent(ev.Kind, ev.Text, ev.At, ev.Args, ev.Result, ev.Id, ev.Failed));
-
-        foreach (TurnDto turnDto in dto.Turns)
-        {
-            Turn turn = new(turnDto.Prompt, turnDto.Attachments ?? [], convo.Sync, turnDto.StartedAt);
-            foreach (TurnEventDto ev in turnDto.Events)
-                // Transcripts saved before Done existed carry it as false, so fall back to the old inference.
-                turn.Add(new TurnEvent(ev.Kind, ev.Text, ev.At, ev.Args, ev.Result, ev.Id, ev.Failed,
-                    ev.Done || !string.IsNullOrWhiteSpace(ev.Result)));
-            turn.SetUsage(turnDto.Usage);
-            // Stamping now would date every restored turn to the restore, which is what bounds the search for images the agent wrote during it.
-            turn.Complete(turnDto.CompletedAt ?? turnDto.StartedAt);
-            convo.TurnList.Add(turn);
-        }
-        return convo;
-    }
-
-    // This is the CLI's own session id, not a plugin-internal handle: it is passed as --session-id
-    // on the first spawn and as --resume afterwards, and persisted as ConversationDto.SessionId.
-    // Mutable because a rejected resume forces the agent to open a fresh session, and the saved id
-    // has to follow or the next resume names a session the CLI has never heard of.
+    // The CLI's own session id: passed as --session-id on the first spawn and as --resume when the CLI is restarted after Stop.
     public Guid AgentSessionId { get; private set; }
     public string AgentName { get; }
     public string DocTitle { get; }
@@ -222,7 +188,7 @@ internal sealed class Conversation
     }
 
     // A free-form lifecycle line, rendered like a session marker. Used to surface a fail-soft note
-    // (e.g. a stale --resume target the CLI rejected, so the session restarted fresh).
+    // (e.g. the CLI exited and Owly asks the student to sign in).
     public void NoteSystem(string text)
     {
         lock (Sync)

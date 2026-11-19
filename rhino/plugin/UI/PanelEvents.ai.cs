@@ -14,7 +14,6 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(ThemeEvent), "theme")]
 [JsonDerivedType(typeof(AgentsEvent), "agents")]
 [JsonDerivedType(typeof(ContextEvent), "context")]
-[JsonDerivedType(typeof(HistoryEvent), "history")]
 [JsonDerivedType(typeof(ConversationEvent), "conversation")]
 [JsonDerivedType(typeof(TurnBeginEvent), "turn.begin")]
 [JsonDerivedType(typeof(TurnTextEvent), "turn.text")]
@@ -36,7 +35,6 @@ internal sealed record HelloEvent(PanelHost Host, string Language, IReadOnlyDict
 internal sealed record ThemeEvent(string Scheme, IReadOnlyDictionary<string, string>? Tokens) : PanelEvent;
 internal sealed record AgentsEvent(IReadOnlyList<PanelAgent> Agents, string? Active) : PanelEvent;
 internal sealed record ContextEvent(IReadOnlyList<PanelContextItem> Items) : PanelEvent;
-internal sealed record HistoryEvent(IReadOnlyList<PanelHistoryEntry> Entries) : PanelEvent;
 internal sealed record ConversationEvent(PanelConversation Snapshot) : PanelEvent;
 internal sealed record TurnBeginEvent(PanelTurn Turn) : PanelEvent;
 internal sealed record TurnTextEvent(string TurnId, string BlockId, string Delta) : PanelEvent;
@@ -128,25 +126,12 @@ internal sealed record PanelTurn(
     bool Undoable,
     string? Error);
 
-// A row in the history drawer. Resumable is false when the conversation's agent is no longer
-// installed or enabled, so the panel offers review only rather than a Resume that would fault.
-internal sealed record PanelHistoryEntry(
-    string SessionId,
-    string Title,
-    string Agent,
-    string DocTitle,
-    string StartedAt,
-    int Turns,
-    PanelUsage Usage,
-    bool Resumable);
-
 internal sealed record PanelConversation(
     string SessionId,
     string Agent,
     string DocTitle,
     string StartedAt,
-    IReadOnlyList<PanelTurn> Turns,
-    bool ReadOnly);
+    IReadOnlyList<PanelTurn> Turns);
 
 internal sealed record PanelQuestion(
     string Id,

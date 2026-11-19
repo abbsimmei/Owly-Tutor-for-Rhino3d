@@ -6,8 +6,7 @@ namespace Rhino.AI;
 // event. Dumb, immutable, behavior-free apart from summing for a session total. CostUsd is a genuine
 // absence channel (decimal?): only some CLIs report a dollar cost, so null means "tokens only", not
 // "zero". Tokens default to 0 so a terminal event that omits a count still yields a valid record.
-// Persisted inside TurnDto, so the two derived readings are [JsonIgnore]'d to keep the stored shape
-// to just the three source fields.
+// The two derived readings are [JsonIgnore]'d so only the three source fields are serialized.
 internal record struct TokenUsage(int InputTokens, int OutputTokens, decimal? CostUsd = null)
 {
     public static TokenUsage Empty { get; } = new(0, 0, null);

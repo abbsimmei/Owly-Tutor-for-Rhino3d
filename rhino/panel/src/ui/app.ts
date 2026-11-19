@@ -2,14 +2,13 @@ import { bind, el, onCleanup, when } from '../core/dom.js';
 import type { Child } from '../core/dom.js';
 import { signal } from '../core/signal.js';
 import { BUSY_KEYS, busyWord } from '../state/busy.js';
-import { clockTime, formatElapsed } from '../state/format.js';
+import { formatElapsed } from '../state/format.js';
 import { t } from '../i18n/t.js';
 import { agentMenu } from './agentMenu.js';
 import { composer } from './composer.js';
 import { hostMenu } from './hostMenu.js';
 import type { PanelContext } from './context.js';
 import { header } from './header.js';
-import { historyDrawer } from './history.js';
 import { questionOverlay } from './question.js';
 import { icon } from './icons.js';
 import { transcript } from './transcript.js';
@@ -71,37 +70,8 @@ function statusStrip(ctx: PanelContext): Child {
   );
 }
 
-function reviewBar(ctx: PanelContext): Child {
-  const session = () => ctx.store.session();
-  return el(
-    'div',
-    { class: 'review-bar' },
-    icon('history', 14),
-    el('span', { text: () => t('review.readOnlyAtTime', clockTime(session()?.startedAt ?? '')) }),
-    el('span', { class: 'spacer' }),
-    el(
-      'button',
-      { class: 'btn', type: 'button', onClick: () => ctx.send({ type: 'conversation.exitReview' }) },
-      () => t('review.backToLive'),
-    ),
-    el(
-      'button',
-      {
-        class: 'btn primary',
-        type: 'button',
-        title: () => t('review.resumeTitle'),
-        onClick: () => {
-          const id = session()?.sessionId;
-          if (id) ctx.send({ type: 'conversation.resume', sessionId: id });
-        },
-      },
-      () => t('review.resume'),
-    ),
-  );
-}
-
 export function app(ctx: PanelContext): Child {
-  const { store, ui } = ctx;
+  const { ui } = ctx;
 
   // One step per gesture, not per wheel tick: a trackpad pinch fires dozens of events.
   let lastWheelStep = 0;
@@ -169,19 +139,11 @@ export function app(ctx: PanelContext): Child {
     // Below the transcript, not above it: what the agent is doing now belongs next to where its
     // output is landing and next to the Stop button, not up by the agent picker.
     statusStrip(ctx),
-    when(
-      () => store.readOnly(),
-      () => reviewBar(ctx),
-      () => composer(ctx),
-    ),
+    composer(ctx),
     questionOverlay(ctx),
     when(
       () => ui.overlay() === 'agents',
       () => [el('div', { class: 'scrim', onClick: () => ui.closeOverlay() }), agentMenu(ctx)],
-    ),
-    when(
-      () => ui.overlay() === 'history',
-      () => historyDrawer(ctx),
     ),
   );
 }

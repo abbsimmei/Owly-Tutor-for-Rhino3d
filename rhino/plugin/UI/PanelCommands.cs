@@ -6,9 +6,6 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(ReadyCommand), "ready")]
 [JsonDerivedType(typeof(CancelCommand), "cancel")]
 [JsonDerivedType(typeof(NewConversationCommand), "conversation.new")]
-[JsonDerivedType(typeof(LoadConversationCommand), "conversation.load")]
-[JsonDerivedType(typeof(ResumeConversationCommand), "conversation.resume")]
-[JsonDerivedType(typeof(ExitReviewCommand), "conversation.exitReview")]
 [JsonDerivedType(typeof(SelectAgentCommand), "agent.select")]
 [JsonDerivedType(typeof(LoginCommand), "agent.login")]
 [JsonDerivedType(typeof(AnswerQuestionCommand), "question.answer")]
@@ -25,9 +22,6 @@ internal abstract partial record PanelCommand { }
 internal sealed record ReadyCommand : PanelCommand;
 internal sealed record CancelCommand : PanelCommand;
 internal sealed record NewConversationCommand : PanelCommand;
-internal sealed record LoadConversationCommand(string SessionId) : PanelCommand;
-internal sealed record ResumeConversationCommand(string SessionId) : PanelCommand;
-internal sealed record ExitReviewCommand : PanelCommand;
 internal sealed record SelectAgentCommand(string Name) : PanelCommand;
 internal sealed record LoginCommand : PanelCommand;
 internal sealed record AnswerQuestionCommand(IReadOnlyList<QuestionAnswer> Items) : PanelCommand;

@@ -58,9 +58,8 @@ internal sealed class ConversationFeed
     }
 
     // Replay the whole conversation as if it were arriving live. Cheaper than a snapshot type, and
-    // it means the attach path, the streaming path and the read-only review of a saved transcript
-    // are all the same code.
-    public void Replay(bool readOnly = false)
+    // it means the attach path and the streaming path are the same code.
+    public void Replay()
     {
         Cursors.Clear();
         LifecycleSent = 0;
@@ -71,8 +70,7 @@ internal sealed class ConversationFeed
             Source.AgentName,
             Source.DocTitle,
             Source.StartedAt.ToString("O"),
-            Array.Empty<PanelTurn>(),
-            readOnly)));
+            Array.Empty<PanelTurn>())));
 
         Pump();
     }

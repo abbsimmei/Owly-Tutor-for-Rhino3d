@@ -11,7 +11,6 @@ import {
   type Attachment,
   type BlockSnapshot,
   type ContextItem,
-  type HistoryEntry,
   type HostEvent,
   type HostInfo,
   type NoticeLevel,
@@ -48,7 +47,6 @@ export interface SessionView {
   sessionId: string;
   docTitle: string;
   startedAt: string;
-  readOnly: boolean;
 }
 
 export interface Notice {
@@ -96,7 +94,6 @@ export class Store {
   readonly agents = signal<readonly AgentInfo[]>([]);
   readonly activeAgentName = signal<string | null>(null);
   readonly context = signal<readonly ContextItem[]>([]);
-  readonly history = signal<readonly HistoryEntry[]>([]);
   readonly session = signal<SessionView | null>(null);
   readonly turns = signal<readonly TurnView[]>([]);
   readonly questions = signal<readonly PendingQuestion[]>([]);
@@ -122,7 +119,6 @@ export class Store {
   /** The agent is not thinking while it is blocked on unanswered questions. */
   readonly thinking: ReadSignal<boolean> = computed(() => this.running() && this.questions().length === 0);
 
-  readonly readOnly: ReadSignal<boolean> = computed(() => this.session()?.readOnly === true);
 
   apply(event: HostEvent): void {
     switch (event.type) {
@@ -149,16 +145,11 @@ export class Store {
         this.context.set(event.items);
         return;
 
-      case 'history':
-        this.history.set(event.entries);
-        return;
-
       case 'conversation':
         this.session.set({
           sessionId: event.snapshot.sessionId,
           docTitle: event.snapshot.docTitle,
           startedAt: event.snapshot.startedAt,
-          readOnly: event.snapshot.readOnly,
         });
         this.activeAgentName.set(event.snapshot.agent);
         this.turns.set(event.snapshot.turns.map(turnFrom));

@@ -33,7 +33,7 @@ const ctx: PanelContext = {
   },
   openLink: (url) => bridge.send({ type: 'url.open', url }),
   submit: (override) => {
-    if (store.readOnly.peek() || !store.hasReadyAgent.peek()) return;
+    if (!store.hasReadyAgent.peek()) return;
     const text = (override ?? ui.draft.peek()).trim();
     const attachments = [...ui.attachments.peek()];
     if (text.length === 0 && attachments.length === 0) return;

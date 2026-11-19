@@ -7,7 +7,6 @@ import type {
   Attachment,
   ContextItem,
   ConversationSnapshot,
-  HistoryEntry,
   HostEvent,
   PanelCommand,
   ToolCall,
@@ -101,39 +100,6 @@ const CONTEXT: readonly ContextItem[] = [
   { id: 'ctx-gh', kind: 'grasshopper', label: 'facade.gh', detail: 'open on canvas' },
 ];
 
-const HISTORY: readonly HistoryEntry[] = [
-  {
-    sessionId: 'sess-a',
-    title: 'Rationalise the facade into flat panels',
-    agent: 'Claude Code',
-    docTitle: 'tower-study.3dm',
-    startedAt: new Date(Date.now() - 3 * 3600_000).toISOString(),
-    turns: 7,
-    usage: { inputTokens: 41_200, outputTokens: 8_940, costUsd: 0.62 },
-    resumable: true,
-  },
-  {
-    sessionId: 'sess-b',
-    title: 'Write a layer-renaming script',
-    agent: 'Codex',
-    docTitle: 'tower-study.3dm',
-    startedAt: new Date(Date.now() - 26 * 3600_000).toISOString(),
-    turns: 3,
-    usage: { inputTokens: 9_100, outputTokens: 2_300, costUsd: 0.11 },
-    resumable: true,
-  },
-  {
-    sessionId: 'sess-c',
-    title: 'Why does BooleanUnion fail on these solids?',
-    agent: 'Claude Code',
-    docTitle: 'bracket.3dm',
-    startedAt: new Date(Date.now() - 4 * 86_400_000).toISOString(),
-    turns: 11,
-    usage: { inputTokens: 88_400, outputTokens: 14_200, costUsd: 1.34 },
-    resumable: false,
-  },
-];
-
 const usage = (input: number, output: number, cost: number): TokenUsage => ({
   inputTokens: input,
   outputTokens: output,
@@ -147,7 +113,6 @@ function seeded(): ConversationSnapshot {
     agent: 'claude',
     docTitle: 'tower-study.3dm',
     startedAt: new Date(start).toISOString(),
-    readOnly: false,
     turns: [
       {
         id: 'turn-seed-1',
@@ -293,41 +258,6 @@ function seeded(): ConversationSnapshot {
               'The heatmap is saved at [planarity heatmap](</Users/Scott Davidson/Rhino renders/planarity heatmap.png>).',
               '',
               'Say the word and I will split the four worst into triangles.',
-            ),
-          },
-        ],
-      },
-    ],
-  };
-}
-
-function reviewSnapshot(entry: HistoryEntry): ConversationSnapshot {
-  return {
-    sessionId: entry.sessionId,
-    agent: 'claude',
-    docTitle: entry.docTitle,
-    startedAt: entry.startedAt,
-    readOnly: true,
-    turns: [
-      {
-        id: `${entry.sessionId}-t1`,
-        prompt: entry.title,
-        attachments: [],
-        context: [],
-        startedAt: entry.startedAt,
-        status: 'ok',
-        usage: entry.usage,
-        undoable: false,
-        plan: [],
-        blocks: [
-          {
-            kind: 'text',
-            id: `${entry.sessionId}-b1`,
-            at: entry.startedAt,
-            text: lines(
-              `This is a saved transcript from ${new Date(entry.startedAt).toLocaleString()}.`,
-              '',
-              'Reading it does not touch the live conversation. **Resume** hands it back to the agent with its session id, so the next prompt continues where this left off.',
             ),
           },
         ],
@@ -858,25 +788,9 @@ export class MockHost implements Bridge {
             agent: AGENTS[0]?.name ?? 'claude',
             docTitle: 'tower-study.3dm',
             startedAt: new Date().toISOString(),
-            readOnly: false,
             turns: [],
           },
         });
-        return;
-
-      case 'conversation.load': {
-        const entry = HISTORY.find((candidate) => candidate.sessionId === command.sessionId);
-        if (entry) this.emit({ type: 'conversation', snapshot: reviewSnapshot(entry) });
-        return;
-      }
-
-      case 'conversation.resume':
-        this.emit({ type: 'conversation', snapshot: seeded() });
-        this.notice('info', 'Resumed the saved session; the next prompt continues it.');
-        return;
-
-      case 'conversation.exitReview':
-        this.emit({ type: 'conversation', snapshot: seeded() });
         return;
 
       case 'agent.select': {
@@ -1055,7 +969,6 @@ export class MockHost implements Bridge {
     });
     this.emit({ type: 'agents', agents: [...AGENTS], active: 'claude' });
     this.emit({ type: 'context', items: [...CONTEXT] });
-    this.emit({ type: 'history', entries: [...HISTORY] });
     this.emit({ type: 'conversation', snapshot: seeded() });
   }
 

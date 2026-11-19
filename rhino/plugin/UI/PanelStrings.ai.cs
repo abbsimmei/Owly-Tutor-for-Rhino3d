@@ -10,8 +10,7 @@ internal static class PanelStrings
         ["header.switchAgent"] = Localization.LocalizeString("Owly", 60),
         ["header.noAgent"] = Localization.LocalizeString("Owly isn't set up", 61),
         ["header.nothingConfigured"] = Localization.LocalizeString("nothing configured", 62),
-        ["header.history"] = Localization.LocalizeString("Conversation history", 63),
-        ["header.newConversation"] = Localization.LocalizeString("New conversation  (Ctrl+Shift+N)", 64),
+        ["header.newConversation"] = Localization.LocalizeString("New conversation (clears this one)  (Ctrl+Shift+N)", 64),
         ["header.settings"] = Localization.LocalizeString("Owly settings", 65),
 
         ["empty.ready"] = Localization.LocalizeString("{0} is ready", 66),
@@ -67,19 +66,8 @@ internal static class PanelStrings
         ["busy.honing"] = Localization.LocalizeString("Honing", 124),
         ["busy.whirring"] = Localization.LocalizeString("Whirring", 125),
 
-        ["review.readOnlyAtTime"] = Localization.LocalizeString("Read-only · {0}", 126),
-        ["review.backToLive"] = Localization.LocalizeString("Back to live", 127),
-        ["review.resumeTitle"] = Localization.LocalizeString("Continue this conversation", 128),
-        ["review.resume"] = Localization.LocalizeString("Resume", 129),
 
-        ["history.title"] = Localization.LocalizeString("Conversations", 130),
-        ["history.close"] = Localization.LocalizeString("Close", 131),
-        ["history.search"] = Localization.LocalizeString("Search conversations…", 132),
-        ["history.empty"] = Localization.LocalizeString("No saved conversations yet", 133),
-        ["history.noMatch"] = Localization.LocalizeString("Nothing matches", 134),
-        ["history.turnCountOne"] = Localization.LocalizeString("{0} turn", 135),
-        ["history.turnCountMany"] = Localization.LocalizeString("{0} turns", 136),
-        ["history.tokenCount"] = Localization.LocalizeString("{0} tok", 137),
+        ["turn.tokenCount"] = Localization.LocalizeString("{0} tok", 137),
 
         ["agent.menuHead"] = Localization.LocalizeString("Agent", 138),
         ["agent.settings"] = Localization.LocalizeString("Owly settings…", 139),
@@ -100,7 +88,6 @@ internal static class PanelStrings
         ["composer.overAttachmentLimit"] = Localization.LocalizeString("{0} is {1}, over the {2} attachment limit.", 154),
 
         ["cmd.newHint"] = Localization.LocalizeString("Start a fresh conversation", 155),
-        ["cmd.historyHint"] = Localization.LocalizeString("Browse past conversations", 156),
         ["cmd.stopHint"] = Localization.LocalizeString("Stop Owly's answer", 159),
         ["cmd.settingsHint"] = Localization.LocalizeString("Open Owly settings", 160),
 

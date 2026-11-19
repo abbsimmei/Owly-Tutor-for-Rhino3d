@@ -60,7 +60,7 @@ function turnFooter(ctx: PanelContext, turn: TurnView): Child {
           // the relationship we want the user to have with the panel.
           text: () => {
             const value = usage();
-            return value ? t('history.tokenCount', formatTokens(value.inputTokens + value.outputTokens)) : '';
+            return value ? t('turn.tokenCount', formatTokens(value.inputTokens + value.outputTokens)) : '';
           },
         }),
       ],
@@ -204,7 +204,7 @@ export function transcript(ctx: PanelContext): Child {
   observer.observe(stream);
   onCleanup(() => observer.disconnect());
 
-  // A snapshot replaces the whole transcript (resume, load, reconnect), and where the user had
+  // A snapshot replaces the whole transcript (a new conversation, a panel reload or a reconnect), and where the user had
   // scrolled to in the old one means nothing in the new one: it has to land on the newest message,
   // however they left the last conversation.
   //
