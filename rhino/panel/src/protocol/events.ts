@@ -223,6 +223,8 @@ export type PanelCommand =
   | { type: 'settings.open' }
   | { type: 'url.open'; url: string }
   | { type: 'clipboard.write'; text: string }
+  // Plan 014: copy a Rhino command and focus Rhino. Never typed into the command line (ADR-0007).
+  | { type: 'command.copy'; name: string }
   | {
       type: 'menu.open';
       x: number;

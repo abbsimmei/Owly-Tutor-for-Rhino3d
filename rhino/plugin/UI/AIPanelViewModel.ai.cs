@@ -183,6 +183,7 @@ internal partial class AIPanelViewModel : IDisposable
             OpenSettingsCommand => OpenSettings(),
             OpenUrlCommand open => OpenUrl(open.Url),
             ClipboardCommand copy => CopyToClipboard(copy.Text),
+            CopyCommandCommand chip => CopyCommand(chip.Name),
             OpenMenuCommand menu => ShowMenu(menu),
 
             _ => false
@@ -405,6 +406,29 @@ internal partial class AIPanelViewModel : IDisposable
     private static bool CopyToClipboard(string text)
     {
         Clipboard.Instance.Text = text;
+        return true;
+    }
+
+    // Plan 014 / ADR-0007: the student clicked a command chip. Copy it and hand focus to Rhino so they can paste
+    // it on the command line. Nothing is typed into Rhino and nothing runs.
+    private bool CopyCommand(string name)
+    {
+        if (!CommandName.IsValid(name))
+        {
+            HostUtils.LogDebugEvent($"[owly] command.copy ignored a value that is not a command name.\n");
+            return false;
+        }
+
+        CopyToClipboard(name);
+        try
+        {
+            if (Document is { } doc) RhinoApp.SetFocusToMainWindow(doc);
+            else RhinoApp.SetFocusToMainWindow();
+        }
+        catch (Exception ex)
+        {
+            HostUtils.LogDebugEvent($"[owly] could not focus Rhino after copying a command: {ex.Message}\n");
+        }
         return true;
     }
 

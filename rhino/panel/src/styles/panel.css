@@ -478,6 +478,24 @@ a:hover { text-decoration: underline; }
   padding: 0.45px 3.6px;
   overflow-wrap: anywhere;
 }
+/* Plan 014: a Rhino command in an answer is a copy chip. */
+.md-cmd { display: inline-flex; vertical-align: baseline; }
+.md-cmd-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+}
+.md-cmd-copy code { cursor: pointer; }
+.md-cmd-glyph { display: inline-flex; color: var(--text-dim); }
+.md-cmd-copy:hover code { border-color: var(--accent-line); background: var(--accent-soft); }
+.md-cmd-copy:hover .md-cmd-glyph { color: var(--accent); }
+.md-cmd-copy:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; }
 
 .md-code {
   margin: 0 0 .7em;

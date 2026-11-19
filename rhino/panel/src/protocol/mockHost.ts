@@ -361,7 +361,7 @@ const SCENARIOS: readonly Scenario[] = [
           '',
           '- `floors` and `height` set the stack, `twist` sets the total rotation',
           '- `Series` drives both the vertical `Move` and the `Rotate` angle, so they stay in step',
-          '- `Loft` through the rotated rectangles gives the skin',
+          '- `_Loft` through the rotated rectangles gives the skin',
           '',
           'The same thing as a script, if you would rather have it in the document:',
           '',
@@ -835,6 +835,10 @@ export class MockHost implements Bridge {
 
       case 'clipboard.write':
         void navigator.clipboard?.writeText(command.text);
+        return;
+
+      case 'command.copy':
+        void navigator.clipboard?.writeText(command.name);
         return;
 
       default:

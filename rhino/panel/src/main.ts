@@ -10,6 +10,7 @@ import { Zoom } from './state/zoom.js';
 import { app } from './ui/app.js';
 import type { PanelContext } from './ui/context.js';
 import { devFrame } from './dev/frame.js';
+import { t } from './i18n/t.js';
 import { engineIsSupported, renderUnsupported } from './ui/unsupported.js';
 
 const native = resolveNativeBridge();
@@ -30,6 +31,11 @@ const ctx: PanelContext = {
     // whole chain short-circuits, fallback included) or refuses to write. The host owns the
     // clipboard; the mock forwards the same command to the browser's.
     bridge.send({ type: 'clipboard.write', text });
+  },
+  copyCommand: (name) => {
+    bridge.send({ type: 'command.copy', name });
+    const mac = store.host.peek()?.platform === 'macos';
+    store.apply({ type: 'notice', level: 'info', text: t(mac ? 'command.copiedMac' : 'command.copied', name) });
   },
   openLink: (url) => bridge.send({ type: 'url.open', url }),
   submit: (override) => {

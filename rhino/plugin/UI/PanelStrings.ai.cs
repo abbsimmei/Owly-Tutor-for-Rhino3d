@@ -25,6 +25,9 @@ internal static class PanelStrings
         ["empty.setupGuide"] = Localization.LocalizeString("How to install Claude Code", 75),
 
         ["turn.copy"] = Localization.LocalizeString("Copy the reply", 77),
+        ["command.copyNamed"] = Localization.LocalizeString("Copy {0}", 277),
+        ["command.copied"] = Localization.LocalizeString("Copied {0}. Paste it on the command line with Ctrl+V, then press Enter.", 278),
+        ["command.copiedMac"] = Localization.LocalizeString("Copied {0}. Paste it on the command line with ⌘V, then press Enter.", 279),
         ["turn.agentName"] = Localization.LocalizeString("Owly", 266),
         ["turn.stopped"] = Localization.LocalizeString("stopped", 81),
         ["transcript.newOutput"] = Localization.LocalizeString("New output", 82),

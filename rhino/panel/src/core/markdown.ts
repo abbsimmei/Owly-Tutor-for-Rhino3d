@@ -3,13 +3,25 @@
 // Never builds an HTML string, so model output cannot inject markup. Unterminated fences render as
 // code anyway, which is what a reply still streaming looks like.
 
+import { isCommandName } from './commandName.js';
 import { highlight, normalizeLanguage } from './highlight.js';
+
+export interface CommandChipOptions {
+  /** Called with the command name (`_Loft`) when the student clicks the chip. */
+  copy: (name: string) => void;
+  /** Builds the chip's glyphs; passed in so core/ does not depend on ui/. */
+  glyph: (name: 'copy' | 'check') => Node;
+  /** Accessible label, e.g. "Copy _Loft". */
+  label: (name: string) => string;
+}
 
 export interface MarkdownOptions {
   /** Rendered as a button on every code block when supplied. */
   copy?: (text: string) => void;
   /** A webview cannot navigate itself, so links are handed back to the host. */
   openLink?: (url: string) => void;
+  /** When supplied, inline code that is a Rhino command (`_Loft`) renders as a copy chip. */
+  command?: CommandChipOptions;
 }
 
 const FENCE = /^ {0,3}(```+|~~~+)\s*([\w#+.-]*)\s*$/;
@@ -73,9 +85,12 @@ function inline(source: string, options: MarkdownOptions): DocumentFragment {
     }
 
     if (code !== undefined) {
-      const node = element('code');
-      node.textContent = code;
-      fragment.appendChild(node);
+      if (options.command && isCommandName(code)) fragment.appendChild(commandChip(code, options.command));
+      else {
+        const node = element('code');
+        node.textContent = code;
+        fragment.appendChild(node);
+      }
     } else if (strongStar !== undefined || strongUnder !== undefined) {
       const node = element('strong');
       node.appendChild(inline((strongStar ?? strongUnder) as string, options));
@@ -303,4 +318,24 @@ function blocks(lines: readonly string[], options: MarkdownOptions): DocumentFra
 
 export function renderMarkdown(source: string, options: MarkdownOptions = {}): DocumentFragment {
   return blocks(source.replace(/\r\n?/g, '\n').split('\n'), options);
+}
+
+function commandChip(name: string, command: CommandChipOptions): HTMLElement {
+  const chip = element('span', 'md-cmd');
+  const button = element('button', 'md-cmd-copy') as HTMLButtonElement;
+  button.type = 'button';
+  button.title = command.label(name);
+  button.setAttribute('aria-label', command.label(name));
+  const code = element('code');
+  code.textContent = name;
+  const glyph = element('span', 'md-cmd-glyph');
+  glyph.appendChild(command.glyph('copy'));
+  button.append(code, glyph);
+  button.addEventListener('click', () => {
+    command.copy(name);
+    glyph.replaceChildren(command.glyph('check'));
+    setTimeout(() => glyph.replaceChildren(command.glyph('copy')), 1200);
+  });
+  chip.appendChild(button);
+  return chip;
 }

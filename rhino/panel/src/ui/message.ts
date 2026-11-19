@@ -1,8 +1,10 @@
 import { bind, el } from '../core/dom.js';
 import type { Child } from '../core/dom.js';
-import { renderMarkdown } from '../core/markdown.js';
+import { renderMarkdown, type MarkdownOptions } from '../core/markdown.js';
 import type { Signal } from '../core/signal.js';
+import { t } from '../i18n/t.js';
 import type { PanelContext } from './context.js';
+import { icon } from './icons.js';
 
 /**
  * Markdown re-rendered on the animation frame after a delta lands, so a fast stream costs one
@@ -15,7 +17,15 @@ export function agentMessage(ctx: PanelContext, text: Signal<string>, streaming:
     'aria-live': 'polite',
   });
 
-  const options = { copy: ctx.copy, openLink: ctx.openLink };
+  const options: MarkdownOptions = {
+    copy: ctx.copy,
+    openLink: ctx.openLink,
+    command: {
+      copy: ctx.copyCommand,
+      glyph: (name) => icon(name, 12),
+      label: (name) => t('command.copyNamed', name),
+    },
+  };
   let queued = false;
 
   bind(() => {

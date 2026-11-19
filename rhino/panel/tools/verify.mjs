@@ -671,6 +671,24 @@ try {
     check('no cost is shown anywhere',
       (await host.evaluate(() => !document.body.textContent.includes('$0.'))) === true);
 
+    // Plan 014: a Rhino command in an answer is a copy chip; other inline code stays plain.
+    await host.evaluate(() => window.rhinoAI.receive({ type: 'turn.text', turnId: 'turn-0', blockId: 'turn-0-cmd',
+      delta: 'Use `_Loft` here. The layer is `layer_name`.' }));
+    await wait(200);
+    check('a Rhino command in an answer renders as a copy chip',
+      (await host.evaluate(() => [...document.querySelectorAll('.msg-agent .md-cmd-copy code')]
+        .some((el) => el.textContent === '_Loft'))) === true);
+    check('inline code that is not a command stays plain code',
+      (await host.evaluate(() => [...document.querySelectorAll('code')]
+        .some((el) => el.textContent === 'layer_name' && !el.closest('.md-cmd')))) === true);
+    await host.evaluate(() => { document.querySelector('.md-cmd-copy').click(); });
+    await wait(100);
+    check('clicking a chip sends command.copy with the name',
+      (await host.evaluate(() => window.__sent.some((m) => m.type === 'command.copy' && m.name === '_Loft'))) === true);
+    check('clicking a chip shows the paste hint',
+      (await host.evaluate(() => [...document.querySelectorAll('.notice.info')]
+        .some((el) => el.textContent.includes('_Loft')))) === true);
+
     await host.evaluate((batch) => { for (const event of batch) window.rhinoAI.receive(event); },
       events.filter(settling));
     const ended = await host.evaluate(() => ({

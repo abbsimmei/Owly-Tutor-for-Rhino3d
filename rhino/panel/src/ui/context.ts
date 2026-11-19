@@ -12,6 +12,7 @@ export interface PanelContext {
   readonly native: boolean;
   send(command: PanelCommand): void;
   copy(text: string): void;
+  copyCommand(name: string): void;
   openLink(url: string): void;
   /** Sends the composer's draft, attachments and picked context as one prompt. */
   submit(text?: string): void;

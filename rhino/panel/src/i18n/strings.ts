@@ -19,6 +19,9 @@ export const EN = {
   'empty.setupGuide': 'How to install Claude Code',
 
   'turn.copy': 'Copy the reply',
+  'command.copyNamed': 'Copy {0}',
+  'command.copied': 'Copied {0}. Paste it on the command line with Ctrl+V, then press Enter.',
+  'command.copiedMac': 'Copied {0}. Paste it on the command line with ⌘V, then press Enter.',
   'turn.stopped': 'stopped',
   'turn.agentName': 'Owly',
   'transcript.newOutput': 'New output',

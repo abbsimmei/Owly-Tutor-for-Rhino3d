@@ -44,6 +44,7 @@
     <Compile Include="../../rhino/plugin/UI/PanelAttachment.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/PanelCommands.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/PanelCommands.ai.cs" LinkBase="PanelSources" />
+    <Compile Include="../../rhino/plugin/UI/CommandName.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/PanelEvents.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/PanelJson.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/ToolChips.ai.cs" LinkBase="PanelSources" />
