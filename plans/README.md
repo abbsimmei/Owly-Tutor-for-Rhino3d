@@ -44,6 +44,49 @@ Decisions the product owner made in the grilling session (each plan repeats the 
 - **Panel.** Revert, Ask again, the plan strip, tool chips and previews, the @-mention menu, and `/agent` and `/login` are deleted. Tool cards become one plain line. Token counts stay.
 - **Settings.** Only the model dropdown remains.
 
+## Phase 3: Basic Interface
+
+Written by an advisor pass (`/improve` + `/grill-with-docs`) against commit `17f9ef6` on `rhino-9.x`. New decision: [ADR-0006](../docs/adr/0006-no-saved-conversations.md) (no saved conversations). New glossary terms: **Conversation**, **Transcript**, **Welcome popup**.
+
+The PRD's "Create the chat panel" and "message input" already exist. They get no plan, only a manual check in 010 that the panel docks on the right the first time it opens.
+
+```
+009 remove saved history ──► 010 owl icon everywhere ──► 011 welcome popup ──► 012 Owly toolbar
+```
+
+The order is linear. 010 edits the same panel files as 009. 011 needs 009's `OnFirstIdle` and 010's `OwlyArt`. 012's button runs 011's `OwlyWelcome` and uses 010's art.
+
+| # | Plan | Status | Depends on |
+|---|---|---|---|
+| 009 | [Remove saved conversation history](009-remove-saved-history.md) | TODO | 008 |
+| 010 | [Owly's owl icon everywhere](010-owly-icon-everywhere.md) | TODO. Blocked until `art/owly*.png` are committed via Git LFS | 009 |
+| 011 | [Welcome popup](011-welcome-popup.md) | TODO | 010 |
+| 012 | [A big Owly toolbar button](012-owly-toolbar.md) | TODO. Part A is manual (the team builds `rhino/plugin/Owly.rui` in Rhino 8); Part B is blocked until it's committed | 011 |
+
+**Prerequisites the team owns:**
+- Commit `art/owly.png`, `owly-dark.png`, `owly-small.png` and `owly-small-dark.png` (LFS) before 010.
+- Build and commit `Owly.rui` before 012 Part B.
+- Every plan has a manual Rhino check at the end.
+
+Decisions the product owner made in the grilling session (each plan repeats the ones it needs):
+- **History.** There are no saved conversations, only the live transcript. Delete the history code on both sides.
+  - A conversation ends on New conversation, on closing the file (including File › Open/New on Windows), or on quitting Rhino. Closing the panel does not end it.
+  - Old `Conversations` settings are wiped once on load.
+  - New conversation has no confirmation; its tooltip says it clears the current one.
+  - Claude Code's own `~/.claude/projects` copy stays (Stop + `--resume` needs it) and is disclosed.
+- **Icon.** The team's PNGs are used as they are (currently opaque). Every icon path must keep alpha, so transparent re-exports are a plain file swap. The owl goes everywhere:
+  - panel tab, Options page, plug-in and yak icons
+  - settings and welcome windows
+  - panel header, empty state, a per-answer head, the thinking strip, the question card
+  - the toolbar
+- **Welcome popup.**
+  - Shown once after Rhino's first start, with Open Owly and Close.
+  - The content includes an agreed privacy line.
+  - It can be reopened with `OwlyWelcome` and with About Owly in settings.
+- **Toolbar.** One button with the owl and the text "Owly", at the largest per-toolbar size (never the global setting), docked at the top.
+- **Out of Phase 3.** Clickable follow-up suggestions are deferred to Phase 4/5.
+- **PRD.md** §3.3 and the Phase 3 bullet are edited by plan 009 to say "transcript".
+
 ## Shared verification gates
 
 Every plan must leave these passing. Run them from the repo root.
@@ -71,3 +114,9 @@ Expected: `Build succeeded` with 0 errors, and all tests passing. Debug builds a
 - **Keeping Claude Code's default system prompt and appending Owly's rules.** Rejected in ADR-0005.
 - **Wiring up "Ask again" and the @-mention context instead of deleting them.** Rejected by the product owner for Phase 2 (plan 007). Revisit only with a real C# handler.
 - **A student- or teacher-editable prompt box.** Rejected in ADR-0005.
+- **Keeping saved history with delete/expiry controls, or history kept only while Rhino is open.** Rejected in ADR-0006.
+- **`--no-session-persistence` now.** Rejected for Phase 3 because Owly would forget the conversation after every Stop. It is a Phase 5 candidate, together with feeding the transcript back (ADR-0006).
+- **Owly deleting Claude Code's transcript files.** Rejected: it would mean guessing the CLI's folder layout inside the student's profile.
+- **Scripting the white/black background out of the owl PNGs.** Rejected: it machine-edits the team's art. The team will re-export transparent PNGs when they want them.
+- **Changing the student's global toolbar button size.** Rejected: it changes all of Rhino. Only the Owly toolbar's own size is set.
+- **One conversation shared across all open files.** Rejected: it means redesigning the per-document agent and listener (ADR-0006).

@@ -38,6 +38,18 @@ _Avoid_: command insertion (implies execution), run
 **Command-line highlight**:
 A visual cue drawing the student's attention to Rhino's command line.
 
+**Conversation**:
+One continuous exchange of questions and answers between a student and Owly. When it ends, it is gone: Owly keeps no record of past conversations.
+_Avoid_: chat, session, thread
+
+**Transcript**:
+The messages of the current conversation, as shown in the Owly panel.
+_Avoid_: conversation history, chat log
+
+**Welcome popup**:
+A one-time introduction to Owly, shown the first time Rhino starts with Owly installed.
+_Avoid_: splash screen, onboarding
+
 **Agent tool**:
 A capability the AI can call (for example `get_selection`). Every agent tool in Owly is read-only.
 _Avoid_: tool (on its own, which clashes with Toolbar tool)
