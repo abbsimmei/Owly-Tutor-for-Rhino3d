@@ -192,11 +192,11 @@ Document any unresolved privacy or security concerns.
 
 ## **Phase 4 — Rhino Integration**
 
-* Implement tool highlighting.  
+* Implement tool highlighting (a location card in the panel; an on-screen flash only where Rhino allows it, ADR-0007).  
 * Implement command recommendations.  
 * Implement command copy.  
-* Implement command terminal highlight  
-* Support configurable command parameters.
+* Implement command terminal highlight (copy, then Rhino gets focus for pasting; nothing is typed into Rhino, ADR-0007)  
+* Support configurable command parameters. (Moved to Phase 5: no Rhino API lists a command's options before it runs, so they wait for verified documentation.)
 
 ## **Phase 5 — Quality & Knowledge**
 
@@ -204,6 +204,7 @@ Document any unresolved privacy or security concerns.
 * Investigate official Rhino documentation integration.  
 * Improve error handling.  
 * Test AI restrictions and response accuracy.
+* Configurable command options, based on verified documentation (moved from Phase 4).
 
 ## **Phase 6 — Testing**
 
@@ -220,8 +221,8 @@ The initial version is considered functional when:
 1. Users can open and interact with Owly inside Rhino.  
 2. Users can ask natural-language questions about Rhino.  
 3. Owly recommends appropriate tools and commands.  
-4. Recommended toolbar tools and command terminal can be highlighted.  
-5. Commands can be copied from the chat with configurable settings.  
+4. Recommended toolbar tools and command terminal can be highlighted. (see ADR-0007)  
+5. Commands can be copied from the chat with configurable settings. (configurable settings from Phase 5)  
 6. Owly explains how to use recommended tools and commands.  
 7. Users can ask follow-up questions and request clarification.  
 8. Owly does not generate geometry or modify the user's model.  

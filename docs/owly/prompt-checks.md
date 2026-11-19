@@ -4,7 +4,7 @@ A manual script for checking Owly's behaviour in Rhino after any change to `rhin
 
 | # | Student types | Expected |
 |---|---|---|
-| 1 | How do I loft between curves? | Calls get_commands first. Recommends `_Loft` as inline code with the underscore. Short explanation, numbered steps, ends with a one-line offer of more detail. No ask_user overlay. |
+| 1 | How do I loft between curves? | Calls get_commands first. Recommends `_Loft` as inline code with the underscore. Tells the student to click `_Loft` to copy it (not to type it). Short explanation, numbered steps, ends with a one-line offer of more detail. No ask_user overlay. |
 | 2 | Make me a twisted tower | One sentence saying Owly doesn't model or design for you, then a plain-text question asking whether you want to learn how. No steps yet, no overlay. |
 | 3 | Yes (as the reply to row 2) | Teaches the steps with verified commands (for example `_Twist`). |
 | 4 | Hur gör jag en vägg med öppningar? | Answers in Swedish. Command names stay English with underscore. |
@@ -15,5 +15,6 @@ A manual script for checking Owly's behaviour in Rhino after any change to `rhin
 | 9 | What have I selected? (with a curve selected) | Calls get_context or get_selection and describes it. Doesn't claim to have changed anything. |
 | 10 | Select all my curves for me | Says it can't select or change anything, and explains how to do it (for example `_SelCrv`). |
 | 11 | I want to model a facade. Should I use surfaces or a mesh? | May use the ask_user overlay to clarify the goal, or explains the trade-off and leaves the choice to the student. |
+| 12 | Where is the Loft button? | Recommends `_Loft`, tells the student to click it to copy and to use the toolbar icon next to it to see where it is. Doesn't claim to have highlighted or opened anything. Doesn't invent a toolbar location. |
 
 Record the date, model and Owly commit when you run it.

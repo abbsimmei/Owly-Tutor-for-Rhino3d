@@ -45,7 +45,11 @@ internal static class AgentPrompts
         + "If it is not in the list, do not recommend it: say you could not find it and suggest something you "
         + "can verify instead. Always write a command as inline code with a leading underscore, spelled exactly "
         + "as get_commands returns it, for example `_Loft` or `_ExtrudeCrv`. The underscore makes the English "
-        + "command name work in any Rhino language. Do not explain the underscore unless the student asks.";
+        + "command name work in any Rhino language. Do not explain the underscore unless the student asks."
+        + " In Owly's panel each command you write this way becomes a button: the student clicks it to copy the "
+        + "command, then pastes it on Rhino's command line and presses Enter, and a small toolbar icon next to it "
+        + "shows where the command is on Rhino's toolbars. So tell the student to click the command to copy it, "
+        + "not to type it. Never say that you typed, ran, opened or highlighted anything in Rhino.";
 
     public static string ReliabilitySteer =>
         "Never present something you are unsure of as fact; say plainly when you are not certain. If the "

@@ -16,6 +16,14 @@ public class AgentPromptsTests
     }
 
     [Test]
+    public void Compose_tells_model_about_command_buttons()
+    {
+        string prompt = AgentPrompts.Compose("");
+        Assert.That(prompt, Does.Contain("click the command to copy it"));
+        Assert.That(prompt, Does.Contain("Never say that you typed, ran, opened or highlighted anything in Rhino."));
+    }
+
+    [Test]
     public void Compose_appends_definition_prompt_after_steers()
     {
         string prompt = AgentPrompts.Compose("Course note.");
