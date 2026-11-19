@@ -58,10 +58,10 @@ The order is linear. 010 edits the same panel files as 009. 011 needs 009's `OnF
 
 | # | Plan | Status | Depends on |
 |---|---|---|---|
-| 009 | [Remove saved conversation history](009-remove-saved-history.md) | TODO | 008 |
-| 010 | [Owly's owl icon everywhere](010-owly-icon-everywhere.md) | TODO. Blocked until `art/owly*.png` are committed via Git LFS | 009 |
-| 011 | [Welcome popup](011-welcome-popup.md) | TODO | 010 |
-| 012 | [A big Owly toolbar button](012-owly-toolbar.md) | TODO. Part A is manual (the team builds `rhino/plugin/Owly.rui` in Rhino 8); Part B is blocked until it's committed | 011 |
+| 009 | [Remove saved conversation history](009-remove-saved-history.md) | DONE: `a2b0ef7` on `owly/phase3-exec`. Advisor review approved. R9 and R8 build clean, Server.Tests 148, panel typecheck clean, 40/40 tests, verify all passed. Approved deviations: removed the now-unused `store` destructure in `app()`, and three extra stale comments reworded. Manual Rhino check still open | 008 |
+| 010 | [Owly's owl icon everywhere](010-owly-icon-everywhere.md) | DONE: `970fa14` on `owly/phase3-exec`. Advisor review approved. R9 and R8 build with 0 warnings, Server.Tests 148, panel typecheck clean, 40/40 tests, verify all passed including the 4 owl checks. Art is byte-identical. Approved deviations: removed `icon` imports that became unused, and kept the `question` icon (still used by `state/tools.ts`). Known plan gap: the done-criteria reference grep also hits a commented-out line in out-of-scope `rhino/sdk/PlugIns/PlugInRegistry.cs:196`, which is harmless. The manual Rhino check is still open; the panel-tab icon (resource-id overload) and the Plug-in Manager icon (PNG) are unverified in Rhino | 009 |
+| 011 | [Welcome popup](011-welcome-popup.md) | DONE: `5186e30` on `owly/phase3-exec`. Advisor review approved. R9 and R8 build with 0 warnings, Server.Tests 148. IDs 267-276 assigned; only ID 2 is shared, on purpose. Approved deviation: the headless check and flag read/write share one try/catch, which returns without setting the flag if the read throws, as the plan intended. Manual Rhino check still open | 010 |
+| 012 | [A big Owly toolbar button](012-owly-toolbar.md) | BLOCKED: Part A (the team builds `rhino/plugin/Owly.rui` in Rhino 8) isn't done. Part B is not dispatched until that file is committed on `owly/phase3-exec` | 011 |
 
 **Prerequisites the team owns:**
 - Commit `art/owly.png`, `owly-dark.png`, `owly-small.png` and `owly-small-dark.png` (LFS) before 010.
