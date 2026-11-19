@@ -22,7 +22,9 @@ Rules for code changes:
 - **Students can't edit Owly's prompt, tools or on/off state** (ADR-0005, plan 008). The settings dialog offers only the model. After changing `AgentPrompts.cs`, run the manual checklist in [docs/owly/prompt-checks.md](docs/owly/prompt-checks.md). Commands in answers are inline code with a leading underscore, such as `_Loft`; Phase 4's copy buttons will rely on that format.
 - **Owly is used only from its in-Rhino panel** (ADR-0001). There is no router and no external MCP endpoint, only `/agent` on localhost.
 - Make small, targeted changes. Reuse the working systems and don't rewrite them. Ask the user before making a decision that changes the architecture or the product's behaviour.
-- Only user-visible identifiers say Owly: the panel GUID, the `Owly` command, the yak package and the `Owly.rhp` assembly (ADR-0004). The csproj file name, the `Rhino.AI` namespace and class names like `RhinoAIPlugin` deliberately keep RhinoAI. If you add a command, give it an `Owly` prefix so it can't clash with the RhinoAI plugin built into Rhino 9.
+- **Owly keeps no saved conversations, only the live transcript** (ADR-0006, plan 009). A conversation ends on New conversation, on closing the file, or on quitting Rhino. Don't add a conversation store or history UI back without a new ADR. Stop has to keep working through the CLI's `--resume` (`StreamJsonAgent.HasEverStarted`), which relies on Claude Code's own session file. That file is disclosed in the welcome popup.
+- **The owl art in `art/owly*.png` belongs to the team** (Git LFS). Never create, redraw, re-encode or resize it. Load it only through `UI/OwlyArt.ai.cs` (C#) or `src/ui/owl.ts` (panel). Every path must keep the PNG's alpha, so transparent re-exports can be swapped in as plain files. Never give the panel's `.owl` element a background, filter, blend mode or rounded clipping; `npm run verify` checks this. `rhino/plugin/Owly.rui` embeds its own copy of `owly-small*.png` (plan 012 explains how to re-embed it).
+- Only user-visible identifiers say Owly: the panel GUID, the `Owly` and `OwlyWelcome` commands, the `Owly.rui` toolbar, the yak package and the `Owly.rhp` assembly (ADR-0004). The csproj file name, the `Rhino.AI` namespace and class names like `RhinoAIPlugin` deliberately keep RhinoAI. If you add a command, give it an `Owly` prefix so it can't clash with the RhinoAI plugin built into Rhino 9.
 
 ## Commands
 
@@ -53,9 +55,16 @@ How a message travels: panel → `PanelBridge` → `AgentDispatch` → Claude Co
   - `Agents/`: starts the Claude Code CLI as a child process (`StreamJsonAgent`) and drives it through ACP (`AgentRunner`). `Agents/AgentPrompts.cs` holds Owly's complete system prompt (ADR-0005). That file is where Owly's identity and teaching rules belong.
   - `Server/` + `Tools/`: the in-process MCP server. Tools are classes marked `[McpServerToolType]`/`[McpServerTool]` that `ToolRegistry` finds by reflection; there is no central list.
   - `src/Resources/`: MCP resources. `command_help` fetches pages from docs.mcneel.com. The Claude CLI probably can't read resources, so Phase 5 should turn this into a tool.
-  - `UI/`: the docked WebView panel. `PanelBridge` and the `PanelEvents`/`PanelCommands` records carry the protocol between C# and TypeScript. `PanelStrings.ai.cs` holds the panel's user-facing text.
+  - `UI/`: the docked WebView panel. `PanelBridge` and the `PanelEvents`/`PanelCommands` records carry the protocol between C# and TypeScript. `PanelStrings.ai.cs` holds the panel's user-facing text. It also holds `OwlyArt.ai.cs` (the only C# loader of the owl art), `WelcomeDialog.ai.cs` (the welcome popup; the `OwlyWelcome` command and "About Owly" in settings reopen it) and `FirstRunLayout.ai.cs`.
+  - First start: `RhinoAIPlugin.OnFirstIdle` runs once-per-Rhino-version steps, each guarded by an `AISettings` flag that is set before the step runs:
+    - delete conversations saved by older builds
+    - `FirstRunLayout`: add the Owly panel as a tab next to Layers or Properties, and switch on the Owly toolbar, which Rhino loads hidden
+    - show the welcome popup (`WelcomeShown`)
+
+    Put new start-up steps before the welcome block, which can return early.
+  - `Owly.rui`: a one-button toolbar (left click `_Owly`, right click `_OwlyWelcome`), hand-written and copied next to every `Owly.rhp`. Rhino auto-loads a `.rui` named like the plugin. Keep its GUIDs.
   - The C# panel records (`PanelEvents.ai.cs`, `PanelCommands*.cs`) still carry fields the panel no longer shows, such as plan, chips and context. They are kept on purpose because Server.Tests compiles them. Remove both sides together or not at all.
-  - `AISettings.cs`: settings stored in Rhino's PersistentSettings, keyed by the plugin GUID. That GUID is written by hand in both this file and `Properties/AssemblyInfo.cs`, and the two must match.
+  - `AISettings.cs`: settings stored in Rhino's PersistentSettings (per Rhino version), keyed by the plugin GUID. That GUID is written by hand in both this file and `Properties/AssemblyInfo.cs`, and the two must match.
 - **`rhino/panel/`**: the chat UI as a dependency-free TypeScript web app. `src/protocol/events.ts` defines the protocol between panel and host.
 - **`rhino/acp/`**: the Agent Client Protocol library that the agent runner uses. `src/Generated/` is codegen output.
 - **`rhino/sdk/`**: an R9-only, direct-API agent SDK. It is not connected to the panel and is kept on purpose (ADR-0003); don't build on it without a new ADR.
