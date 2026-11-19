@@ -31,12 +31,15 @@ internal sealed class AISettingsDialog : Dialog
         Button closeButton = new() { Text = Localization.LocalizeString("Cancel", 12) };
         closeButton.Click += (_, _) => Close();
 
+        Button aboutButton = new() { Text = Localization.LocalizeString("About Owly", 276) };
+        aboutButton.Click += (_, _) => WelcomeDialog.ShowFor(this);
+
         StackLayout buttons = new()
         {
             Orientation = Orientation.Horizontal,
             Spacing = 8,
             HorizontalContentAlignment = HorizontalAlignment.Right,
-            Items = { null, closeButton, saveButton },
+            Items = { aboutButton, null, closeButton, saveButton },
         };
 
         Content = new TableLayout

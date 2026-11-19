@@ -64,7 +64,7 @@ The prompt steers always included (`AgentPrompts.cs`) are `AskUserSteer`, `Groun
 | `ask_user` | **Reuse** | Follow-up questions, quizzes |
 | Read-only tools | **Reuse** | Context for advice. `get_context` needs its GH parts removed |
 | `command_help` resource (docs.mcneel.com fetch) | **Reuse, modify** in Phase 5 | Basis for PRD §5.1. It is a resource, and the Claude CLI with `--tools ""` probably can't read resources, so it should become a tool |
-| Eto dialog pattern (`MCPConnectCommand.cs` ConnectDialog) | **Reuse as a template** | Welcome popup |
+| Eto dialog pattern (`MCPConnectCommand.cs` ConnectDialog) | **Done** | ConnectDialog was deleted in plan 003; the welcome popup (plan 011) follows `AISettingsDialog` |
 | `CommandInterceptor` (watches command history) | **Keep in mind** | Currently off. Could detect which command the student ran |
 | Execute, mutate and GH tools; `ScriptProjects/`, `RhinoCode/` | **Remove** | [ADR-0002](../adr/0002-delete-tools-not-filter.md) |
 | Router, `/` endpoint, MCP* commands, client-config installer, cc-plugin, connector, docs site | **Remove** | [ADR-0001](../adr/0001-in-panel-only.md) |
@@ -76,7 +76,7 @@ The prompt steers always included (`AgentPrompts.cs`) are `AskUserSteer`, `Groun
 
 - **Toolbar highlighting (Phase 4).** Nothing in the codebase touches toolbars (`RhinoApp.ToolbarFiles` / RUI). This is entirely new work, and its feasibility on Rhino 8 and 9 for Windows and Mac still needs a spike.
 - **Command-line highlighting and insertion (Phase 4).** There is no existing code. `RhinoApp.SetCommandPrompt` is only valid inside a running command. Pre-filling the command line without running anything needs investigation. The PRD forbids auto-executing, so the fallback is copy-to-clipboard plus a visual cue.
-- **Welcome popup (Phase 3).** There is no first-run flag yet. It belongs in `AISettings` (PersistentSettings keyed by the plugin GUID).
+- **Welcome popup (Phase 3).** There is no first-run flag yet. It belongs in `AISettings` (PersistentSettings keyed by the plugin GUID). Done in plan 011: AISettings.WelcomeShown, WelcomeDialog, the OwlyWelcome command.
 - **Owl icon (Phase 3).** There is no owl artwork. The panel icon comes from `art/Panel_*.ico`. Bug: both icon constants in `RhinoAIPlugin.cs:12-13` point at the dark icon.
 - **Docs access (Phase 5).** Only command pages are fetched, English only, with HTML stripped by regex. There is no search.
 - **Every student needs a Claude subscription** plus the Claude Code CLI. That is a real cost and setup barrier for a course. It is recorded in ADR-0003.

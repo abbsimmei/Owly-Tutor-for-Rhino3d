@@ -38,6 +38,30 @@ public class RhinoAIPlugin : PlugIn
         {
             RhinoApp.WriteLine($"[owly] could not clear old conversations: {ex.Message}");
         }
+
+        // Welcome popup, once per computer and Rhino version (plan 011). The flag is set before
+        // showing, so a crash inside the dialog can never make it pop up on every start.
+        try
+        {
+            if (RhinoApp.IsRunningHeadless || AISettings.WelcomeShown)
+                return;
+
+            AISettings.WelcomeShown = true;
+        }
+        catch (Exception ex)
+        {
+            RhinoApp.WriteLine($"[owly] could not read the welcome flag: {ex.Message}");
+            return;
+        }
+
+        try
+        {
+            WelcomeDialog.ShowFor(RhinoEtoApp.MainWindow);
+        }
+        catch (Exception ex)
+        {
+            RhinoApp.WriteLine($"[owly] could not show the welcome popup: {ex.Message}");
+        }
     }
 
     // Adds the "AI" settings page to the Rhino Options dialog. Called each time Options is opened, so a

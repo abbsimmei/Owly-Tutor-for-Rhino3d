@@ -34,6 +34,14 @@ internal static class AISettings
         set => Settings.SetBool(nameof(AutoLoadMCP), value);
     }
 
+    // True once the welcome popup has been shown on this computer (plan 011). PersistentSettings are
+    // kept per Rhino version, so Rhino 8 and Rhino 9 each show it once.
+    public static bool WelcomeShown
+    {
+        get => Settings.GetBool(nameof(WelcomeShown), false);
+        set => Settings.SetBool(nameof(WelcomeShown), value);
+    }
+
     // Owly has one agent and no on/off switch (plan 008); a disabled-agents value from an older build is ignored.
     public static bool IsEnabled(AgentDefinition def) => def.Enabled;
 

@@ -7,4 +7,7 @@ internal static class DocsLinks
     // Installing and authing an AI agent (Claude) for the in-Rhino panel.
     public const string GettingStarted = "https://mcneel.github.io/RhinoAI/docs/getting-started/";
     public const string Homepage = "https://mcneel.github.io/RhinoAI";
+
+    // Installing and signing in to Claude Code, which Owly needs. Same URL as the panel's empty state (empty.ts).
+    public const string ClaudeCodeSetup = "https://code.claude.com/docs/en/setup";
 }
