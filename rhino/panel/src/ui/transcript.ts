@@ -8,6 +8,7 @@ import type { PanelContext } from './context.js';
 import { emptyState } from './empty.js';
 import { icon } from './icons.js';
 import { imageBlock } from './imageBlock.js';
+import { locationCards } from './locationCard.js';
 import { notices } from './notices.js';
 import { owl } from './owl.js';
 import { agentMessage } from './message.js';
@@ -25,7 +26,7 @@ function attachmentChip(attachment: Attachment): Child {
 function block(ctx: PanelContext, turn: TurnView, view: BlockView): Child {
   switch (view.kind) {
     case 'text':
-      return agentMessage(ctx, view.text, () => {
+      return agentMessage(ctx, turn.id, view.text, () => {
         const blocks = turn.blocks();
         return turn.status() === 'running' && blocks[blocks.length - 1]?.id === view.id;
       });
@@ -98,6 +99,7 @@ function turnView(ctx: PanelContext, turn: TurnView): Child {
       (view) => view.id,
       (view) => block(ctx, turn, view),
     ),
+    locationCards(ctx, turn.id),
     when(
       () => turn.status() === 'error' && turn.error !== undefined,
       () => el('div', { class: 'turn-error' }, icon('alert', 14), el('span', { text: () => turn.error() ?? '' })),

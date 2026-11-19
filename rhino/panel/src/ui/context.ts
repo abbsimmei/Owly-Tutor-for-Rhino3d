@@ -13,6 +13,8 @@ export interface PanelContext {
   send(command: PanelCommand): void;
   copy(text: string): void;
   copyCommand(name: string): void;
+  /** Plan 015: ask the host where a command is on the toolbars; the answer arrives as a location card. */
+  findToolbar(name: string, turnId: string): void;
   openLink(url: string): void;
   /** Sends the composer's draft, attachments and picked context as one prompt. */
   submit(text?: string): void;

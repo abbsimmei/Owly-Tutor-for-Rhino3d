@@ -10,9 +10,13 @@ export interface CommandChipOptions {
   /** Called with the command name (`_Loft`) when the student clicks the chip. */
   copy: (name: string) => void;
   /** Builds the chip's glyphs; passed in so core/ does not depend on ui/. */
-  glyph: (name: 'copy' | 'check') => Node;
+  glyph: (name: 'copy' | 'check' | 'toolbar') => Node;
   /** Accessible label, e.g. "Copy _Loft". */
   label: (name: string) => string;
+  /** When supplied, the chip gets a second button that asks where the command is on the toolbars (plan 015). */
+  locate?: (name: string) => void;
+  /** Accessible label for that button, e.g. "Where is _Loft on the toolbars?". */
+  locateLabel?: (name: string) => string;
 }
 
 export interface MarkdownOptions {
@@ -337,5 +341,16 @@ function commandChip(name: string, command: CommandChipOptions): HTMLElement {
     setTimeout(() => glyph.replaceChildren(command.glyph('copy')), 1200);
   });
   chip.appendChild(button);
+  const locate = command.locate;
+  if (locate) {
+    const where = element('button', 'md-cmd-where') as HTMLButtonElement;
+    where.type = 'button';
+    const label = command.locateLabel ? command.locateLabel(name) : name;
+    where.title = label;
+    where.setAttribute('aria-label', label);
+    where.appendChild(command.glyph('toolbar'));
+    where.addEventListener('click', () => locate(name));
+    chip.appendChild(where);
+  }
   return chip;
 }

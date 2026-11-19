@@ -37,6 +37,7 @@ const ctx: PanelContext = {
     const mac = store.host.peek()?.platform === 'macos';
     store.apply({ type: 'notice', level: 'info', text: t(mac ? 'command.copiedMac' : 'command.copied', name) });
   },
+  findToolbar: (name, turnId) => bridge.send({ type: 'toolbar.find', name, turnId }),
   openLink: (url) => bridge.send({ type: 'url.open', url }),
   submit: (override) => {
     if (!store.hasReadyAgent.peek()) return;

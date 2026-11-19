@@ -497,6 +497,40 @@ a:hover { text-decoration: underline; }
 .md-cmd-copy:hover .md-cmd-glyph { color: var(--accent); }
 .md-cmd-copy:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; }
 
+.md-cmd-where {
+  display: inline-flex;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  color: var(--text-dim);
+  margin-inline-start: 2px;
+}
+.md-cmd-where:hover { color: var(--accent); }
+.md-cmd-where:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; }
+
+.location-card {
+  margin: 0 0 .7em;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  font-size: var(--fs-xs);
+}
+.location-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.location-title { font-weight: 600; }
+.location-card p { margin: 2px 0 0; }
+.location-tag {
+  display: inline-block;
+  padding: 0 4px;
+  margin-inline-start: 4px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  color: var(--text-dim);
+}
+
 .md-code {
   margin: 0 0 .7em;
   border: 1px solid var(--border);

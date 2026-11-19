@@ -20,8 +20,14 @@ import {
   type ToolCall,
   type TurnImage,
   type TurnSnapshot,
+  type ToolbarPlace,
   type TurnStatus,
 } from '../protocol/events.js';
+
+export interface LocationEntry {
+  name: string;
+  places: readonly ToolbarPlace[];
+}
 
 export type BlockView =
   | { kind: 'text'; id: string; at: string; text: Signal<string> }
@@ -97,6 +103,8 @@ export class Store {
   readonly session = signal<SessionView | null>(null);
   readonly turns = signal<readonly TurnView[]>([]);
   readonly questions = signal<readonly PendingQuestion[]>([]);
+  /** Plan 015: location cards by turn. They belong to the conversation: cleared with it, never kept (ADR-0006). */
+  readonly locations = signal<ReadonlyMap<string, readonly LocationEntry[]>>(new Map());
   readonly notices = signal<readonly Notice[]>([]);
   readonly status = signal<string | null>(null);
 
@@ -154,6 +162,7 @@ export class Store {
         this.activeAgentName.set(event.snapshot.agent);
         this.turns.set(event.snapshot.turns.map(turnFrom));
         this.questions.set([]);
+        this.locations.set(new Map());
         return;
 
       // Idempotent on id. A host that re-announces a turn or a call must not be able to put two
@@ -239,6 +248,21 @@ export class Store {
         this.questions.set((list) => list.filter((q) => q.id !== event.id));
         return;
 
+      // A location card answers one chip click. Latest wins, one card per command per turn; a turn that is
+      // already gone (a race with New conversation) gets none.
+      case 'toolbar.found': {
+        if (!this.turn(event.turnId)) return;
+        const map = new Map(this.locations());
+        const entries = [...(map.get(event.turnId) ?? [])];
+        const entry: LocationEntry = { name: event.name, places: event.places };
+        const at = entries.findIndex((existing) => existing.name === event.name);
+        if (at >= 0) entries[at] = entry;
+        else entries.push(entry);
+        map.set(event.turnId, entries);
+        this.locations.set(map);
+        return;
+      }
+
       // The same remark twice is still one remark: a repeat bumps the toast already showing.
       case 'notice': {
         const showing = this.notices().find((n) => n.level === event.level && n.text === event.text);
@@ -260,6 +284,16 @@ export class Store {
         this.status.set(event.text);
         return;
     }
+  }
+
+  dismissLocation(turnId: string, name: string): void {
+    const entries = this.locations().get(turnId);
+    if (!entries) return;
+    const map = new Map(this.locations());
+    const rest = entries.filter((entry) => entry.name !== name);
+    if (rest.length > 0) map.set(turnId, rest);
+    else map.delete(turnId);
+    this.locations.set(map);
   }
 
   dismissNotice(id: string): void {

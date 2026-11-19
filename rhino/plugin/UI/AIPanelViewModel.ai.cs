@@ -184,6 +184,7 @@ internal partial class AIPanelViewModel : IDisposable
             OpenUrlCommand open => OpenUrl(open.Url),
             ClipboardCommand copy => CopyToClipboard(copy.Text),
             CopyCommandCommand chip => CopyCommand(chip.Name),
+            FindToolbarCommand find => FindToolbar(find.Name, find.TurnId),
             OpenMenuCommand menu => ShowMenu(menu),
 
             _ => false
@@ -406,6 +407,14 @@ internal partial class AIPanelViewModel : IDisposable
     private static bool CopyToClipboard(string text)
     {
         Clipboard.Instance.Text = text;
+        return true;
+    }
+
+    // Plan 015 / ADR-0007: the student asked where a command is on the toolbars. Read-only lookup; plan 016 may add a flash here.
+    private bool FindToolbar(string name, string turnId)
+    {
+        if (!CommandName.IsValid(name)) return false;
+        Bridge.Post(new ToolbarFoundEvent(name, turnId, ToolbarLocator.Find(name)));
         return true;
     }
 

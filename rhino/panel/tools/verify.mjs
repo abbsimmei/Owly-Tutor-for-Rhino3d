@@ -689,6 +689,25 @@ try {
       (await host.evaluate(() => [...document.querySelectorAll('.notice.info')]
         .some((el) => el.textContent.includes('_Loft')))) === true);
 
+    // Plan 015: the toolbar.found line of the contract fixture shows as one location card under turn-0.
+    const card = await host.evaluate(() => ({
+      count: document.querySelectorAll('.location-card').length,
+      text: document.querySelector('.location-card')?.textContent ?? '',
+    }));
+    check('the contract replay shows one location card naming the toolbar',
+      card.count === 1 && card.text.includes('Loft') && card.text.includes('Surface Tools'), JSON.stringify(card));
+    await host.evaluate(() => { document.querySelector('.md-cmd-where').click(); });
+    await wait(100);
+    check('clicking the where button sends toolbar.find with the name and turn',
+      (await host.evaluate(() => window.__sent.some((m) => m.type === 'toolbar.find' && m.name === '_Loft' && m.turnId === 'turn-0'))) === true);
+    await host.evaluate(() => { document.querySelector('.location-card button').click(); });
+    await wait(100);
+    check('the card close button removes the card',
+      (await host.evaluate(() => document.querySelectorAll('.location-card').length)) === 0);
+    await host.evaluate((event) => window.rhinoAI.receive(event),
+      events.find((event) => event.type === 'toolbar.found'));
+    await wait(100);
+
     await host.evaluate((batch) => { for (const event of batch) window.rhinoAI.receive(event); },
       events.filter(settling));
     const ended = await host.evaluate(() => ({
@@ -925,7 +944,15 @@ try {
       return { gap: Math.round(t.scrollHeight - t.scrollTop - t.clientHeight), turns: document.querySelectorAll('.turn').length };
     });
 
-    await post(replay('sess-a', 8));
+    // Plan 015: a location card belongs to the conversation, so the empty snapshot that opens a replay clears it.
+    const firstReplay = replay('sess-a', 8);
+    check('a location card is still showing before the replay starts',
+      (await host.evaluate(() => document.querySelectorAll('.location-card').length)) === 1);
+    await host.evaluate((e) => window.rhinoAI.receive(e), firstReplay[0]);
+    await wait(100);
+    check('the empty conversation snapshot of a replay clears the location cards',
+      (await host.evaluate(() => document.querySelectorAll('.location-card').length)) === 0);
+    await post(firstReplay.slice(1));
     await wait(1600);
     await host.evaluate(() => document.querySelector('.transcript').scrollTo({ top: 0 }));
     await wait(200);

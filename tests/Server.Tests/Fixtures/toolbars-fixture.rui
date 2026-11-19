@@ -1,0 +1,82 @@
+<RhinoUI guid="11111111-0000-0000-0000-000000000000" major_ver="5" minor_ver="0" localize="False" default_language_id="1033">
+  <!-- Hand-written test fixture with made-up GUIDs and names (plan 015). It is not McNeel content. -->
+  <tool_bar_groups>
+    <tool_bar_group guid="a0000000-0000-0000-0000-000000000001">
+      <text><locale_1033>Main</locale_1033></text>
+      <tool_bar_group_item guid="a0000000-0000-0000-0000-0000000000a1">
+        <text><locale_1033>Surface</locale_1033></text>
+        <tool_bar_id>b0000000-0000-0000-0000-000000000001</tool_bar_id>
+        <sidebar guid="a0000000-0000-0000-0000-0000000000a2">b0000000-0000-0000-0000-000000000004</sidebar>
+      </tool_bar_group_item>
+    </tool_bar_group>
+  </tool_bar_groups>
+  <tool_bars>
+    <tool_bar guid="b0000000-0000-0000-0000-000000000001">
+      <text><locale_1033>Surface Tools</locale_1033></text>
+      <tool_bar_item guid="c0000000-0000-0000-0000-000000000001" button_style="normal">
+        <text><locale_1033>Item one</locale_1033></text>
+        <left_macro_id>d0000000-0000-0000-0000-000000000001</left_macro_id>
+        <right_macro_id>d0000000-0000-0000-0000-000000000002</right_macro_id>
+      </tool_bar_item>
+      <tool_bar_item guid="c0000000-0000-0000-0000-000000000002" button_style="normal">
+        <text><locale_1033>Item two</locale_1033></text>
+        <link style="normal">b0000000-0000-0000-0000-000000000002</link>
+        <left_macro_id>d0000000-0000-0000-0000-000000000003</left_macro_id>
+      </tool_bar_item>
+    </tool_bar>
+    <tool_bar guid="b0000000-0000-0000-0000-000000000002">
+      <text><locale_1033>More Surfaces</locale_1033></text>
+      <tool_bar_item guid="c0000000-0000-0000-0000-000000000003" button_style="normal">
+        <text><locale_1033>Item three</locale_1033></text>
+        <left_macro_id>d0000000-0000-0000-0000-000000000004</left_macro_id>
+      </tool_bar_item>
+    </tool_bar>
+    <tool_bar guid="b0000000-0000-0000-0000-000000000003">
+      <text><locale_1033>Loose</locale_1033></text>
+      <tool_bar_item guid="c0000000-0000-0000-0000-000000000004" button_style="normal">
+        <text><locale_1033>Item four</locale_1033></text>
+        <link style="normal">b0000000-0000-0000-0000-000000000003</link>
+        <left_macro_id>d0000000-0000-0000-0000-000000000005</left_macro_id>
+      </tool_bar_item>
+    </tool_bar>
+    <tool_bar guid="b0000000-0000-0000-0000-000000000004">
+      <text><locale_1033>Side</locale_1033></text>
+      <tool_bar_item guid="c0000000-0000-0000-0000-000000000005" button_style="normal" platforms="Mac">
+        <text><locale_1033>Item five</locale_1033></text>
+        <left_macro_id>d0000000-0000-0000-0000-000000000006</left_macro_id>
+      </tool_bar_item>
+    </tool_bar>
+  </tool_bars>
+  <macros>
+    <macro_item guid="d0000000-0000-0000-0000-000000000001">
+      <text><locale_1033>Macro one</locale_1033></text>
+      <tooltip><locale_1033>Loft</locale_1033><locale_1053>Loft (sv)</locale_1053></tooltip>
+      <script>! _Loft</script>
+    </macro_item>
+    <macro_item guid="d0000000-0000-0000-0000-000000000002">
+      <text><locale_1033>Macro two</locale_1033></text>
+      <button_text><locale_1033>Loft scripted</locale_1033></button_text>
+      <script>_-Loft</script>
+    </macro_item>
+    <macro_item guid="d0000000-0000-0000-0000-000000000003">
+      <text><locale_1033>Macro three</locale_1033></text>
+      <tooltip><locale_1033>Select none then loft</locale_1033></tooltip>
+      <script>_SelNone _Loft</script>
+    </macro_item>
+    <macro_item guid="d0000000-0000-0000-0000-000000000004">
+      <text><locale_1033>Macro four</locale_1033></text>
+      <tooltip><locale_1033>Sweep 2</locale_1033></tooltip>
+      <script>'_Sweep2</script>
+    </macro_item>
+    <macro_item guid="d0000000-0000-0000-0000-000000000005">
+      <text><locale_1033>Macro five</locale_1033></text>
+      <tooltip><locale_1033>Sweep two (loose)</locale_1033></tooltip>
+      <script>_Sweep2</script>
+    </macro_item>
+    <macro_item guid="d0000000-0000-0000-0000-000000000006">
+      <text><locale_1033>Macro six</locale_1033></text>
+      <tooltip><locale_1033>Loft</locale_1033></tooltip>
+      <script>_Loft</script>
+    </macro_item>
+  </macros>
+</RhinoUI>

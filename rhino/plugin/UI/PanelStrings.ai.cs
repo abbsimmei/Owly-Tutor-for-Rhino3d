@@ -27,6 +27,16 @@ internal static class PanelStrings
         ["turn.copy"] = Localization.LocalizeString("Copy the reply", 77),
         ["command.copyNamed"] = Localization.LocalizeString("Copy {0}", 277),
         ["command.copied"] = Localization.LocalizeString("Copied {0}. Paste it on the command line with Ctrl+V, then press Enter.", 278),
+        ["command.whereNamed"] = Localization.LocalizeString("Where is {0} on the toolbars?", 280),
+        ["location.title"] = Localization.LocalizeString("Where to find {0}", 281),
+        ["location.none"] = Localization.LocalizeString("{0} is not on any open toolbar. Copy it and paste it on the command line instead.", 282),
+        ["location.place"] = Localization.LocalizeString("{0} button on the {1} toolbar, {2} tab ({3})", 283),
+        ["location.placeNoTab"] = Localization.LocalizeString("{0} button on the {1} toolbar ({2})", 284),
+        ["location.placeLoose"] = Localization.LocalizeString("{0} button on the {1} toolbar", 285),
+        ["location.sidebar"] = Localization.LocalizeString("sidebar", 286),
+        ["location.right"] = Localization.LocalizeString("right-click", 287),
+        ["location.hidden"] = Localization.LocalizeString("hidden", 288),
+        ["location.close"] = Localization.LocalizeString("Close", 289),
         ["command.copiedMac"] = Localization.LocalizeString("Copied {0}. Paste it on the command line with ⌘V, then press Enter.", 279),
         ["turn.agentName"] = Localization.LocalizeString("Owly", 266),
         ["turn.stopped"] = Localization.LocalizeString("stopped", 81),
@@ -118,6 +128,9 @@ internal static class PanelStrings
         ["unsupported.classic"] = "Until then, you can still use Rhino's Help (F1) and the command line.",
         ["unsupported.showAnyway"] = "Show it anyway",
     };
+
+    // Plan 015: the word appended to a tab's name for its sidebar toolbar in a location card.
+    public static string SidebarWord() => Localized()["location.sidebar"];
 
     public static string LanguageTag() => Localization.CurrentLanguageId switch
     {

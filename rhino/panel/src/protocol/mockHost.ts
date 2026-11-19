@@ -841,6 +841,18 @@ export class MockHost implements Bridge {
         void navigator.clipboard?.writeText(command.name);
         return;
 
+      case 'toolbar.find':
+        this.emit({
+          type: 'toolbar.found',
+          name: command.name,
+          turnId: command.turnId,
+          places:
+            command.name === '_Loft'
+              ? [{ group: 'Main', tab: 'Surface', path: 'Surface Tools', button: 'Loft', click: 'left', hidden: false }]
+              : [],
+        });
+        return;
+
       default:
         return;
     }

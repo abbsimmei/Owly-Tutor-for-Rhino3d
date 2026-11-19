@@ -38,3 +38,72 @@ test('the same text shows again once the earlier one is gone', () => {
   assert.equal(store.notices().length, 1);
   assert.notEqual(store.notices()[0]?.id, first.id);
 });
+
+const place = { group: 'Main', tab: 'Surface', path: 'Surface Tools', button: 'Loft', click: 'left', hidden: false } as const;
+
+function storeWithTurn(): Store {
+  const store = new Store();
+  store.apply({
+    type: 'turn.begin',
+    turn: {
+      id: 'turn-0',
+      prompt: 'How do I loft?',
+      attachments: [],
+      context: [],
+      startedAt: '2026-01-01T00:00:00Z',
+      status: 'ok',
+      usage: null,
+      blocks: [],
+      plan: [],
+      undoable: false,
+    },
+  });
+  return store;
+}
+
+test('a toolbar answer for a known turn adds a location card', () => {
+  const store = storeWithTurn();
+
+  store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [place] });
+
+  assert.deepEqual(store.locations().get('turn-0'), [{ name: '_Loft', places: [place] }]);
+});
+
+test('a second answer for the same command replaces the first', () => {
+  const store = storeWithTurn();
+
+  store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [place] });
+  store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [] });
+  store.apply({ type: 'toolbar.found', name: '_Extrude', turnId: 'turn-0', places: [] });
+
+  assert.deepEqual(
+    store.locations().get('turn-0')?.map((entry) => [entry.name, entry.places.length]),
+    [
+      ['_Loft', 0],
+      ['_Extrude', 0],
+    ],
+  );
+});
+
+test('a toolbar answer for a turn that is gone is ignored', () => {
+  const store = storeWithTurn();
+
+  store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-9', places: [place] });
+
+  assert.equal(store.locations().size, 0);
+});
+
+test('a card can be dismissed and a new conversation clears them all', () => {
+  const store = storeWithTurn();
+  store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [place] });
+
+  store.dismissLocation('turn-0', '_Loft');
+  assert.equal(store.locations().size, 0);
+
+  store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [place] });
+  store.apply({
+    type: 'conversation',
+    snapshot: { sessionId: 's', agent: 'Owly', docTitle: 'd', startedAt: '2026-01-01T00:00:00Z', turns: [] },
+  });
+  assert.equal(store.locations().size, 0);
+});

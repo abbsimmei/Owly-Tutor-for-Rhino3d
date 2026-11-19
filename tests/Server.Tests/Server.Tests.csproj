@@ -48,6 +48,7 @@
     <Compile Include="../../rhino/plugin/UI/PanelEvents.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/PanelJson.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/ToolChips.ai.cs" LinkBase="PanelSources" />
+    <Compile Include="../../rhino/plugin/UI/ToolbarIndex.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/ServedImages.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/ImageMentions.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/GeneratedImages.ai.cs" LinkBase="PanelSources" />
@@ -59,6 +60,11 @@
     <Compile Include="../../rhino/plugin/Tools/AskUserValidation.ai.cs" LinkBase="PluginSources" />
     <Compile Include="../../rhino/plugin/Tools/AskUserQuestion.ai.cs" LinkBase="PluginSources" />
     <Compile Include="../../rhino/plugin/Tools/Coercions.cs" LinkBase="PluginSources" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../rhino/plugin/Owly.rui" Link="Fixtures/Owly.rui" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures/toolbars-fixture.rui" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

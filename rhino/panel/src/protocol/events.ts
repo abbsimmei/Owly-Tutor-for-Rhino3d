@@ -31,6 +31,15 @@ export interface AgentInfo {
   builtin: boolean;
 }
 
+export interface ToolbarPlace {
+  group: string;
+  tab: string;
+  path: string;
+  button: string;
+  click: 'left' | 'right';
+  hidden: boolean;
+}
+
 export type AttachmentKind = 'image' | 'text';
 
 export interface Attachment {
@@ -185,6 +194,7 @@ export type HostEvent =
   | { type: 'question.clear'; id: string }
   | { type: 'attachments.add'; attachments: Attachment[] }
   | { type: 'notice'; level: NoticeLevel; text: string }
+  | { type: 'toolbar.found'; name: string; turnId: string; places: ToolbarPlace[] }
   | { type: 'status'; text: string | null }
   // The host owns the right-click menu, but the panel owns the zoom ladder, so the menu sends back
   // an intent rather than a level. `set` is the other direction: the level the host had stored.
@@ -225,6 +235,8 @@ export type PanelCommand =
   | { type: 'clipboard.write'; text: string }
   // Plan 014: copy a Rhino command and focus Rhino. Never typed into the command line (ADR-0007).
   | { type: 'command.copy'; name: string }
+  // Plan 015: where is this command on the toolbars? Read-only (ADR-0007).
+  | { type: 'toolbar.find'; name: string; turnId: string }
   | {
       type: 'menu.open';
       x: number;

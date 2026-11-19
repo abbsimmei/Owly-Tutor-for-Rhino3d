@@ -26,6 +26,7 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(QuestionClearEvent), "question.clear")]
 [JsonDerivedType(typeof(AttachmentsAddEvent), "attachments.add")]
 [JsonDerivedType(typeof(NoticeEvent), "notice")]
+[JsonDerivedType(typeof(ToolbarFoundEvent), "toolbar.found")]
 [JsonDerivedType(typeof(StatusEvent), "status")]
 [JsonDerivedType(typeof(ZoomEvent), "zoom")]
 [JsonDerivedType(typeof(ReloadEvent), "reload")]
@@ -47,6 +48,8 @@ internal sealed record QuestionEvent(PanelQuestion Question) : PanelEvent;
 internal sealed record QuestionClearEvent(string Id) : PanelEvent;
 internal sealed record AttachmentsAddEvent(IReadOnlyList<PanelAttachment> Attachments) : PanelEvent;
 internal sealed record NoticeEvent(string Level, string Text) : PanelEvent;
+internal sealed record ToolbarFoundEvent(string Name, string TurnId, IReadOnlyList<PanelToolbarPlace> Places) : PanelEvent;
+internal sealed record PanelToolbarPlace(string Group, string Tab, string Path, string Button, string Click, bool Hidden);
 internal sealed record StatusEvent(string? Text) : PanelEvent;
 
 // The host owns the menu, the panel owns the zoom ladder, so this carries an intent rather than a
