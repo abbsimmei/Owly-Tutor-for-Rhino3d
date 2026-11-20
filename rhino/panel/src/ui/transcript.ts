@@ -135,8 +135,19 @@ export function transcript(ctx: PanelContext): Child {
   // scrollTop in the unzoomed one turns that assignment into a short hop: at 200% it stops about
   // halfway. Any value past the end clamps to the real bottom in every scale.
   const PAST_THE_END = 1e7;
+  // Follows new content, but never past the top of the newest turn: a long reply arrives in one
+  // piece, and following it to its end would land the reader on its last line. The cap is applied
+  // with scrollIntoView and compares two rects, so it stays in one scale under the CSS zoom. It
+  // never moves the view up either, so a reader who scrolled down into the reply stays put.
   const toBottom = (): void => {
+    const before = scroller.scrollTop;
     scroller.scrollTop = PAST_THE_END;
+    const turns = stream.querySelectorAll<HTMLElement>('.turn');
+    const newest = turns[turns.length - 1];
+    if (newest && newest.getBoundingClientRect().top < scroller.getBoundingClientRect().top) {
+      newest.scrollIntoView({ block: 'start', behavior: 'instant' });
+    }
+    if (scroller.scrollTop < before) scroller.scrollTop = before;
   };
 
   // A replay is over when the transcript has held its height for this long; the cap is there for
