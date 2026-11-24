@@ -19,7 +19,7 @@ public class AgentPromptsTests
     public void Compose_tells_model_about_command_buttons()
     {
         string prompt = AgentPrompts.Compose("");
-        Assert.That(prompt, Does.Contain("click the command to copy it"));
+        Assert.That(prompt, Does.Contain("Name each command once, at the step where the student uses it, in the order they use it."));
         Assert.That(prompt, Does.Contain("Never say that you typed, ran, opened or highlighted anything in Rhino."));
     }
 

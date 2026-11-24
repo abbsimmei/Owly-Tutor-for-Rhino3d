@@ -11,7 +11,13 @@ import { icon } from './icons.js';
  * render per frame rather than one per token. The Eto panel had to grow a bubble, re-measure its
  * wrapped height and re-pin its width on every chunk; here the browser does all of that.
  */
-export function agentMessage(ctx: PanelContext, turnId: string, text: Signal<string>, streaming: () => boolean): Child {
+export function agentMessage(
+  ctx: PanelContext,
+  turnId: string,
+  text: Signal<string>,
+  streaming: () => boolean,
+  seenBefore: () => ReadonlySet<string>,
+): Child {
   const host = el('div', {
     class: () => `msg-agent md${streaming() ? ' streaming' : ''}`,
     'aria-live': 'polite',
@@ -26,6 +32,7 @@ export function agentMessage(ctx: PanelContext, turnId: string, text: Signal<str
       label: (name) => t('command.copyNamed', name),
       locate: (name) => ctx.findToolbar(name, turnId),
       locateLabel: (name) => t('command.whereNamed', name),
+      seenBefore,
     },
   };
   let queued = false;
