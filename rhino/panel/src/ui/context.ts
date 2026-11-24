@@ -17,6 +17,10 @@ export interface PanelContext {
   findToolbar(name: string, turnId: string): void;
   /** Plan 021: ask the host for a command's toolbar button image, once per name. The answer fills store.icons. */
   requestToolbarIcon(name: string): void;
+  /** Plan 022: ask the host whether a command may get a Run button, once per name. The answer fills store.runnable. */
+  requestCommandCheck(name: string): void;
+  /** Plan 022 / ADR-0008: the student clicked Run. The host re-checks and starts the command; the AI cannot send this. */
+  runCommand(name: string): void;
   openLink(url: string): void;
   /** Sends the composer's draft, attachments and picked context as one prompt. */
   submit(text?: string): void;

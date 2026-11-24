@@ -25,6 +25,11 @@ export interface CommandChipOptions {
    * (plan 019). Only the first mention of a command in an answer becomes a chip.
    */
   seenBefore?: () => ReadonlySet<string>;
+  /**
+   * Plan 022: builds the options card that sits under the block holding a command's chip (one per chip, so one
+   * per command per turn). Passed in so core/ does not depend on ui/. Null draws nothing.
+   */
+  card?: (name: string) => Node | null;
 }
 
 export interface MarkdownOptions {
@@ -36,6 +41,13 @@ export interface MarkdownOptions {
   command?: CommandChipOptions;
   /** Internal: commands already given a chip during this render. Set by renderMarkdown. */
   seen?: Set<string>;
+  /** Internal: chip names whose card has not been placed yet. Drained by blocks(). Set by renderMarkdown. */
+  cards?: string[];
+  /**
+   * True while the text is still streaming. The open block is the one the model is still writing, so its cards
+   * are held back until the block closes (plan 022).
+   */
+  growing?: boolean;
 }
 
 const FENCE = /^ {0,3}(```+|~~~+)\s*([\w#+.-]*)\s*$/;
@@ -103,6 +115,7 @@ function inline(source: string, options: MarkdownOptions): DocumentFragment {
       if (options.command && isCommandName(code) && !options.seen?.has(key)) {
         options.seen?.add(key);
         fragment.appendChild(commandChip(code, options.command));
+        options.cards?.push(code);
       } else {
         const node = element('code');
         node.textContent = code;
@@ -180,6 +193,16 @@ function el_wrap(table: HTMLElement): HTMLElement {
   return wrap;
 }
 
+/** Places the cards of the chips drawn since the last call, as the next children of `parent`. */
+function drainCards(parent: Node, options: MarkdownOptions): void {
+  const names = options.cards;
+  if (!names || names.length === 0) return;
+  for (const name of names.splice(0)) {
+    const card = options.command?.card?.(name);
+    if (card) parent.appendChild(card);
+  }
+}
+
 function indentWidth(line: string): number {
   const match = /^\s*/.exec(line);
   return match ? match[0].replace(/\t/g, '    ').length : 0;
@@ -216,6 +239,7 @@ function blocks(lines: readonly string[], options: MarkdownOptions): DocumentFra
       const node = element(`h${(heading[1] as string).length}`);
       node.appendChild(inline(heading[2] as string, options));
       fragment.appendChild(node);
+      drainCards(fragment, options);
       index++;
       continue;
     }
@@ -269,6 +293,7 @@ function blocks(lines: readonly string[], options: MarkdownOptions): DocumentFra
       }
       table.appendChild(body);
       fragment.appendChild(el_wrap(table));
+      drainCards(fragment, options);
       continue;
     }
 
@@ -299,9 +324,12 @@ function blocks(lines: readonly string[], options: MarkdownOptions): DocumentFra
         const nested = body.findIndex((l) => ITEM.test(l));
         if (nested > 0) {
           li.appendChild(inline(body.slice(0, nested).join('\n').trim(), options));
+          // A step's card sits under the step text, before the nested list.
+          drainCards(li, options);
           li.appendChild(blocks(body.slice(nested), options));
         } else {
           li.appendChild(inline(body.join('\n').trim(), options));
+          drainCards(li, options);
         }
         list.appendChild(li);
       }
@@ -328,6 +356,7 @@ function blocks(lines: readonly string[], options: MarkdownOptions): DocumentFra
     const node = element('p');
     node.appendChild(inline(paragraph.join('\n'), options));
     fragment.appendChild(node);
+    drainCards(fragment, options);
   }
 
   return fragment;
@@ -335,7 +364,27 @@ function blocks(lines: readonly string[], options: MarkdownOptions): DocumentFra
 
 export function renderMarkdown(source: string, options: MarkdownOptions = {}): DocumentFragment {
   const seen = new Set<string>(options.command?.seenBefore?.() ?? []);
-  return blocks(source.replace(/\r\n?/g, '\n').split('\n'), { ...options, seen });
+  const cards: string[] = [];
+  const fragment = blocks(source.replace(/\r\n?/g, '\n').split('\n'), { ...options, seen, cards });
+  if (options.growing) holdBackOpenBlock(fragment);
+  return fragment;
+}
+
+/**
+ * Plan 022: while streaming, the last block is still being written (a command in it may not be finished, and
+ * the answer may still become a list item or a table). Take the cards out of it; the next render draws them
+ * once the block has closed. The open block is the last top-level element that is not a card, or that list's
+ * last item.
+ */
+function holdBackOpenBlock(fragment: DocumentFragment): void {
+  const children = Array.from(fragment.children);
+  let at = children.length - 1;
+  while (at >= 0 && children[at]!.classList.contains('cmd-card')) at--;
+  if (at < 0) return;
+  for (let i = at + 1; i < children.length; i++) children[i]!.remove();
+  let open: Element = children[at]!;
+  if (open.tagName === 'UL' || open.tagName === 'OL') open = open.lastElementChild ?? open;
+  open.querySelectorAll('.cmd-card').forEach((card) => card.remove());
 }
 
 function commandChip(name: string, command: CommandChipOptions): HTMLElement {

@@ -205,6 +205,8 @@ export type HostEvent =
   | { type: 'toolbar.found'; name: string; turnId: string; places: ToolbarPlace[] }
   // Plan 021: a command's toolbar button image, as base64 of SVG text. Both absent means none was found.
   | { type: 'toolbar.icon.found'; name: string; light?: string; dark?: string }
+  // Plan 022 / ADR-0008: whether a command may get a Run button. The host decides (blocklist, aliases, unknown names).
+  | { type: 'command.checked'; name: string; run: 'ok' | 'blocked' | 'unknown' }
   | { type: 'status'; text: string | null }
   // Plan 025: this document's project. `pending`: Owly doesn't know the file's project yet, so the
   // project card asks once a question has been sent. `suggestion` is an id from `projects`.
@@ -252,6 +254,10 @@ export type PanelCommand =
   | { type: 'toolbar.find'; name: string; turnId: string }
   // Plan 021: which of these commands have a toolbar button image? Read-only. Answered per name by toolbar.icon.found.
   | { type: 'toolbar.icon'; names: string[] }
+  // Plan 022 / ADR-0008: may these commands get a Run button? Read-only. Answered per name by command.checked.
+  | { type: 'command.check'; names: string[] }
+  // Plan 022 / ADR-0008: the student clicked Run on a command card. The host re-checks and starts the command.
+  | { type: 'command.run'; name: string }
   // Plan 025: projects. `choose` makes a project current (and files a file Owly didn't know under it),
   // `create` does the same for a new one, `move` files this document under another project.
   | { type: 'project.choose'; id: string }

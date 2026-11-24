@@ -127,6 +127,12 @@ export class Store {
    */
   readonly icons = signal<ReadonlyMap<string, { light?: string; dark?: string }>>(new Map());
   private readonly iconAsked = new Set<string>();
+  /**
+   * Plan 022: whether the host lets Run start a command, by chip name. Host-decided and kept across conversations,
+   * like icons. No per-card state lives here (plan 023 adds the options).
+   */
+  readonly runnable = signal<ReadonlyMap<string, 'ok' | 'blocked' | 'unknown'>>(new Map());
+  private readonly checkAsked = new Set<string>();
   readonly notices = signal<readonly Notice[]>([]);
   readonly status = signal<string | null>(null);
   readonly project = signal<ProjectView | null>(null);
@@ -292,6 +298,11 @@ export class Store {
         return;
       }
 
+      // Plan 022: always kept, asked for or not.
+      case 'command.checked':
+        this.runnable.set((map) => new Map(map).set(event.name, event.run));
+        return;
+
       // The same remark twice is still one remark: a repeat bumps the toast already showing.
       case 'notice': {
         const showing = this.notices().find((n) => n.level === event.level && n.text === event.text);
@@ -338,6 +349,13 @@ export class Store {
   markIconAsked(name: string): boolean {
     if (this.iconAsked.has(name) || this.icons.peek().has(name)) return false;
     this.iconAsked.add(name);
+    return true;
+  }
+
+  /** True the first time a command needs checking with the host; false once asked or known. */
+  markCheckAsked(name: string): boolean {
+    if (this.checkAsked.has(name) || this.runnable.peek().has(name)) return false;
+    this.checkAsked.add(name);
     return true;
   }
 

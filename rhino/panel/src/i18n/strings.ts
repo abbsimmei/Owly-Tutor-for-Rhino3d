@@ -51,6 +51,8 @@ export const EN = {
   'location.right': 'right-click',
   'location.hidden': 'hidden',
   'location.close': 'Close',
+  'run.button': 'Run {0}',
+  'run.blocked': "Owly can't start this command. Copy it and run it yourself.",
   'location.looking': 'Looking for {0} on the toolbars…',
   'turn.stopped': 'stopped',
   'turn.agentName': 'Owly',

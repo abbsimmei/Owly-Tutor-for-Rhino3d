@@ -36,6 +36,7 @@
   --accent-line: #b7d0f7;
 
   --ok: #17803d;
+  --ok-text: #ffffff;
   --ok-soft: #e4f5e9;
   --warn: #9a6400;
   --warn-soft: #fdf1dc;
@@ -85,6 +86,7 @@
     --accent-line: #2f4a78;
 
     --ok: #5fce8b;
+    --ok-text: #0d2416;
     --ok-soft: #17301f;
     --warn: #e8b45c;
     --warn-soft: #33280f;
@@ -132,6 +134,7 @@
   --accent-soft: #1c2942;
   --accent-line: #2f4a78;
   --ok: #5fce8b;
+  --ok-text: #0d2416;
   --ok-soft: #17301f;
   --warn: #e8b45c;
   --warn-soft: #33280f;
@@ -532,6 +535,26 @@ a:hover { text-decoration: underline; }
 .md-cmd-icon { width: 14px; height: 14px; display: block; background: none; filter: none; mix-blend-mode: normal; }
 .md-cmd-where:hover { color: var(--accent); }
 .md-cmd-where:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; }
+
+/* Plan 022: the card under a command's chip. Run is the only thing that starts a command in Rhino. */
+.cmd-card { margin-top: 4px; }
+.cmd-card:empty { margin-top: 0; }
+.cmd-run {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: var(--r);
+  background: var(--ok);
+  color: var(--ok-text);
+  font: inherit;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+.cmd-run:hover { filter: brightness(1.08); }
+.cmd-run:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 2px; }
+.cmd-card-note { margin: 0; font-size: var(--fs-xs); color: var(--text-dim); }
 
 /* Plan 020: positioned by script in the panel's own units (the panel carries a CSS zoom). Not .popover: its top/inset fight that. */
 .location-popover {

@@ -768,6 +768,69 @@ try {
         return where !== null && where.querySelector('img') === null && where.querySelector('svg') !== null;
       })) === true);
 
+    // Plan 022 / ADR-0008: a Run card under the block holding a command's chip, only once that block has closed.
+    // The contract's command.checked line already told the store that _Pyramid is "ok", so it is never asked.
+    const turnText = (blockId, delta) => host.evaluate((id, text) =>
+      window.rhinoAI.receive({ type: 'turn.text', turnId: 'turn-0', blockId: id, delta: text }), blockId, delta);
+    const messageWith = (needle) => `[...document.querySelectorAll('.msg-agent')].find((m) => m.textContent.includes(${JSON.stringify(needle)}))`;
+    await turnText('turn-0-run', 'Make it with `_Pyramid`.');
+    await wait(250);
+    check('the block still being written has no Run card yet',
+      (await host.evaluate(`${messageWith('Make it with')}.querySelectorAll('.cmd-card').length`)) === 0);
+    await turnText('turn-0-run', '\n\nNext.');
+    await wait(250);
+    const runCard = await host.evaluate(`(() => {
+      const m = ${messageWith('Make it with')};
+      const p = [...m.querySelectorAll('p')].find((n) => n.textContent.includes('Make it with'));
+      const card = p.nextElementSibling;
+      return { cards: m.querySelectorAll('.cmd-card').length, isCard: card?.classList.contains('cmd-card') ?? false,
+        label: card?.querySelector('button.cmd-run')?.textContent ?? '' };
+    })()`);
+    check('once the block closes it gets one card under its paragraph with a Run button',
+      runCard.cards === 1 && runCard.isCard && runCard.label === 'Run _Pyramid', JSON.stringify(runCard));
+    await host.evaluate(() => { document.querySelector('.cmd-run').click(); });
+    await wait(100);
+    check('clicking Run sends command.run with the name',
+      (await host.evaluate(() => window.__sent.some((m) => m.type === 'command.run' && m.name === '_Pyramid'))) === true);
+    await turnText('turn-0-run2', 'Again `_Pyramid` here.\n\nEnd.');
+    await wait(250);
+    check('a second mention of the command makes no second card',
+      (await host.evaluate(() => [...document.querySelectorAll('.cmd-run')].filter((b) => b.textContent === 'Run _Pyramid').length)) === 1);
+    await turnText('turn-0-cone', 'Try `_Cone`.\n\nMore.');
+    await wait(250);
+    await turnText('turn-0-cone', ' Even more.');
+    await wait(250);
+    const coneAsks = await host.evaluate(() => window.__sent.filter((m) => m.type === 'command.check' && m.names.includes('_Cone')));
+    check('an unknown command is checked exactly once, even after another delta redraws it',
+      coneAsks.length === 1, JSON.stringify(coneAsks));
+    await turnText('turn-0-del', '`_Delete` it.\n\nMore.');
+    await wait(250);
+    await host.evaluate(() => window.rhinoAI.receive({ type: 'command.checked', name: '_Delete', run: 'blocked' }));
+    await wait(250);
+    const delCard = await host.evaluate(`(() => {
+      const m = ${messageWith('it.')};
+      return { runs: m.querySelectorAll('.cmd-run').length, note: m.querySelector('.cmd-card .cmd-card-note')?.textContent ?? '' };
+    })()`);
+    check('a blocked command gets a card with the note and no Run button',
+      delCard.runs === 0 && delCard.note.includes("can't start"), JSON.stringify(delCard));
+    await turnText('turn-0-list', '1. Draw with `_Box`.\n2. Close with `_Cap`.\n\nDone.');
+    await wait(250);
+    await host.evaluate(() => {
+      window.rhinoAI.receive({ type: 'command.checked', name: '_Box', run: 'ok' });
+      window.rhinoAI.receive({ type: 'command.checked', name: '_Cap', run: 'ok' });
+    });
+    await wait(250);
+    const listCards = await host.evaluate(`(() => {
+      const m = ${messageWith('Draw with')};
+      const items = [...m.querySelectorAll('ol > li')];
+      return { items: items.length, each: items.map((li) => li.querySelectorAll('.cmd-card').length),
+        loose: [...m.querySelectorAll('ol > .cmd-card, ul > .cmd-card')].length,
+        labels: items.map((li) => li.querySelector('.cmd-run')?.textContent ?? '') };
+    })()`);
+    check('each list item holds exactly one card, and no card is a direct child of the list',
+      listCards.items === 2 && listCards.each.every((n) => n === 1) && listCards.loose === 0
+        && listCards.labels.join() === 'Run _Box,Run _Cap', JSON.stringify(listCards));
+
     // Plan 020 (the old card's class name is split so a grep for the removed code finds nothing): the toolbar.found line of the contract fixture was never asked for, so the replay opens nothing.
     check('the contract replay opens no location popover and draws no location card',
       (await host.evaluate(() => document.querySelectorAll('.location-popover, .location-' + 'card').length)) === 0);

@@ -173,3 +173,35 @@ test('icons survive a new conversation', () => {
   assert.equal(store.iconUrl('_Loft'), 'data:image/svg+xml;base64,TElHSFQ=');
   assert.equal(store.markIconAsked('_Loft'), false);
 });
+
+// Plan 022: whether the host lets Run start a command.
+test('a command.checked answer is kept whether it was asked for or not', () => {
+  const store = new Store();
+  store.apply({ type: 'command.checked', name: '_Pyramid', run: 'ok' });
+  store.apply({ type: 'command.checked', name: '_Delete', run: 'blocked' });
+
+  assert.equal(store.runnable().get('_Pyramid'), 'ok');
+  assert.equal(store.runnable().get('_Delete'), 'blocked');
+});
+
+test('a command is checked once, and never again once it is known', () => {
+  const store = new Store();
+
+  assert.equal(store.markCheckAsked('_Loft'), true);
+  assert.equal(store.markCheckAsked('_Loft'), false);
+
+  store.apply({ type: 'command.checked', name: '_Box', run: 'ok' });
+  assert.equal(store.markCheckAsked('_Box'), false);
+});
+
+test('Run answers survive a new conversation', () => {
+  const store = new Store();
+  store.apply({ type: 'command.checked', name: '_Pyramid', run: 'ok' });
+
+  store.apply({
+    type: 'conversation',
+    snapshot: { sessionId: 's', agent: 'Owly', docTitle: 'd', startedAt: '2026-01-01T00:00:00Z', turns: [] },
+  });
+
+  assert.equal(store.runnable().get('_Pyramid'), 'ok');
+});

@@ -851,6 +851,22 @@ export class MockHost implements Bridge {
         void navigator.clipboard?.writeText(command.text);
         return;
 
+      // Plan 022: a mock only; the Rhino host is authoritative (blocklist, aliases, names Rhino doesn't know).
+      case 'command.check':
+        for (const name of command.names) {
+          const run = /delete|save|script|python|grasshopper|owly|undo|redo|purge/i.test(name)
+            ? 'blocked'
+            : name === '_Nonsense'
+              ? 'unknown'
+              : 'ok';
+          this.emit({ type: 'command.checked', name, run });
+        }
+        return;
+
+      case 'command.run':
+        this.emit({ type: 'notice', level: 'info', text: `The Rhino host would start ${command.name} now.` });
+        return;
+
       case 'command.copy':
         void navigator.clipboard?.writeText(command.name);
         return;
