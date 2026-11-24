@@ -154,14 +154,9 @@ try {
     JSON.stringify(picture));
   check('the image carries a pop-out button over its corner', picture.popOut === 1, JSON.stringify(picture));
 
-  // ------------------------------------------------------- tool cards / json
-  const card = await page.evaluate(() => ({
-    cards: document.querySelectorAll('.tool.ok').length,
-    body: document.querySelectorAll('.tool .tool-body').length,
-    wire: document.querySelectorAll('.tool .wire').length,
-    code: document.querySelectorAll('.tool pre code').length,
-  }));
-  check('a settled tool card is one plain line', card.cards >= 1 && card.body === 0 && card.wire === 0 && card.code === 0, JSON.stringify(card));
+  // ------------------------------------------------------- no tool lines
+  const card = await page.evaluate(() => ({ tools: document.querySelectorAll('.tool').length }));
+  check('no tool-call line renders', card.tools === 0, JSON.stringify(card));
   const owlsSeeded = await owlsClear('.header .owl, .agent-head .owl');
   check('the owl shows in the header and on each answer, with nothing painted behind it',
     owlsSeeded.count >= 2 && owlsSeeded.bad === 0, JSON.stringify(owlsSeeded));
@@ -204,6 +199,7 @@ try {
     thinking: document.querySelectorAll('.status-strip').length,
     stopButton: document.querySelectorAll('.send.stop').length,
     tools: document.querySelectorAll('.tool').length,
+    turnText: document.querySelector('.turn:last-of-type')?.textContent.length ?? 0,
   }));
   check('a new turn is appended', mid.turns === before + 1, `${before} -> ${mid.turns}`);
   check('earlier turns are not rebuilt', mid.probesKept === before, `${mid.probesKept}/${before} survived`);
@@ -216,12 +212,15 @@ try {
   const later = await until(
     page,
     `(() => {
-       const count = document.querySelectorAll('.tool').length;
-       return count > ${mid.tools} ? { count } : null;
+       const turn = document.querySelector('.turn:last-of-type');
+       const length = turn ? turn.textContent.length : 0;
+       return length > ${mid.turnText} ? { length } : null;
      })()`,
     8000,
   );
-  check('tool calls append as the turn proceeds', later !== null, `stuck at ${mid.tools} cards`);
+  check('the running turn grows as it proceeds', later !== null, `stuck at ${mid.turnText} chars`);
+  check('no tool line appears while the turn runs',
+    (await page.evaluate(() => document.querySelectorAll('.tool').length)) === 0 && mid.tools === 0);
   check('earlier turns still are not rebuilt mid-turn',
     (await page.evaluate(() => document.querySelectorAll('.turn[data-probe]').length)) === before);
 
@@ -439,9 +438,9 @@ try {
   await wait(3500);
   const answered = await page.evaluate(() => ({
     scrims: document.querySelectorAll('.ask-scrim').length,
-    tools: document.querySelectorAll('.tool').length,
+    continued: /Closed it via/.test(document.querySelector('.turn:last-of-type')?.textContent ?? ''),
   }));
-  check('answering closes the overlay and the turn continues', answered.scrims === 0 && answered.tools >= 3, JSON.stringify(answered));
+  check('answering closes the overlay and the turn continues', answered.scrims === 0 && answered.continued, JSON.stringify(answered));
   await shot('06-answered');
 
   // -------------------------------------------------- too-old engine fallback
@@ -631,9 +630,6 @@ try {
       bold: document.querySelectorAll('.msg-agent strong').length,
       code: document.querySelectorAll('.md-code').length,
       tools: document.querySelectorAll('.tool').length,
-      toolOk: document.querySelectorAll('.tool.ok').length,
-      toolFailed: document.querySelectorAll('.tool.failed').length,
-      titles: [...document.querySelectorAll('.tool .title')].map((n) => n.textContent),
       question: document.querySelectorAll('.ask .opts label').length,
       questionPages: document.querySelectorAll('.ask-page').length,
       questionSteps: document.querySelectorAll('.ask .steps i').length,
@@ -647,10 +643,7 @@ try {
     check('C#-serialised events render a turn', rendered.turns === 1 && rendered.prompt?.includes('Facade'), JSON.stringify(rendered));
     check('the agent list arrives', rendered.agent === 'Claude Code' && rendered.model === 'Opus 5', JSON.stringify(rendered));
     check('streamed markdown and code render', rendered.bold >= 1 && rendered.code === 1, JSON.stringify(rendered));
-    check('a tool call and its folded-in result render as one settled card',
-      rendered.tools === 4 && rendered.toolOk === 1, JSON.stringify(rendered));
-    check('a result the agent flagged as an error renders as a failed card',
-      rendered.toolFailed === 1 && rendered.titles.includes('selection failed'), JSON.stringify(rendered));
+    check('tool calls from the host draw no line', rendered.tools === 0, JSON.stringify(rendered));
     check('a C#-serialised image lands as a block pointing at the host route',
       rendered.images === 1 && rendered.imageSrc === '/image/a3f1c09e42b7', JSON.stringify(rendered));
     check('an image the host cannot serve drops the picture and keeps its caption',
@@ -659,8 +652,6 @@ try {
       rendered.imageName === 'Generated image', JSON.stringify(rendered));
     check('the mcp__rhino__ prefix never reaches the panel',
       !JSON.stringify(rendered).includes('mcp__'), JSON.stringify(rendered));
-    check('a namespaced tool gets its real phrase',
-      rendered.titles.includes('listed objects'), JSON.stringify(rendered.titles));
     check('the questions posed by the feed open one paged card',
       rendered.questionPages === 1 && rendered.questionSteps === 2 && rendered.question === 2, JSON.stringify(rendered));
     check('per-turn tokens land on the turn, not the top bar',
@@ -711,17 +702,11 @@ try {
     await host.evaluate((batch) => { for (const event of batch) window.rhinoAI.receive(event); },
       events.filter(settling));
     const ended = await host.evaluate(() => ({
-      spinners: document.querySelectorAll('.tool .spinner').length,
-      running: document.querySelectorAll('.tool.running').length,
-      unknown: document.querySelectorAll('.tool.unknown').length,
-      ok: document.querySelectorAll('.tool.ok').length,
-      failed: document.querySelectorAll('.tool.failed').length,
-      dashed: getComputedStyle(document.querySelector('.tool.unknown')).borderStyle,
+      tools: document.querySelectorAll('.tool').length,
+      spinners: document.querySelectorAll('.transcript .spinner').length,
     }));
-    check('a call the turn ended without a result stops without claiming success',
-      ended.spinners === 0 && ended.running === 0
-      && ended.unknown === 2 && ended.ok === 1 && ended.failed === 1 && ended.dashed === 'dashed',
-      JSON.stringify(ended));
+    check('an ended turn with unfinished calls draws no tool line and no spinner',
+      ended.tools === 0 && ended.spinners === 0, JSON.stringify(ended));
 
     // Switching Rhino's theme sends a second theme event. The panel has to restyle from it, both
     // the host-supplied tokens and the scheme attribute that drives everything the host does not
@@ -795,17 +780,15 @@ try {
     // receiver half of the guard; the sender half is ConversationFeed keeping its high-water marks.
     const beforeReplay = await host.evaluate(() => ({
       turns: document.querySelectorAll('.turn').length,
-      tools: document.querySelectorAll('.tool').length,
       users: document.querySelectorAll('.msg-user').length,
     }));
     await host.evaluate((batch) => { for (const event of batch) window.rhinoAI.receive(event); }, events.filter((e) => e.type.startsWith('turn.')));
     await wait(400);
     const afterReplay = await host.evaluate(() => ({
       turns: document.querySelectorAll('.turn').length,
-      tools: document.querySelectorAll('.tool').length,
       users: document.querySelectorAll('.msg-user').length,
     }));
-    check('re-announced turns and tool calls do not duplicate rows',
+    check('re-announced turns do not duplicate rows',
       JSON.stringify(beforeReplay) === JSON.stringify(afterReplay),
       `${JSON.stringify(beforeReplay)} -> ${JSON.stringify(afterReplay)}`);
 

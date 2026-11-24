@@ -12,7 +12,6 @@ import { locationCards } from './locationCard.js';
 import { notices } from './notices.js';
 import { owl } from './owl.js';
 import { agentMessage } from './message.js';
-import { toolCard } from './toolCard.js';
 
 function attachmentChip(attachment: Attachment): Child {
   return el(
@@ -31,7 +30,7 @@ function block(ctx: PanelContext, turn: TurnView, view: BlockView): Child {
         return turn.status() === 'running' && blocks[blocks.length - 1]?.id === view.id;
       });
     case 'tool':
-      return toolCard(ctx, view.call);
+      return null;
     case 'image':
       return imageBlock(ctx, view.image);
     case 'notice':
@@ -91,7 +90,7 @@ function turnView(ctx: PanelContext, turn: TurnView): Child {
     ),
     turn.prompt ? el('div', { class: 'msg-user', text: turn.prompt }) : null,
     when(
-      () => turn.blocks().length > 0,
+      () => turn.blocks().some((b) => b.kind !== 'tool'),
       () => el('div', { class: 'agent-head' }, owl(ctx, 16), el('span', { text: () => t('turn.agentName') })),
     ),
     each(
