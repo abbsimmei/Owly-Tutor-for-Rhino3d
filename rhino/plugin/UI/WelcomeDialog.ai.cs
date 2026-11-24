@@ -25,7 +25,7 @@ internal sealed class WelcomeDialog : Dialog<bool>
 
         Label does = Paragraph(Localization.LocalizeString("Owly is your Rhino tutor. Describe what you want to make, and Owly recommends the Rhino commands and tools that fit and explains how to use them.", 269));
         Label wont = Paragraph(Localization.LocalizeString("Owly never models for you. You always do the modelling yourself.", 270));
-        Label privacy = Paragraph(Localization.LocalizeString("Your questions, and what Owly reads from your model (such as selected objects and layers), are sent to Anthropic through Claude Code. Owly doesn't save your conversations. Claude Code keeps its own copy on this computer for about 30 days.", 271));
+        Label privacy = Paragraph(Localization.LocalizeString("Your questions, and what Owly reads from your model (such as selected objects and layers), are sent to Anthropic through Claude Code. Owly saves your conversations and short notes about your projects on this computer until you delete them. When used, they are sent to Anthropic through Claude Code. Claude Code keeps its own copy on this computer for about 30 days.", 368));
         Label needs = Paragraph(Localization.LocalizeString("Owly needs Claude Code, installed and signed in on this computer.", 272));
 
         LinkButton setup = new() { Text = Localization.LocalizeString("How to install Claude Code", 273) };

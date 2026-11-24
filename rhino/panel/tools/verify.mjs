@@ -580,6 +580,65 @@ try {
   check('a text field keeps its native menu so paste still works',
     (await page.evaluate(() => document.querySelectorAll('.ctx-menu').length)) === 0);
 
+  // ---------------------------------------------------------------- projects (plan 025)
+  const count = (sel) => page.evaluate((s) => document.querySelectorAll(s).length, sel);
+  const projectHeader = () => page.evaluate(() => document.querySelector('.header .project-btn .project-name')?.textContent ?? '');
+  check('the header shows the project name', (await projectHeader()) === 'Tower study', await projectHeader());
+  check('the project button sits between the agent chip and the new conversation button',
+    (await page.evaluate(() => {
+      const kids = [...document.querySelector('.header').children];
+      const chip = kids.findIndex((k) => k.classList.contains('agent-chip'));
+      const project = kids.findIndex((k) => k.classList.contains('project-btn'));
+      return chip >= 0 && project === chip + 1 && kids[project + 1]?.classList.contains('icon-btn');
+    })) === true);
+  check('a long project name truncates in a capped button',
+    (await page.evaluate(() => getComputedStyle(document.querySelector('.project-btn')).maxWidth === '140px'
+      && getComputedStyle(document.querySelector('.project-btn .project-name')).textOverflow === 'ellipsis')) === true);
+  check('a file with a project gets no project card', (await count('.project-card')) === 0);
+
+  await page.click('.project-btn');
+  await wait(150);
+  const projectMenu = await page.evaluate(() => ({
+    open: document.querySelectorAll('.project-menu').length,
+    items: [...document.querySelectorAll('.project-menu .project-item')].map((n) => n.textContent),
+    selected: document.querySelector('.project-menu .project-item.selected')?.textContent ?? '',
+    actions: ['new', 'rename', 'delete', 'move'].filter((a) => document.querySelector(`.project-menu .project-${a}`)).length,
+  }));
+  check('the project menu opens with every project and its actions',
+    projectMenu.open === 1 && projectMenu.items.length === 3 && projectMenu.selected === 'Tower study' && projectMenu.actions === 4,
+    JSON.stringify(projectMenu));
+
+  await page.click('.project-menu .project-delete');
+  await wait(100);
+  const confirmText = await page.evaluate(() => document.querySelector('.project-menu .project-confirm')?.textContent ?? '');
+  check('delete asks for confirmation inline', confirmText.includes('Tower study'), confirmText);
+  await page.click('.project-menu .btn.danger');
+  await wait(200);
+  check('the menu closes once the project is deleted', (await count('.project-menu')) === 0);
+  check('the header says the file has no project yet', (await projectHeader()) === 'No project yet', await projectHeader());
+
+  const projectCard = await page.evaluate(() => ({
+    cards: document.querySelectorAll('.project-card').length,
+    choices: [...document.querySelectorAll('.project-card .project-choice')].map((n) => n.className),
+    first: document.querySelector('.project-card .project-choice')?.textContent ?? '',
+    aboveComposer: (() => {
+      const card = document.querySelector('.project-card');
+      const composer = document.querySelector('.composer');
+      return Boolean(card && composer && card.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING);
+    })(),
+  }));
+  check('a pending file with a question asked shows the project card above the composer',
+    projectCard.cards === 1 && projectCard.aboveComposer, JSON.stringify(projectCard));
+  check('the card puts the suggestion first and offers New project and Unsorted',
+    projectCard.first.includes('Summer pavilion') && projectCard.choices[0]?.includes('suggested')
+      && projectCard.choices.some((c) => c.includes('project-new')) && projectCard.choices.at(-1)?.includes('unsorted'),
+    JSON.stringify(projectCard));
+
+  await page.click('.project-card .project-choice.unsorted');
+  await wait(200);
+  check('choosing a project hides the card', (await count('.project-card')) === 0);
+  check('the header shows the chosen project', (await projectHeader()) === 'Unsorted', await projectHeader());
+
   // ------------------------------------------------- the C# contract, replayed
   // host-events.json is written by PanelContractTests in the plug-in's test suite, using the real
   // serialiser. Replaying it here is the only place the two languages are checked against each
@@ -707,6 +766,29 @@ try {
     await host.evaluate((event) => window.rhinoAI.receive(event),
       events.find((event) => event.type === 'toolbar.found'));
     await wait(100);
+
+    // Plan 025: the contract's project event is pending, so the card asks, suggestion first.
+    const hostProject = await host.evaluate(() => ({
+      cards: document.querySelectorAll('.project-card').length,
+      first: document.querySelector('.project-card .project-choice')?.textContent ?? '',
+      header: document.querySelector('.project-btn .project-name')?.textContent ?? '',
+    }));
+    check('a C#-serialised pending project shows the card with the suggestion first',
+      hostProject.cards === 1 && hostProject.first.includes('Pavilion') && hostProject.header === 'No project yet',
+      JSON.stringify(hostProject));
+    await host.evaluate(() => { document.querySelector('.project-card .project-choice.suggested').click(); });
+    await wait(100);
+    check('choosing on the card sends project.choose with the id',
+      (await host.evaluate(() => window.__sent.some((m) => m.type === 'project.choose' && m.id === 'p-1'))) === true);
+    await host.evaluate((event) => window.rhinoAI.receive({ ...event, id: 'p-1', name: 'Pavilion', pending: false, suggestion: undefined }),
+      events.find((event) => event.type === 'project'));
+    await wait(100);
+    const hostChosen = await host.evaluate(() => ({
+      cards: document.querySelectorAll('.project-card').length,
+      header: document.querySelector('.project-btn .project-name')?.textContent ?? '',
+    }));
+    check('the host naming the project hides the card and shows the name',
+      hostChosen.cards === 0 && hostChosen.header === 'Pavilion', JSON.stringify(hostChosen));
 
     await host.evaluate((batch) => { for (const event of batch) window.rhinoAI.receive(event); },
       events.filter(settling));

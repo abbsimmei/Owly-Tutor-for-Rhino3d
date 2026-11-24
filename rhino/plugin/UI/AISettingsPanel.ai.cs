@@ -128,6 +128,7 @@ internal sealed class AISettingsPanel : Panel
                 new TableRow(NameHeader),
                 new TableRow(AvailableLabel),
                 new TableRow(LabeledColumn(Localization.LocalizeString("Model:", 23), ModelBox)),
+                new TableRow(DeleteMemoryRow()),
                 new TableRow(LabeledColumn(Localization.LocalizeString("Found at:", 24), SearchPathsBox)),
                 new TableRow { ScaleHeight = true },
             },
@@ -149,6 +150,32 @@ internal sealed class AISettingsPanel : Panel
             Spacing = new Size(0, 3),
             Rows = { new TableRow(new Label { Text = label }), new TableRow(new TableCell(control, true)) },
         };
+
+    // Plan 025 / ADR-0009: everything Owly keeps in %AppData%\Owly, gone in one step. It happens at
+    // once, not on OK, because the confirmation is the commit.
+    private Control DeleteMemoryRow()
+    {
+        Button button = new() { Text = Localization.LocalizeString("Delete all Owly memory", 363) };
+        button.Click += (_, _) => DeleteAllMemory();
+        return new TableLayout { Rows = { new TableRow(button, null) } };
+    }
+
+    private void DeleteAllMemory()
+    {
+        DialogResult answer = MessageBox.Show(
+            this,
+            Localization.LocalizeString("Delete all Owly memory? Owly forgets your projects, which files belong to them, and everything it saved about them. This can't be undone.", 364),
+            Localization.LocalizeString("Delete all Owly memory", 365),
+            MessageBoxButtons.YesNo,
+            MessageBoxType.Warning,
+            MessageBoxDefaultButton.No);
+        if (answer != DialogResult.Yes) return;
+
+        if (OwlyMemory.DeleteAll())
+            MessageBox.Show(this, Localization.LocalizeString("Owly's memory on this computer is deleted.", 366), MessageBoxType.Information);
+        else
+            MessageBox.Show(this, Localization.LocalizeString("Owly couldn't delete everything. Close the other Rhino if it is open, then try again.", 367), MessageBoxType.Error);
+    }
 
     private static string FoundString { get; } = Localization.LocalizeString("Found on search paths", 217);
     private static string NotFoundString { get; } = Localization.LocalizeString("Not found on search paths", 218);

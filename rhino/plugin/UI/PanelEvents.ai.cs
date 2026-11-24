@@ -27,6 +27,7 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(AttachmentsAddEvent), "attachments.add")]
 [JsonDerivedType(typeof(NoticeEvent), "notice")]
 [JsonDerivedType(typeof(ToolbarFoundEvent), "toolbar.found")]
+[JsonDerivedType(typeof(ProjectEvent), "project")]
 [JsonDerivedType(typeof(StatusEvent), "status")]
 [JsonDerivedType(typeof(ZoomEvent), "zoom")]
 [JsonDerivedType(typeof(ReloadEvent), "reload")]
@@ -51,6 +52,12 @@ internal sealed record NoticeEvent(string Level, string Text) : PanelEvent;
 internal sealed record ToolbarFoundEvent(string Name, string TurnId, IReadOnlyList<PanelToolbarPlace> Places) : PanelEvent;
 internal sealed record PanelToolbarPlace(string Group, string Tab, string Path, string Button, string Click, bool Hidden);
 internal sealed record StatusEvent(string? Text) : PanelEvent;
+
+// Plan 025: this document's project. Pending means Owly doesn't know which project the file belongs
+// to yet, so the panel asks with its project card once a question has been sent. Suggestion is a
+// project id from Projects.
+internal sealed record ProjectEvent(string? Id, string? Name, bool Pending, string? Suggestion, IReadOnlyList<PanelProject> Projects) : PanelEvent;
+internal sealed record PanelProject(string Id, string Name, bool Builtin);
 
 // The host owns the menu, the panel owns the zoom ladder, so this carries an intent rather than a
 // level and the ladder is never duplicated on this side. "set" is the exception: the stored level.

@@ -49,6 +49,7 @@ internal partial class AIPanelViewModel : IDisposable
     public void Dispose()
     {
         Detach();
+        UnsubscribeProjects();
         Listener.Close();
     }
 
@@ -186,6 +187,11 @@ internal partial class AIPanelViewModel : IDisposable
             CopyCommandCommand chip => CopyCommand(chip.Name),
             FindToolbarCommand find => FindToolbar(find.Name, find.TurnId),
             OpenMenuCommand menu => ShowMenu(menu),
+            ChooseProjectCommand choose => ChooseProject(choose.Id),
+            CreateProjectCommand create => CreateProject(create.Name),
+            RenameProjectCommand rename => RenameProject(rename.Id, rename.Name),
+            DeleteProjectCommand delete => DeleteProject(delete.Id),
+            MoveProjectCommand move => MoveProject(move.Id),
 
             _ => false
         };
@@ -221,6 +227,10 @@ internal partial class AIPanelViewModel : IDisposable
 
         Resubscribe();
         AgentDispatch.PromptActive(doc, new UserMessage(text, attachments));
+
+        // Plan 025: the question is sent either way; a file without a project gets the project card.
+        if (ProjectId is null)
+            SendProject();
         return true;
     }
 
@@ -467,6 +477,7 @@ internal partial class AIPanelViewModel : IDisposable
 
         SendAgents();
         SendContext();
+        SendProject();
     }
 
     private void SendContext()

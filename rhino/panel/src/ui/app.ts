@@ -11,6 +11,8 @@ import type { PanelContext } from './context.js';
 import { header } from './header.js';
 import { questionOverlay } from './question.js';
 import { owl } from './owl.js';
+import { projectCard } from './projectCard.js';
+import { projectMenu } from './projectMenu.js';
 import { transcript } from './transcript.js';
 
 function statusStrip(ctx: PanelContext): Child {
@@ -136,6 +138,8 @@ export function app(ctx: PanelContext): Child {
     },
     header(ctx),
     transcript(ctx),
+    // Plan 025: asks for an unknown file's project above the composer; the question has already gone.
+    projectCard(ctx),
     // Below the transcript, not above it: what the agent is doing now belongs next to where its
     // output is landing and next to the Stop button, not up by the agent picker.
     statusStrip(ctx),
@@ -144,6 +148,10 @@ export function app(ctx: PanelContext): Child {
     when(
       () => ui.overlay() === 'agents',
       () => [el('div', { class: 'scrim', onClick: () => ui.closeOverlay() }), agentMenu(ctx)],
+    ),
+    when(
+      () => ui.overlay() === 'project',
+      () => [el('div', { class: 'scrim', onClick: () => ui.closeOverlay() }), projectMenu(ctx)],
     ),
   );
 }

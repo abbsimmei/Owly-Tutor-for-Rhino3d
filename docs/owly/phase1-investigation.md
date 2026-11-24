@@ -88,6 +88,7 @@ The prompt steers always included (`AgentPrompts.cs`) are `AskUserSteer`, `Groun
 | Data | Where | Concern |
 |---|---|---|
 | Conversations: prompts, answers, tool arguments and results, token cost | In memory only, discarded when the conversation ends (plan 009) | Resolved by ADR-0006. Old builds' saved conversations are deleted on load |
+| Projects: names and which .3dm paths belong to them (plan 025) | `%AppData%\Owly\projects.json`, shared by Rhino 8 and 9, kept until the student deletes a project or uses "Delete all Owly memory" in settings | Disclosed in the welcome popup (ADR-0009). Nothing is written into the .3dm. Plans 026-028 add saved conversations and notes to the same folder |
 | CLI transcripts | Claude's own store under the user's profile | Outside Owly's control; Claude Code deletes them after about 30 days by default. Must be disclosed (welcome popup, plan 011). Phase 5 option: --no-session-persistence (ADR-0006) |
 | Content sent to the AI provider | Prompts, attachments (inline base64), tool results (object lists, selection), host OS and Rhino version, installed plugin list | Must be disclosed. Removing `get_viewport_image` stops viewport images being sent |
 | User's own Claude settings and hooks | Loaded because `--setting-sources ""` isn't passed | A student's hooks could run inside Owly's agent. Fixed in plan 005 |

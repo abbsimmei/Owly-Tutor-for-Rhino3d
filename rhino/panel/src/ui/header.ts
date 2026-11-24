@@ -36,11 +36,30 @@ export function header(ctx: PanelContext): Child {
     el('span', { class: 'chev' }, icon('chevron', 13)),
   );
 
+  // Plan 025: the project this file belongs to. The menu switches, creates, renames, deletes and moves.
+  const projectName = (): string => store.project()?.name ?? t('project.none');
+  const projectButton = el(
+    'button',
+    {
+      class: () => (store.project()?.name ? 'project-btn' : 'project-btn none'),
+      type: 'button',
+      'aria-expanded': () => ui.overlay() === 'project',
+      title: () => {
+        const name = store.project()?.name;
+        return name ? t('project.button', name) : t('project.none');
+      },
+      onClick: () => ui.openOverlay('project'),
+    },
+    el('span', { class: 'project-name', text: projectName }),
+    el('span', { class: 'chev' }, icon('chevron', 12)),
+  );
+
   return el(
     'header',
     { class: 'header' },
     owl(ctx, 20, 'header-owl'),
     agentButton,
+    projectButton,
     el(
       'button',
       {
