@@ -11,6 +11,7 @@ import type { PanelContext } from './context.js';
 import { header } from './header.js';
 import { questionOverlay } from './question.js';
 import { owl } from './owl.js';
+import { locationPopover, locationScrim } from './locationPopover.js';
 import { projectCard } from './projectCard.js';
 import { projectMenu } from './projectMenu.js';
 import { transcript } from './transcript.js';
@@ -99,6 +100,7 @@ export function app(ctx: PanelContext): Child {
 
     if (event.key === 'Escape' && ui.overlay() !== 'none') {
       ui.closeOverlay();
+      ctx.store.closeLocation();
       event.preventDefault();
       return;
     }
@@ -123,6 +125,10 @@ export function app(ctx: PanelContext): Child {
   // panel div; and inside Rhino the webview is the panel, so there is nowhere else for a wheel
   // gesture to land. passive:false is required or preventDefault is ignored and the page scrolls.
   hostMenu(ctx);
+  // Plan 020: a new conversation clears the location; the overlay (and its scrim) must go with it.
+  bind(() => {
+    if (ctx.store.location() === null && ui.overlay.peek() === 'location') ui.closeOverlay();
+  });
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('wheel', onWheel, { passive: false });
   onCleanup(() => {
@@ -148,6 +154,10 @@ export function app(ctx: PanelContext): Child {
     when(
       () => ui.overlay() === 'agents',
       () => [el('div', { class: 'scrim', onClick: () => ui.closeOverlay() }), agentMenu(ctx)],
+    ),
+    when(
+      () => ui.overlay() === 'location' && ctx.store.location() !== null,
+      () => [locationScrim(ctx), locationPopover(ctx)],
     ),
     when(
       () => ui.overlay() === 'project',

@@ -51,6 +51,7 @@ export const EN = {
   'location.right': 'right-click',
   'location.hidden': 'hidden',
   'location.close': 'Close',
+  'location.looking': 'Looking for {0} on the toolbars…',
   'turn.stopped': 'stopped',
   'turn.agentName': 'Owly',
   'transcript.newOutput': 'New output',
