@@ -221,6 +221,11 @@ Document any unresolved privacy or security concerns.
 * Memory (second): projects; saved conversations per project with the owl strip; project notes; opt-in main memory.  
 * Student level (last): level choice in the welcome popup; level check-in.
 
+**Status** (details in `plans/README.md`; manual Rhino checks still open for the done plans):
+
+* Done: 018 lookup lines, 019 commands once/in order, 025 projects.  
+* To do, in order: 020 popover → 021 button images (needs a Rhino 9 check first) → 022 Run → 023 options card → 024 option probe test → 026 saved conversations → 027 project notes → 028 main memory → 029 level → 030 level check-in.
+
 ## **Phase 6 — Testing**
 
 * Test common Rhino workflows.  
