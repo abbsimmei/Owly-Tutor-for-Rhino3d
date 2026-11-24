@@ -45,6 +45,33 @@ In mock-up 2, `_Pyramid` appears in the intro and again in step 1 ("Click `_Pyra
 4. **Prompt checks.** Add rows 13 ("How do I make a pyramid roof?": `_Pyramid` appears once, and multi-command answers list commands in order) and 14 (a three-step loft workflow: `_Curve`, `_Loft`, `_Cap` each once, in order).
 5. Rebuild `dist/panel.host.html`.
 
+## Advisor addendum (checked against `15b9a13` before execution)
+
+- **How the chip options reach the renderer.** `rhino/panel/src/ui/message.ts`, `agentMessage(ctx, turnId, text, streaming)`, builds one `MarkdownOptions` object with `command: { copy, glyph, label, locate, locateLabel }`. It calls `renderMarkdown(text.peek(), options)` on every animation frame.
+  - `renderMarkdown(source, options)` is at `rhino/panel/src/core/markdown.ts:~323`.
+  - Inline code is matched by the first alternative of the `INLINE` regex (`` /`([^`\n]+)`/ ``, `markdown.ts:~38-40`).
+  - The chip branch is `if (options.command && isCommandName(code)) fragment.appendChild(commandChip(code, options.command));`.
+- **Design to implement:**
+  1. Add an optional `seenBefore?: () => ReadonlySet<string>` to `CommandChipOptions`, holding the normalised names already used as chips in **earlier** text blocks of the same turn.
+  2. `renderMarkdown` creates a fresh `Set` per call, seeded from `seenBefore?.()`. The inline renderer checks and adds to it: the first time a normalised name is seen it renders the chip; otherwise plain `<code>`. Thread the set through `blocks()` → `inline()` via the options object or an extra parameter, whichever fits the existing code. Don't use a module-level variable.
+  3. **Normalising:** lowercase, and strip the leading `_` and an optional `-` (`_-Loft` → `loft`).
+  4. `src/core/commandMentions.ts` exports `normaliseCommand(name)` and `commandsIn(text): string[]`, the command names in order of first appearance in a markdown text (inline code only, matching `isCommandName`; ignore fenced code blocks, like the renderer). Both are pure and DOM-free. `markdown.ts` and `transcript.ts` use them.
+  5. `agentMessage` gets a new last parameter `seenBefore: () => ReadonlySet<string>` and passes it in `options.command`.
+  6. `transcript.ts` `block()`, in `case 'text'`, passes `() => new Set(turn.blocks().slice(0, index).filter(b => b.kind === 'text').flatMap(b => commandsIn(b.text.peek())).map(normaliseCommand))`, where `index` is this view's position in `turn.blocks()` at call time. Find it with `turn.blocks().findIndex(b => b.id === view.id)`. Check the `BlockView` type in `src/state/store.ts` for the exact field holding a text block's signal.
+- **Tests:** add `src/core/commandMentions.test.ts`, following `src/core/commandName.test.ts`'s style (`node:test`, `assert`). Cover:
+  - `commandsIn("Use `_Loft` then `_Loft` and `_Cap`")` → `['_Loft','_Cap']`
+  - fenced code ignored
+  - `` `layer_name` `` ignored
+  - `normaliseCommand('_-Loft') === normaliseCommand('_loft')`
+- **verify:** in `rhino/panel/tools/verify.mjs`, next to the existing chip checks (search `md-cmd-copy`), add a check that an answer mentioning `` `_Loft` `` twice renders exactly one `.md-cmd` chip and one plain `code`. If the mock host has no such answer, add one to the scripted reply in `src/protocol/mockHost.ts` that already contains `` `_Loft` `` (search `_Loft`). Don't create a new scenario.
+- **Prompt checks:** `docs/owly/prompt-checks.md` rows **1** and **12** currently expect "Tells the student to click `_Loft` to copy it". Change them to "Names `_Loft` once (it becomes a copy button); no separate 'click it to copy' step". Then add rows 13 and 14 in the same table format.
+- **`tests/Server.Tests/AgentPromptsTests.ai.cs`:** the test `Compose_tells_model_about_command_buttons` asserts `"click the command to copy it"`. Replace that assertion with the new once-in-order sentence (an exact substring of the new `TeachingSteer` text), and keep the "Never say that you typed, ran, opened or highlighted anything in Rhino." assertion.
+- **Out of scope:** the `case 'tool'` line and the agent-head condition in `transcript.ts` (plan 018 changes those), and `rhino/plugin/UI/*`.
+- **Gates:**
+  - in `rhino/panel`: `npm run typecheck && npm test && npm run verify && npm run build` (commit `dist/panel.host.html`)
+  - from the repo root: `dotnet build rhino/plugin/RhinoAI.csproj -p:RhinoTarget=R9 -clp:NoSummary` and `dotnet test tests/Server.Tests/Server.Tests.csproj`
+- **Commit message:** `Plan 019: name each command once, in order`.
+
 ## Done criteria
 
 - Shared gates pass, and the new markdown tests pass.

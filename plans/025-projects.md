@@ -77,6 +77,42 @@
 
    Update `mockHost.ts` and `host-events.json`. Rebuild the panel.
 
+## Advisor addendum (checked against `15b9a13` before execution)
+
+- **One panel per document.** `rhino/plugin/UI/AIPanelViewModel.ai.cs` is per document: it has `Document` and `DocumentSerialNumber` properties.
+  - `Ready()` (`~line 194`, reached from `ReadyCommand`) posts the start-up events: `HelloEvent` (`~456`, which already carries the doc title, `"Untitled"` when unsaved), `ZoomEvent`, `ContextEvent` and `AgentsEvent` (`~502`). **Post the new `project` event from the same place**, and again whenever the project changes.
+  - Commands are dispatched in the `switch` in `IncomingCommand` (`~166-191`). Add the `project.*` cases there.
+- **The prompt path:** `Prompt(...)` (`~201-225`) sends the student's question. The project card must **not** block it. If the project is pending, still send the prompt, and post the `project` event with `pending: true` so the panel shows the card.
+- **Header** (`rhino/panel/src/ui/header.ts`): owl, `agent-chip` button, `+` button, settings button. Put the project button **between the agent chip and `+`**. The panel is narrow, so truncate the name with CSS ellipsis and give the button a max-width of about 140px. Reuse `ui.openOverlay(...)`: add `'project'` to the `Overlay` type in `src/state/ui.ts` and mount the menu in `src/ui/app.ts`, next to the existing `ui.overlay() === 'agents'` popover.
+- **Message records.** Follow the existing patterns:
+  - C# panel → host: a `[JsonDerivedType(typeof(X), "project.choose")]` line on `PanelCommand` in `rhino/plugin/UI/PanelCommands.ai.cs`, plus a `sealed record`.
+  - C# host → panel: `rhino/plugin/UI/PanelEvents.ai.cs`, same pattern (see `NoticeEvent`, `[JsonDerivedType(typeof(NoticeEvent), "notice")]`).
+  - TS: add both directions to `rhino/panel/src/protocol/events.ts`.
+  - Mirror them in `rhino/panel/src/protocol/mockHost.ts`, with an in-memory project list so `npm run dev` and verify work, and add a `project` event to `rhino/panel/tests/host-events.json`.
+  - `tests/Server.Tests` has a JSON contract test for the toolbar fixture (`ToolbarIndexTests.ai.cs` near line 118). If the panel fixture's new `project` event shape needs a C# contract test, follow it.
+- **Rhino-free code** goes under `rhino/plugin/Agents/Memory/` (new folder): `OwlyStore.ai.cs` and `ProjectRegistry.ai.cs`, with no `using Rhino`. Link both in `tests/Server.Tests/Server.Tests.csproj` with `<Compile Include="../../rhino/plugin/Agents/Memory/OwlyStore.ai.cs" />` lines, following the existing entries. Tests go in `tests/Server.Tests/OwlyStoreTests.ai.cs` and `ProjectRegistryTests.ai.cs`, in NUnit style like `tests/Server.Tests/AgentPromptsTests.ai.cs`.
+  - The root path is a constructor parameter. Production passes `Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Owly")`.
+  - **net48:** `File.Move` has no overwrite overload. Use `File.Replace(tmp, target, null)` when the target exists, otherwise `File.Move(tmp, target)`.
+  - Mutex: `new Mutex(false, @"Local\OwlyStore")`, with `WaitOne(TimeSpan.FromSeconds(5))`. On a timeout, log and skip the write. Never throw into Rhino.
+- **Untitled files.** Subscribe to `RhinoDoc.EndSaveDocument` once (e.g. in the view model's constructor, unsubscribed on dispose, like the selection events around `~line 60-75`). When the saved document is this panel's document and a pending choice exists, call `Assign(doc.Path, id)` and post `project` again.
+- **Strings:**
+  - C#: `Localization.LocalizeString("…", id)` with ids **360-389** (the last id in use is 289; check with `grep -rn "LocalizeString(" rhino/plugin | grep -o ", [0-9]*)" | sort -t' ' -k2 -n | tail -3`).
+  - Panel text: `rhino/panel/src/i18n/strings.ts` (English fallbacks) and `rhino/plugin/UI/PanelStrings.ai.cs`, following an existing pair such as `command.copied`.
+- **Settings:** "Delete all Owly memory" goes in `rhino/plugin/UI/AISettingsPanel.ai.cs`, under the model row. Confirm with an Eto `MessageBox.Show(..., MessageBoxButtons.YesNo)`. After deleting, post a fresh `project` event (pending) to open panels if that's easy; otherwise the next question re-resolves.
+- **Welcome privacy line:** `rhino/plugin/UI/WelcomeDialog.ai.cs` (`~line 28`). Replace "Owly doesn't save your conversations." with the step-6 text. Keep the rest of the sentence about Anthropic and Claude Code's own copy.
+- **Out of scope:**
+  - saving conversations (plan 026)
+  - notes (plan 027)
+  - any change to `AgentHost`, `StreamJsonAgent`, `AgentPrompts`
+  - `rhino/panel/src/ui/transcript.ts` and `src/core/markdown.ts`, which other plans are changing in parallel
+- **Gates:**
+  - from the repo root: `dotnet build rhino/plugin/RhinoAI.csproj -p:RhinoTarget=R9 -clp:NoSummary`, the same with `-p:RhinoTarget=R8` (also builds net48, which catches API gaps), and `dotnet test tests/Server.Tests/Server.Tests.csproj`
+  - in `rhino/panel`: `npm run typecheck && npm test && npm run verify && npm run build` (commit `dist/panel.host.html`)
+- **Commit message:** `Plan 025: projects`.
+- **STOP and report if:**
+  - the R8/net48 build can't reach `System.Text.Json` from the plugin project
+  - adding the mutex or the file store would require changing any file listed as out of scope
+
 ## Done criteria
 
 - Shared gates pass.
