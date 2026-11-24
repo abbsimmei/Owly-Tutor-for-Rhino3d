@@ -201,7 +201,7 @@ Document any unresolved privacy or security concerns.
 
 ## **Phase 4 — Rhino Integration**
 
-* Implement tool highlighting (a location card in the panel; an on-screen flash only where Rhino allows it, ADR-0007; on-screen flash not possible with Rhino's public API, see docs/owly/toolbar-flash-spike.md).  
+* Implement tool highlighting (a location card in the panel; an on-screen flash only where Rhino allows it, ADR-0007; on-screen flash not possible with Rhino's public API, see docs/owly/toolbar-flash-spike.md). (Phase 5 rework: the location card is now a "where to find" popover over the transcript, plan 020.)  
 * Implement command recommendations.  
 * Implement command copy.  
 * Implement command terminal highlight (copy, then Rhino gets focus for pasting; nothing is typed into Rhino, ADR-0007)  
@@ -223,8 +223,8 @@ Document any unresolved privacy or security concerns.
 
 **Status** (details in `plans/README.md`; manual Rhino checks still open for the done plans):
 
-* Done: 018 lookup lines, 019 commands once/in order, 025 projects.  
-* To do, in order: 020 popover → 021 button images (needs a Rhino 9 check first) → 022 Run → 023 options card → 024 option probe test → 026 saved conversations → 027 project notes → 028 main memory → 029 level → 030 level check-in.
+* Done: 018 lookup lines, 019 commands once/in order, 020 "where to find" popover, 025 projects.  
+* To do, in order: 021 button images (needs a Rhino 9 check first) → 022 Run → 023 options card → 024 option probe test → 026 saved conversations → 027 project notes → 028 main memory → 029 level → 030 level check-in.
 
 ## **Phase 6 — Testing**
 
