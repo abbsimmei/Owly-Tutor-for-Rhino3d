@@ -872,9 +872,13 @@ export class MockHost implements Bridge {
             options:
               name === '_Pyramid'
                 ? [
+                    { name: 'NumSides', kind: 'number', description: 'Demo: how many sides the base has.', values: [], current: '8', firstPrompt: true },
+                    { name: 'Mode', kind: 'info', description: 'Demo: how the base is drawn.', values: [], current: 'Inscribed', firstPrompt: true },
                     {
                       name: 'DirectionConstraint',
                       kind: 'choice',
+                      current: 'Vertical',
+                      firstPrompt: true,
                       description: 'Demo: limits which way the pyramid points.',
                       values: [
                         { name: 'None', description: 'Demo: no limit.' },
@@ -885,12 +889,15 @@ export class MockHost implements Bridge {
                     {
                       name: 'Solid',
                       kind: 'toggle',
+                      current: 'Yes',
+                      firstPrompt: true,
                       description: 'Demo: make a closed solid.',
                       values: [
                         { name: 'Yes', description: 'Demo: closed.' },
                         { name: 'No', description: 'Demo: open.' },
                       ],
                     },
+                    { name: 'Edge', kind: 'info', description: 'Demo: pick the base by its edge.', values: [], firstPrompt: true },
                     { name: 'BothSides', kind: 'info', description: 'Demo: build on both sides.', values: [] },
                   ]
                 : [],

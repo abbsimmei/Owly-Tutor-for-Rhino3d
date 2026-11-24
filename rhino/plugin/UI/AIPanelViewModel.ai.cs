@@ -39,6 +39,7 @@ internal partial class AIPanelViewModel : IDisposable
     public void Detach()
     {
         RhinoApp.Idle -= UpdateSelection;
+        StopProbeRetry();
         RhinoDoc.SelectObjects -= OnSelectionChanged;
         RhinoDoc.DeselectObjects -= OnSelectionChanged;
         RhinoDoc.DeselectAllObjects -= OnSelectionChanged;
@@ -468,11 +469,95 @@ internal partial class AIPanelViewModel : IDisposable
             HostUtils.LogDebugEvent($"[owly] command.options failed for {name}: {ex.Message}\n");
             data = CommandOptions.Empty;
         }
+        // Bridge.Post calls the WebView's ExecuteScriptAsync, which has to run on the UI thread. The option probe
+        // (plan 024) starts and cancels a command, so it also runs here, queued and outside the WebView handler.
+        var help = data;
+        Application.Instance.AsyncInvoke(() =>
+        {
+            var shown = help;
+            try
+            {
+                if (Document is { } doc)
+                {
+                    var probe = CommandOptionProbe.TryProbe(doc, name, help, out var guard);
+                    if (probe is not null)
+                    {
+                        shown = OptionMerge.Merge(help, probe);
+                        CommandOptionsSource.SetMerged(name, shown);
+                    }
+                    else
+                    {
+                        if (CommandOptionsSource.TryCached(name, out var cached)) shown = cached;
+                        if (guard is CommandOptionProbe.Guard.Busy or CommandOptionProbe.Guard.Selection) QueueProbeRetry(name, help);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                HostUtils.LogDebugEvent($"[owly] option probe step failed for {name}: {ex.Message}\n");
+            }
+            PostOptions(name, shown);
+        });
+    }
+
+    private void PostOptions(string name, CommandOptions data)
+    {
         var options = data.Options
-            .Select(o => new PanelCommandOption(o.Name, o.Kind, o.Values.Select(v => new PanelCommandOptionValue(v.Name, v.Description)).ToList(), o.Description))
+            .Select(o => new PanelCommandOption(o.Name, o.Kind, o.Values.Select(v => new PanelCommandOptionValue(v.Name, v.Description)).ToList(), o.Description, o.Current, o.FirstPrompt))
             .ToList();
-        // Bridge.Post calls the WebView's ExecuteScriptAsync, which has to run on the UI thread.
-        Application.Instance.AsyncInvoke(() => Bridge.Post(new CommandOptionsFoundEvent(name, options)));
+        Bridge.Post(new CommandOptionsFoundEvent(name, options));
+    }
+
+    // Plan 024: when a guard that can change (a command running, objects selected) blocked the probe, try again from
+    // Idle, one name per tick, for two minutes. The other guards never change, so those names are not queued.
+    private readonly Dictionary<string, (CommandOptions Help, DateTime Deadline)> _probeRetry = new(StringComparer.Ordinal);
+    private bool _probeRetryAttached;
+
+    private void QueueProbeRetry(string name, CommandOptions help)
+    {
+        _probeRetry[name] = (help, DateTime.UtcNow.AddMinutes(2));
+        if (_probeRetryAttached) return;
+        _probeRetryAttached = true;
+        RhinoApp.Idle += OnProbeRetryIdle;
+    }
+
+    private void StopProbeRetry()
+    {
+        _probeRetry.Clear();
+        if (!_probeRetryAttached) return;
+        _probeRetryAttached = false;
+        RhinoApp.Idle -= OnProbeRetryIdle;
+    }
+
+    private void OnProbeRetryIdle(object? sender, EventArgs e)
+    {
+        try
+        {
+            if (_probeRetry.Count == 0) { StopProbeRetry(); return; }
+            var doc = Document;
+            if (doc is null) { StopProbeRetry(); return; }
+            var name = _probeRetry.Keys.First();
+            var (help, deadline) = _probeRetry[name];
+            if (DateTime.UtcNow > deadline) { _probeRetry.Remove(name); }
+            else
+            {
+                var probe = CommandOptionProbe.TryProbe(doc, name, help, out var guard);
+                if (probe is not null)
+                {
+                    _probeRetry.Remove(name);
+                    var merged = OptionMerge.Merge(help, probe);
+                    CommandOptionsSource.SetMerged(name, merged);
+                    PostOptions(name, merged);
+                }
+                else if (CommandOptionProbe.IsPermanent(guard) || guard == CommandOptionProbe.Guard.None) _probeRetry.Remove(name);
+            }
+            if (_probeRetry.Count == 0) StopProbeRetry();
+        }
+        catch (Exception ex)
+        {
+            HostUtils.LogDebugEvent($"[owly] option probe retry failed: {ex.Message}\n");
+            StopProbeRetry();
+        }
     }
 
     private static RunVerdict ClassifyForRun(string? name) =>

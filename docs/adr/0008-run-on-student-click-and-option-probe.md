@@ -37,3 +37,4 @@ PRD §4's "Never execute Rhino commands on behalf of the user" now reads: Owly s
 - The blocklist lives in one C# file with unit tests. Adding a group of commands to it needs no ADR; removing a group does.
 - A command not on the blocklist that acts at once on a selection (for example `_BooleanUnion` with objects selected) runs when the student clicks Run. The student's click is the consent.
 - Letting the AI start Run, or adding any other click-less action, needs a new ADR that supersedes this one.
+- Plan 024 Part A passed with the `_X _Cancel` form only; see docs/owly/option-probe-spike.md.

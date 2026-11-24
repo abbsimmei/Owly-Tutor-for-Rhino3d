@@ -312,6 +312,18 @@ public class CommandOptionsParserTests
     }
 
     [Test]
+    public void A_merged_options_found_event_has_the_json_the_panel_fixture_pins()
+    {
+        var ev = new CommandOptionsFoundEvent("_Demo", new[]
+        {
+            new PanelCommandOption("Sides", "number", Array.Empty<PanelCommandOptionValue>(), "Demo sides.", "8", true),
+            new PanelCommandOption("Shape", "info", Array.Empty<PanelCommandOptionValue>(), "Demo shape.", "Round", true),
+        });
+        Assert.That(PanelJson.Serialize(ev), Is.EqualTo(
+            """{"type":"command.options.found","name":"_Demo","options":[{"name":"Sides","kind":"number","values":[],"description":"Demo sides.","current":"8","firstPrompt":true},{"name":"Shape","kind":"info","values":[],"description":"Demo shape.","current":"Round","firstPrompt":true}]}"""));
+    }
+
+    [Test]
     public void The_options_commands_the_panel_sends_are_understood()
     {
         var q = (CommandOptionsCommand)PanelJson.Deserialize("""{"type":"command.options","names":["_Pyramid","_Cone"]}""")!;

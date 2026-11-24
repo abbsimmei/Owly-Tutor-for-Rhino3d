@@ -36,7 +36,11 @@ test('parseCommandCode rejects anything that is not a name with simple pairs', a
   for (const text of [
     'Pyramid',
     '_Pyramid NumSides',
-    '_Pyramid NumSides=6.5',
+    '_Pyramid NumSides=6.',
+    '_Pyramid NumSides=1e5',
+    '_Pyramid NumSides=2,5',
+    '_Pyramid NumSides=-',
+    '_Pyramid NumSides=6 _Delete',
     '_Pyramid Shape=Round _Delete',
     '_Pyramid Shape=Round;_Exit',
     '_Pyramid Shape="Round"',
@@ -47,4 +51,11 @@ test('parseCommandCode rejects anything that is not a name with simple pairs', a
   ]) {
     assert.equal(parseCommandCode(text), null, JSON.stringify(text));
   }
+});
+
+test('parseCommandCode reads number values, plain, decimal and negative', async () => {
+  const { parseCommandCode } = await import('./commandName.js');
+  assert.deepEqual(parseCommandCode('_Pyramid NumSides=6'), { name: '_Pyramid', pairs: { NumSides: '6' } });
+  assert.deepEqual(parseCommandCode('_Pyramid _Radius=2.5 Solid=No'), { name: '_Pyramid', pairs: { Radius: '2.5', Solid: 'No' } });
+  assert.deepEqual(parseCommandCode('_Pyramid Shift=-3'), { name: '_Pyramid', pairs: { Shift: '-3' } });
 });

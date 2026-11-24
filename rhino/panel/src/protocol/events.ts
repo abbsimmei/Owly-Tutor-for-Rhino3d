@@ -46,12 +46,18 @@ export interface CommandOptionValue {
   description: string;
 }
 
-/** Plan 023: one option of a command. `info` options have no editable value; Run never writes them. */
+/**
+ * Plan 023: one option of a command. `info` options have no editable value; Run never writes them.
+ * Plan 024: `number` options are typed in; `current` and `firstPrompt` come from the option probe (the value Rhino
+ * shows now, and whether the option is on the command's first prompt). Both are absent without probe data.
+ */
 export interface CommandOptionInfo {
   name: string;
-  kind: 'choice' | 'toggle' | 'info';
+  kind: 'choice' | 'toggle' | 'number' | 'info';
   values: CommandOptionValue[];
   description: string;
+  current?: string;
+  firstPrompt?: boolean;
 }
 
 /** Plan 025: a project the student named, or the built-in Unsorted one. */

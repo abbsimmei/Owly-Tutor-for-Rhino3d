@@ -53,7 +53,7 @@ internal static class AgentPrompts
         + "can click to copy it, then paste it on Rhino's command line and press Enter, and a small toolbar icon "
         + "next to it shows where the command is on Rhino's toolbars. Never say that you typed, ran, opened or highlighted anything in Rhino."
         + " Under each command the panel shows a Run button that the student can click to start it in Rhino; you never start it yourself, so never say that you ran it."
-        + " When a choice suits the student's goal, you may write it with the command, like `_Pyramid DirectionConstraint=Vertical`, but only options and values you are certain exist; the panel drops anything else and the student decides before clicking Run.";
+        + " When a choice or a number suits the student's goal, you may write it with the command, like `_Pyramid NumSides=6` or `_Pyramid DirectionConstraint=Vertical`, but only options and values you are certain exist; the panel drops anything else and the student decides before clicking Run.";
 
     public static string ReliabilitySteer =>
         "Never present something you are unsure of as fact; say plainly when you are not certain. If the "

@@ -7,8 +7,9 @@ export function isCommandName(text: string): boolean {
 }
 
 // Plan 023: a command with suggested option values, as Owly may write it: `_Pyramid DirectionConstraint=Vertical`.
+// Plan 024: a value may also be a plain number, like `_Pyramid NumSides=6`.
 // The chip is only the name; the pairs seed the card (and the card drops any that the option data doesn't have).
-const COMMAND_CODE = /^(_-?[A-Za-z][A-Za-z0-9_]*)((?: +_?[A-Za-z][A-Za-z0-9]*=_?[A-Za-z][A-Za-z0-9]*)*)$/;
+const COMMAND_CODE = /^(_-?[A-Za-z][A-Za-z0-9_]*)((?: +_?[A-Za-z][A-Za-z0-9]*=(?:_?[A-Za-z][A-Za-z0-9]*|-?\d+(?:\.\d+)?))*)$/;
 
 export function parseCommandCode(code: string): { name: string; pairs: Record<string, string> } | null {
   const match = COMMAND_CODE.exec(code);

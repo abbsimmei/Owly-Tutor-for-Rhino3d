@@ -426,6 +426,20 @@ export class Store {
     this.cardValues.set((map) => new Map(map).set(key, values));
   }
 
+  /**
+   * Plan 024: a typed number. Unlike setCardValue it does not redraw the cards, because the commit comes from the
+   * field's `change` event, which a click on Run triggers by blurring the field. A redraw then would replace the Run
+   * button between mouse-down and mouse-up and swallow the click. The maps are edited in place; the card reads the
+   * value back when it next draws and when Run is clicked.
+   */
+  commitCardNumber(key: string, option: string, value: string | null): void {
+    const outer = this.cardValues.peek() as Map<string, ReadonlyMap<string, CardValue>>;
+    const values = new Map(outer.get(key) ?? []);
+    for (const existing of [...values.keys()]) if (existing.toLowerCase() === option.toLowerCase()) values.delete(existing);
+    if (value !== null) values.set(option, { value, suggested: false });
+    outer.set(key, values);
+  }
+
   openExplain(turnId: string, name: string, option: string): void {
     this.explain.set({ turnId, name, option });
   }

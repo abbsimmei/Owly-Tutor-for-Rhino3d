@@ -569,6 +569,19 @@ a:hover { text-decoration: underline; }
 }
 .cmd-opt-value[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
 .cmd-opt-value:focus-visible, .cmd-opt-explain:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; }
+.cmd-opt-value.is-current:not([aria-pressed="true"]) { border-color: var(--accent); }
+.cmd-opt-number {
+  width: 9ch;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+.cmd-opt-number[aria-invalid="true"] { border-color: var(--err); }
+.cmd-opt-number:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; }
+.cmd-opt-current { color: var(--text-dim); }
 .cmd-opt-suggested { color: var(--text-dim); font-style: italic; }
 .cmd-opt-explain {
   display: inline-flex;

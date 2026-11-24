@@ -4,9 +4,10 @@ using System.Text.RegularExpressions;
 namespace Rhino.AI.UI;
 
 // Plan 023: the options of a command, read from the command's help page. Rhino-free so Server.Tests can link it.
-// Kind: "choice" | "toggle" | "info". Only choice and toggle can be written by Run (RunMacro); "info" is read-only.
+// Kind: "choice" | "toggle" | "number" | "info". Run (RunMacro) writes choice, toggle and number; "info" is read-only.
+// Current and FirstPrompt come only from the option probe (plan 024, OptionMerge).
 internal sealed record CommandOptionValue(string Name, string Description);
-internal sealed record CommandOption(string Name, string Kind, IReadOnlyList<CommandOptionValue> Values, string Description);
+internal sealed record CommandOption(string Name, string Kind, IReadOnlyList<CommandOptionValue> Values, string Description, string? Current = null, bool? FirstPrompt = null);
 internal sealed record CommandOptions(IReadOnlyList<CommandOption> Options)
 {
     public static readonly CommandOptions Empty = new(Array.Empty<CommandOption>());
