@@ -105,7 +105,11 @@ export function locationPopover(ctx: PanelContext): Child {
     const scale = pr.width / panel.offsetWidth || 1;
     const ar = anchor.getBoundingClientRect();
     const sr = stream.getBoundingClientRect();
-    const bottom = (view.getBoundingClientRect().bottom - pr.top) / scale;
+    const vr = view.getBoundingClientRect();
+    const viewTop = (vr.top - pr.top) / scale;
+    const bottom = (vr.bottom - pr.top) / scale;
+    // At a high zoom 300px is wider than the stream: narrow it first, so the measurements below are the final size.
+    root.style.maxWidth = `${Math.min(300, (sr.width) / scale)}px`;
     const width = root.offsetWidth;
     const height = root.offsetHeight;
 
@@ -113,7 +117,10 @@ export function locationPopover(ctx: PanelContext): Child {
     const maxLeft = Math.max(minLeft, (sr.right - pr.left) / scale - width);
     const left = Math.min(Math.max((ar.left - pr.left) / scale, minLeft), maxLeft);
     let top = (ar.bottom - pr.top) / scale + 4;
-    if (top + height > bottom) top = Math.max(0, (ar.top - pr.top) / scale - height - 4);
+    // Flip above only when it doesn't fit below and there is more room above; never rise over the header.
+    if (top + height > bottom && (ar.top - pr.top) / scale - viewTop > bottom - top)
+      top = (ar.top - pr.top) / scale - height - 4;
+    top = Math.max(top, viewTop);
 
     root.style.left = `${Math.round(left)}px`;
     root.style.top = `${Math.round(top)}px`;
