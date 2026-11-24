@@ -10,6 +10,7 @@ import {
   type AgentInfo,
   type Attachment,
   type BlockSnapshot,
+  type CommandOptionInfo,
   type ContextItem,
   type HostEvent,
   type HostInfo,
@@ -30,6 +31,19 @@ export interface LocationView {
   turnId: string;
   name: string;
   places?: readonly ToolbarPlace[];
+}
+
+/** Plan 023: the one open explain popover for a command option. */
+export interface ExplainView {
+  turnId: string;
+  name: string;
+  option: string;
+}
+
+/** Plan 023: a value the student set (or Owly suggested) for one option of a card. */
+export interface CardValue {
+  value: string;
+  suggested: boolean;
 }
 
 export type BlockView =
@@ -133,6 +147,20 @@ export class Store {
    */
   readonly runnable = signal<ReadonlyMap<string, 'ok' | 'blocked' | 'unknown'>>(new Map());
   private readonly checkAsked = new Set<string>();
+  /**
+   * Plan 023: the options of a command from McNeel's help page, by chip name. Host data, kept across conversations like
+   * runnable. A name that was asked about but has no entry yet is "looking up". An empty list means none were found.
+   */
+  readonly commandOptions = signal<ReadonlyMap<string, readonly CommandOptionInfo[]>>(new Map());
+  private readonly optionsAsked = new Set<string>();
+  /**
+   * Plan 023: what each card has set, by `${turnId}|${name}` then option name. It is conversation content: a
+   * conversation snapshot clears it.
+   */
+  readonly cardValues = signal<ReadonlyMap<string, ReadonlyMap<string, CardValue>>>(new Map());
+  private readonly cardSeeded = new Set<string>();
+  /** Plan 023: the one open explain popover. Cleared with the conversation. */
+  readonly explain = signal<ExplainView | null>(null);
   readonly notices = signal<readonly Notice[]>([]);
   readonly status = signal<string | null>(null);
   readonly project = signal<ProjectView | null>(null);
@@ -192,6 +220,9 @@ export class Store {
         this.turns.set(event.snapshot.turns.map(turnFrom));
         this.questions.set([]);
         this.location.set(null);
+        this.explain.set(null);
+        this.cardValues.set(new Map());
+        this.cardSeeded.clear();
         this.cache.clear();
         this.asked.clear();
         return;
@@ -303,6 +334,11 @@ export class Store {
         this.runnable.set((map) => new Map(map).set(event.name, event.run));
         return;
 
+      // Plan 023: always kept, asked for or not.
+      case 'command.options.found':
+        this.commandOptions.set((map) => new Map(map).set(event.name, event.options));
+        return;
+
       // The same remark twice is still one remark: a repeat bumps the toast already showing.
       case 'notice': {
         const showing = this.notices().find((n) => n.level === event.level && n.text === event.text);
@@ -357,6 +393,45 @@ export class Store {
     if (this.checkAsked.has(name) || this.runnable.peek().has(name)) return false;
     this.checkAsked.add(name);
     return true;
+  }
+
+  /** True the first time a name needs its options looked up; false once asked or known. */
+  markOptionsAsked(name: string): boolean {
+    if (this.optionsAsked.has(name) || this.commandOptions.peek().has(name)) return false;
+    this.optionsAsked.add(name);
+    return true;
+  }
+
+  /** True while the host has been asked for a command's options and has not answered. */
+  optionsLookingUp(name: string): boolean {
+    return this.optionsAsked.has(name) && !this.commandOptions.peek().has(name);
+  }
+
+  /** Writes Owly's suggested pairs into a card, but only the first time the card is seen, so a re-render never resets a click. */
+  seedCard(key: string, pairs: Readonly<Record<string, string>>): void {
+    if (this.cardSeeded.has(key)) return;
+    this.cardSeeded.add(key);
+    const entries = Object.entries(pairs);
+    if (entries.length === 0) return;
+    const values = new Map<string, CardValue>();
+    for (const [option, value] of entries) values.set(option, { value, suggested: true });
+    this.cardValues.set((map) => new Map(map).set(key, values));
+  }
+
+  /** The student's click: sets an option (no longer "suggested"), or clears it on null. Option names match case-insensitively. */
+  setCardValue(key: string, option: string, value: string | null): void {
+    const values = new Map(this.cardValues.peek().get(key) ?? []);
+    for (const existing of [...values.keys()]) if (existing.toLowerCase() === option.toLowerCase()) values.delete(existing);
+    if (value !== null) values.set(option, { value, suggested: false });
+    this.cardValues.set((map) => new Map(map).set(key, values));
+  }
+
+  openExplain(turnId: string, name: string, option: string): void {
+    this.explain.set({ turnId, name, option });
+  }
+
+  closeExplain(): void {
+    this.explain.set(null);
   }
 
   /** A data: URL for the chip's button image in the current scheme, or null when there is none. */

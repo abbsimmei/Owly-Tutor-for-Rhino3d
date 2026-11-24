@@ -22,6 +22,7 @@ const zoom = new Zoom((level) => bridge.send({ type: 'zoom.set', level }));
 
 const iconQueue: string[] = [];
 const checkQueue: string[] = [];
+const optionsQueue: string[] = [];
 
 const ctx: PanelContext = {
   store,
@@ -54,7 +55,14 @@ const ctx: PanelContext = {
     if (checkQueue.length > 1) return;
     queueMicrotask(() => bridge.send({ type: 'command.check', names: checkQueue.splice(0) }));
   },
-  runCommand: (name) => bridge.send({ type: 'command.run', name }),
+  requestCommandOptions: (name) => {
+    if (!store.markOptionsAsked(name)) return;
+    optionsQueue.push(name);
+    if (optionsQueue.length > 1) return;
+    queueMicrotask(() => bridge.send({ type: 'command.options', names: optionsQueue.splice(0) }));
+  },
+  runCommand: (name, options) =>
+    bridge.send(options && Object.keys(options).length > 0 ? { type: 'command.run', name, options: { ...options } } : { type: 'command.run', name }),
   openLink: (url) => bridge.send({ type: 'url.open', url }),
   submit: (override) => {
     if (!store.hasReadyAgent.peek()) return;

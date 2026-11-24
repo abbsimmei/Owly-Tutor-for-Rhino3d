@@ -24,6 +24,12 @@ public class AgentPromptsTests
         Assert.That(prompt, Does.Contain("Under each command the panel shows a Run button that the student can click to start it in Rhino; you never start it yourself, so never say that you ran it."));
     }
 
+    [Test]
+    public void Compose_allows_suggesting_option_values_with_a_command()
+    {
+        Assert.That(AgentPrompts.Compose(""), Does.Contain("you may write it with the command, like `_Pyramid DirectionConstraint=Vertical`, but only options and values you are certain exist; the panel drops anything else and the student decides before clicking Run."));
+    }
+
     // The CLI is launched through cmd.exe, whose command line limit is 8,191 characters; the other arguments need room.
     [Test]
     public void Compose_stays_under_the_command_line_budget()

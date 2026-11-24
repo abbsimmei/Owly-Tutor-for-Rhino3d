@@ -10,6 +10,7 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(ToolbarIconCommand), "toolbar.icon")]
 [JsonDerivedType(typeof(RunCommandCommand), "command.run")]
 [JsonDerivedType(typeof(CheckCommandsCommand), "command.check")]
+[JsonDerivedType(typeof(CommandOptionsCommand), "command.options")]
 [JsonDerivedType(typeof(ChooseProjectCommand), "project.choose")]
 [JsonDerivedType(typeof(CreateProjectCommand), "project.create")]
 [JsonDerivedType(typeof(RenameProjectCommand), "project.rename")]
@@ -34,10 +35,15 @@ internal sealed record ToolbarIconCommand(IReadOnlyList<string> Names) : PanelCo
 
 // Plan 022 / ADR-0008: the student clicked Run on a command card. Starts the command in Rhino (RunScript, posted),
 // after the host re-checks it. Only a click sends this; the AI cannot.
-internal sealed record RunCommandCommand(string Name) : PanelCommand;
+// Plan 023: Options is only what the student set (option name to value). The host rebuilds the macro from its own
+// cached option data with RunMacro, so a name or value that is not in that data is dropped.
+internal sealed record RunCommandCommand(string Name, IReadOnlyDictionary<string, string>? Options = null) : PanelCommand;
 
 // Plan 022 / ADR-0008: may these commands get a Run button? Read-only. The answers are command.checked.
 internal sealed record CheckCommandsCommand(IReadOnlyList<string> Names) : PanelCommand;
+
+// Plan 023: what options do these commands have, from McNeel's help page? Read-only. The answers are command.options.found.
+internal sealed record CommandOptionsCommand(IReadOnlyList<string> Names) : PanelCommand;
 
 // Plan 025: projects. Choose makes a project current for this document (and remembers it for a file
 // Owly didn't know yet); Create does the same for a new project; Move re-files this document.

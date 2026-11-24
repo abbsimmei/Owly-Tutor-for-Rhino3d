@@ -26,19 +26,28 @@ internal static class CommandHelpResource
         // Rhino.Commands.Command.LookupCommandId()
         if (!Rhino.Commands.Command.IsCommand(name)) return "invalid command name";
 
-        var slug = WebUtility.UrlEncode(name.Trim().ToLowerInvariant());
         var major = RhinoApp.Version.Major;
+        var slug = WebUtility.UrlEncode(name.Trim().ToLowerInvariant());
         var url = $"https://docs.mcneel.com/rhino/{major}/help/en-us/commands/{slug}.htm";
 
-        using var response = await Http.GetAsync(url).ConfigureAwait(false);
-        if (response.StatusCode == HttpStatusCode.NotFound)
+        var html = await FetchHtml(name.Trim(), major).ConfigureAwait(false);
+        if (html == null)
             throw new InvalidOperationException($"No help page found for command \"{name}\" at {url}.");
-        response.EnsureSuccessStatusCode();
 
-        var html = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         var text = ExtractMainText(html);
 
         return $"{name} — {url}\n\n{text}";
+    }
+
+    // Plan 023: the raw help page, or null on any status other than 200 (McNeel serves 403 for a missing page).
+    // Callers pass a name that already passed CommandName.IsValid and Command.IsCommand, so the slug is [a-z0-9_].
+    internal static async Task<string?> FetchHtml(string bareName, int major)
+    {
+        var slug = WebUtility.UrlEncode(bareName.ToLowerInvariant());
+        var url = $"https://docs.mcneel.com/rhino/{major}/help/en-us/commands/{slug}.htm";
+        using var response = await Http.GetAsync(url).ConfigureAwait(false);
+        if (response.StatusCode != HttpStatusCode.OK) return null;
+        return await response.Content.ReadAsStringAsync().ConfigureAwait(false);
     }
 
     private static readonly Regex MainContentRegex = new(

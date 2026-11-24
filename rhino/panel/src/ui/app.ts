@@ -11,6 +11,7 @@ import type { PanelContext } from './context.js';
 import { header } from './header.js';
 import { questionOverlay } from './question.js';
 import { owl } from './owl.js';
+import { explainPopover, explainScrim } from './explainPopover.js';
 import { locationPopover, locationScrim } from './locationPopover.js';
 import { projectCard } from './projectCard.js';
 import { projectMenu } from './projectMenu.js';
@@ -101,6 +102,7 @@ export function app(ctx: PanelContext): Child {
     if (event.key === 'Escape' && ui.overlay() !== 'none') {
       ui.closeOverlay();
       ctx.store.closeLocation();
+      ctx.store.closeExplain();
       event.preventDefault();
       return;
     }
@@ -128,6 +130,10 @@ export function app(ctx: PanelContext): Child {
   // Plan 020: a new conversation clears the location; the overlay (and its scrim) must go with it.
   bind(() => {
     if (ctx.store.location() === null && ui.overlay.peek() === 'location') ui.closeOverlay();
+  });
+  // Plan 023: the same for the explain popover.
+  bind(() => {
+    if (ctx.store.explain() === null && ui.overlay.peek() === 'explain') ui.closeOverlay();
   });
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('wheel', onWheel, { passive: false });
@@ -158,6 +164,10 @@ export function app(ctx: PanelContext): Child {
     when(
       () => ui.overlay() === 'location' && ctx.store.location() !== null,
       () => [locationScrim(ctx), locationPopover(ctx)],
+    ),
+    when(
+      () => ui.overlay() === 'explain' && ctx.store.explain() !== null,
+      () => [explainScrim(ctx), explainPopover(ctx)],
     ),
     when(
       () => ui.overlay() === 'project',

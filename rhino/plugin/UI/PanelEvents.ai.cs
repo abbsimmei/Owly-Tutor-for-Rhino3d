@@ -29,6 +29,7 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(ToolbarFoundEvent), "toolbar.found")]
 [JsonDerivedType(typeof(ToolbarIconFoundEvent), "toolbar.icon.found")]
 [JsonDerivedType(typeof(CommandCheckedEvent), "command.checked")]
+[JsonDerivedType(typeof(CommandOptionsFoundEvent), "command.options.found")]
 [JsonDerivedType(typeof(ProjectEvent), "project")]
 [JsonDerivedType(typeof(StatusEvent), "status")]
 [JsonDerivedType(typeof(ZoomEvent), "zoom")]
@@ -57,6 +58,10 @@ internal sealed record PanelToolbarPlace(string Group, string Tab, string Path, 
 internal sealed record ToolbarIconFoundEvent(string Name, string? Light, string? Dark) : PanelEvent;
 // Plan 022 / ADR-0008: whether a command may get a Run button. Run is "ok", "blocked" or "unknown".
 internal sealed record CommandCheckedEvent(string Name, string Run) : PanelEvent;
+// Plan 023: the options of a command from its help page. Kind is "choice", "toggle" or "info". Empty when unknown.
+internal sealed record CommandOptionsFoundEvent(string Name, IReadOnlyList<PanelCommandOption> Options) : PanelEvent;
+internal sealed record PanelCommandOption(string Name, string Kind, IReadOnlyList<PanelCommandOptionValue> Values, string Description);
+internal sealed record PanelCommandOptionValue(string Name, string Description);
 internal sealed record StatusEvent(string? Text) : PanelEvent;
 
 // Plan 025: this document's project. Pending means Owly doesn't know which project the file belongs

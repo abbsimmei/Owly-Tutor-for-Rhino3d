@@ -1,7 +1,7 @@
 // Which Rhino commands an answer mentions, and in what order (plan 019). Pure and DOM-free so that
 // node --test can run it; markdown.ts and ui/transcript.ts share it.
 
-import { isCommandName } from './commandName.js';
+import { parseCommandCode } from './commandName.js';
 
 const FENCE = /^ {0,3}(```+|~~~+)/;
 const CODE = /`([^`\n]+)`/g;
@@ -25,7 +25,8 @@ export function commandsIn(text: string): string[] {
     if (fence !== undefined) continue;
     for (const match of line.matchAll(CODE)) {
       const code = match[1] as string;
-      if (isCommandName(code) && !found.includes(code)) found.push(code);
+      const name = parseCommandCode(code)?.name;
+      if (name !== undefined && !found.includes(name)) found.push(name);
     }
   }
   return found;

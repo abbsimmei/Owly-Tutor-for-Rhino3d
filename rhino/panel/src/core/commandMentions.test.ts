@@ -18,3 +18,8 @@ test('_-Loft and _Loft are the same command', () => {
   assert.equal(normaliseCommand('_-Loft'), normaliseCommand('_loft'));
   assert.equal(normaliseCommand('_Loft'), 'loft');
 });
+
+test('a code span with suggested pairs counts as a mention of the command name only', () => {
+  assert.deepEqual(commandsIn('Try `_Pyramid DirectionConstraint=Vertical` then `_Pyramid` and `_Cap`'), ['_Pyramid', '_Cap']);
+  assert.deepEqual(commandsIn('Not this: `_Pyramid Shape=Round _Delete`'), []);
+});

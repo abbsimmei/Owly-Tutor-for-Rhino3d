@@ -205,3 +205,67 @@ test('Run answers survive a new conversation', () => {
 
   assert.equal(store.runnable().get('_Pyramid'), 'ok');
 });
+
+// Plan 023: command options and per-card values.
+const fresh = {
+  type: 'conversation' as const,
+  snapshot: { sessionId: 's', agent: 'Owly', docTitle: 'd', startedAt: '2026-01-01T00:00:00Z', turns: [] },
+};
+
+test('a command.options.found answer is kept, and a name is looked up once', () => {
+  const store = new Store();
+  assert.equal(store.markOptionsAsked('_Pyramid'), true);
+  assert.equal(store.markOptionsAsked('_Pyramid'), false);
+  assert.equal(store.optionsLookingUp('_Pyramid'), true);
+
+  store.apply({ type: 'command.options.found', name: '_Pyramid', options: [] });
+  assert.equal(store.optionsLookingUp('_Pyramid'), false);
+  assert.deepEqual(store.commandOptions().get('_Pyramid'), []);
+  assert.equal(store.markOptionsAsked('_Pyramid'), false);
+});
+
+test('option data survives a new conversation', () => {
+  const store = new Store();
+  store.apply({ type: 'command.options.found', name: '_Pyramid', options: [] });
+  store.apply(fresh);
+  assert.equal(store.commandOptions().has('_Pyramid'), true);
+});
+
+test('a card is seeded once, so a re-render never resets what the student clicked', () => {
+  const store = new Store();
+  store.seedCard('t1|_Pyramid', { Shape: 'Round' });
+  assert.deepEqual(store.cardValues().get('t1|_Pyramid')?.get('Shape'), { value: 'Round', suggested: true });
+
+  store.setCardValue('t1|_Pyramid', 'Shape', 'Square');
+  store.seedCard('t1|_Pyramid', { Shape: 'Round' });
+  assert.deepEqual(store.cardValues().get('t1|_Pyramid')?.get('Shape'), { value: 'Square', suggested: false });
+});
+
+test('a click clears "suggested", and clicking again unselects', () => {
+  const store = new Store();
+  store.seedCard('t1|_Pyramid', { shape: 'Round' });
+  store.setCardValue('t1|_Pyramid', 'Shape', 'Round');
+  const values = store.cardValues().get('t1|_Pyramid');
+  assert.equal(values?.size, 1);
+  assert.equal(values?.get('Shape')?.suggested, false);
+
+  store.setCardValue('t1|_Pyramid', 'Shape', null);
+  assert.equal(store.cardValues().get('t1|_Pyramid')?.size, 0);
+});
+
+test('card values belong to one turn and one chip', () => {
+  const store = new Store();
+  store.setCardValue('t1|_Pyramid', 'Shape', 'Round');
+  assert.equal(store.cardValues().get('t2|_Pyramid'), undefined);
+});
+
+test('a new conversation clears card values, and a card can be seeded again', () => {
+  const store = new Store();
+  store.seedCard('t1|_Pyramid', { Shape: 'Round' });
+  store.openExplain('t1', '_Pyramid', 'Shape');
+  store.apply(fresh);
+  assert.equal(store.cardValues().size, 0);
+  assert.equal(store.explain(), null);
+  store.seedCard('t1|_Pyramid', { Shape: 'Square' });
+  assert.equal(store.cardValues().get('t1|_Pyramid')?.get('Shape')?.value, 'Square');
+});

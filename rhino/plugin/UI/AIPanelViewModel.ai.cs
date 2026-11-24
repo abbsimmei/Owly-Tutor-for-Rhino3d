@@ -188,7 +188,8 @@ internal partial class AIPanelViewModel : IDisposable
             FindToolbarCommand find => FindToolbar(find.Name, find.TurnId),
             ToolbarIconCommand icons => FindToolbarIcons(icons.Names),
             CheckCommandsCommand check => CheckCommands(check.Names),
-            RunCommandCommand run => RunCommand(run.Name),
+            RunCommandCommand run => RunCommand(run.Name, run.Options),
+            CommandOptionsCommand opts => FindCommandOptions(opts.Names),
             OpenMenuCommand menu => ShowMenu(menu),
             ChooseProjectCommand choose => ChooseProject(choose.Id),
             CreateProjectCommand create => CreateProject(create.Name),
@@ -446,6 +447,34 @@ internal partial class AIPanelViewModel : IDisposable
         static string? ToBase64(string? svg) => svg is null ? null : Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(svg));
     }
 
+    // Plan 023: the options of each command, from McNeel's help page, fetched by the host. Exactly one answer per
+    // valid name (empty when offline or the page is missing), so the panel never waits forever.
+    private bool FindCommandOptions(IReadOnlyList<string> names)
+    {
+        foreach (var name in names.Distinct(StringComparer.Ordinal).Take(20))
+        {
+            if (!CommandName.IsValid(name)) continue;
+            _ = AnswerOptions(name);
+        }
+        return true;
+    }
+
+    private async System.Threading.Tasks.Task AnswerOptions(string name)
+    {
+        CommandOptions data;
+        try { data = await CommandOptionsSource.Get(name).ConfigureAwait(false); }
+        catch (Exception ex)
+        {
+            HostUtils.LogDebugEvent($"[owly] command.options failed for {name}: {ex.Message}\n");
+            data = CommandOptions.Empty;
+        }
+        var options = data.Options
+            .Select(o => new PanelCommandOption(o.Name, o.Kind, o.Values.Select(v => new PanelCommandOptionValue(v.Name, v.Description)).ToList(), o.Description))
+            .ToList();
+        // Bridge.Post calls the WebView's ExecuteScriptAsync, which has to run on the UI thread.
+        Application.Instance.AsyncInvoke(() => Bridge.Post(new CommandOptionsFoundEvent(name, options)));
+    }
+
     private static RunVerdict ClassifyForRun(string? name) =>
         CommandBlocklist.Classify(name, Rhino.Commands.Command.IsCommand, Rhino.ApplicationSettings.CommandAliasList.IsAlias);
 
@@ -478,7 +507,7 @@ internal partial class AIPanelViewModel : IDisposable
 
     // Plan 022 / ADR-0008: the student clicked Run. Starts the command; Rhino then waits for the student's picks.
     // Posted with AsyncInvoke because RunScript blocks until the command ends and would stall the WebView otherwise.
-    private bool RunCommand(string name)
+    private bool RunCommand(string name, IReadOnlyDictionary<string, string>? options = null)
     {
         RunVerdict verdict;
         try { verdict = ClassifyForRun(name); }
@@ -510,7 +539,21 @@ internal partial class AIPanelViewModel : IDisposable
             return false;
         }
 
-        HostUtils.LogDebugEvent($"[owly] Run: {name}\n");
+        // Plan 023: only the options the student changed, rebuilt from the host's own cached help-page data.
+        string macro;
+        try
+        {
+            macro = CommandOptionsSource.TryCached(name, out var data)
+                ? RunMacro.Build(name, options, data)
+                : RunMacro.Build(name, null, CommandOptions.Empty);
+        }
+        catch (Exception ex)
+        {
+            HostUtils.LogDebugEvent($"[owly] Run refused, could not build the macro: {ex.Message}\n");
+            return false;
+        }
+
+        HostUtils.LogDebugEvent($"[owly] Run: {macro}\n");
         var doc = Document;
         try
         {
@@ -531,8 +574,8 @@ internal partial class AIPanelViewModel : IDisposable
                     PostBusy();
                     return;
                 }
-                if (doc is not null) RhinoApp.RunScript(doc.RuntimeSerialNumber, name, true);
-                else RhinoApp.RunScript(name, true);
+                if (doc is not null) RhinoApp.RunScript(doc.RuntimeSerialNumber, macro, true);
+                else RhinoApp.RunScript(macro, true);
             }
             catch (Exception ex)
             {

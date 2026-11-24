@@ -4,7 +4,7 @@
 // code anyway, which is what a reply still streaming looks like.
 
 import { normaliseCommand } from './commandMentions.js';
-import { isCommandName } from './commandName.js';
+import { parseCommandCode } from './commandName.js';
 import { highlight, normalizeLanguage } from './highlight.js';
 
 export interface CommandChipOptions {
@@ -29,7 +29,7 @@ export interface CommandChipOptions {
    * Plan 022: builds the options card that sits under the block holding a command's chip (one per chip, so one
    * per command per turn). Passed in so core/ does not depend on ui/. Null draws nothing.
    */
-  card?: (name: string) => Node | null;
+  card?: (name: string, suggested: Readonly<Record<string, string>>) => Node | null;
 }
 
 export interface MarkdownOptions {
@@ -42,7 +42,7 @@ export interface MarkdownOptions {
   /** Internal: commands already given a chip during this render. Set by renderMarkdown. */
   seen?: Set<string>;
   /** Internal: chip names whose card has not been placed yet. Drained by blocks(). Set by renderMarkdown. */
-  cards?: string[];
+  cards?: { name: string; pairs: Record<string, string> }[];
   /**
    * True while the text is still streaming. The open block is the one the model is still writing, so its cards
    * are held back until the block closes (plan 022).
@@ -111,11 +111,13 @@ function inline(source: string, options: MarkdownOptions): DocumentFragment {
     }
 
     if (code !== undefined) {
-      const key = normaliseCommand(code);
-      if (options.command && isCommandName(code) && !options.seen?.has(key)) {
+      // Plan 023: `_Pyramid DirectionConstraint=Vertical` is a chip for `_Pyramid`; the pairs go to its card.
+      const parsed = options.command ? parseCommandCode(code) : null;
+      const key = normaliseCommand(parsed?.name ?? code);
+      if (options.command && parsed && !options.seen?.has(key)) {
         options.seen?.add(key);
-        fragment.appendChild(commandChip(code, options.command));
-        options.cards?.push(code);
+        fragment.appendChild(commandChip(parsed.name, options.command));
+        options.cards?.push({ name: parsed.name, pairs: parsed.pairs });
       } else {
         const node = element('code');
         node.textContent = code;
@@ -197,8 +199,8 @@ function el_wrap(table: HTMLElement): HTMLElement {
 function drainCards(parent: Node, options: MarkdownOptions): void {
   const names = options.cards;
   if (!names || names.length === 0) return;
-  for (const name of names.splice(0)) {
-    const card = options.command?.card?.(name);
+  for (const { name, pairs } of names.splice(0)) {
+    const card = options.command?.card?.(name, pairs);
     if (card) parent.appendChild(card);
   }
 }
@@ -364,7 +366,7 @@ function blocks(lines: readonly string[], options: MarkdownOptions): DocumentFra
 
 export function renderMarkdown(source: string, options: MarkdownOptions = {}): DocumentFragment {
   const seen = new Set<string>(options.command?.seenBefore?.() ?? []);
-  const cards: string[] = [];
+  const cards: { name: string; pairs: Record<string, string> }[] = [];
   const fragment = blocks(source.replace(/\r\n?/g, '\n').split('\n'), { ...options, seen, cards });
   if (options.growing) holdBackOpenBlock(fragment);
   return fragment;
