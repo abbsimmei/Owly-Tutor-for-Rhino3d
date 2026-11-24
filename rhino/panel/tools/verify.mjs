@@ -672,6 +672,16 @@ try {
     check('inline code that is not a command stays plain code',
       (await host.evaluate(() => [...document.querySelectorAll('code')]
         .some((el) => el.textContent === 'layer_name' && !el.closest('.md-cmd')))) === true);
+    // Plan 019: only the first mention of a command in an answer is a chip.
+    await host.evaluate(() => window.rhinoAI.receive({ type: 'turn.text', turnId: 'turn-0', blockId: 'turn-0-cmd',
+      delta: ' Later `_Loft` again.' }));
+    await wait(200);
+    check('a repeated command in one answer makes one chip and one plain code',
+      (await host.evaluate(() => {
+        const block = [...document.querySelectorAll('.msg-agent')].find((el) => el.textContent.includes('Later'));
+        return block.querySelectorAll('.md-cmd').length === 1
+          && [...block.querySelectorAll('code')].filter((c) => c.textContent === '_Loft' && !c.closest('.md-cmd')).length === 1;
+      })) === true);
     await host.evaluate(() => { document.querySelector('.md-cmd-copy').click(); });
     await wait(100);
     check('clicking a chip sends command.copy with the name',

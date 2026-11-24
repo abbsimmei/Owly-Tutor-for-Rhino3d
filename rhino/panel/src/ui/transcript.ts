@@ -11,6 +11,7 @@ import { imageBlock } from './imageBlock.js';
 import { locationCards } from './locationCard.js';
 import { notices } from './notices.js';
 import { owl } from './owl.js';
+import { commandsIn, normaliseCommand } from '../core/commandMentions.js';
 import { agentMessage } from './message.js';
 
 function attachmentChip(attachment: Attachment): Child {
@@ -25,10 +26,23 @@ function attachmentChip(attachment: Attachment): Child {
 function block(ctx: PanelContext, turn: TurnView, view: BlockView): Child {
   switch (view.kind) {
     case 'text':
-      return agentMessage(ctx, turn.id, view.text, () => {
-        const blocks = turn.blocks();
-        return turn.status() === 'running' && blocks[blocks.length - 1]?.id === view.id;
-      });
+      return agentMessage(
+        ctx,
+        turn.id,
+        view.text,
+        () => {
+          const blocks = turn.blocks();
+          return turn.status() === 'running' && blocks[blocks.length - 1]?.id === view.id;
+        },
+        // Plan 019: a command is a chip only at its first mention in the turn, across text blocks.
+        () => {
+          const blocks = turn.blocks.peek();
+          const earlier = blocks.slice(0, blocks.findIndex((b) => b.id === view.id));
+          return new Set(
+            earlier.flatMap((b) => (b.kind === 'text' ? commandsIn(b.text.peek()) : [])).map(normaliseCommand),
+          );
+        },
+      );
     case 'tool':
       return null;
     case 'image':

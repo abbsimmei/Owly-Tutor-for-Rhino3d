@@ -3,6 +3,7 @@
 // Never builds an HTML string, so model output cannot inject markup. Unterminated fences render as
 // code anyway, which is what a reply still streaming looks like.
 
+import { normaliseCommand } from './commandMentions.js';
 import { isCommandName } from './commandName.js';
 import { highlight, normalizeLanguage } from './highlight.js';
 
@@ -17,6 +18,11 @@ export interface CommandChipOptions {
   locate?: (name: string) => void;
   /** Accessible label for that button, e.g. "Where is _Loft on the toolbars?". */
   locateLabel?: (name: string) => string;
+  /**
+   * Normalised names of commands already used as chips in earlier text blocks of the same turn
+   * (plan 019). Only the first mention of a command in an answer becomes a chip.
+   */
+  seenBefore?: () => ReadonlySet<string>;
 }
 
 export interface MarkdownOptions {
@@ -26,6 +32,8 @@ export interface MarkdownOptions {
   openLink?: (url: string) => void;
   /** When supplied, inline code that is a Rhino command (`_Loft`) renders as a copy chip. */
   command?: CommandChipOptions;
+  /** Internal: commands already given a chip during this render. Set by renderMarkdown. */
+  seen?: Set<string>;
 }
 
 const FENCE = /^ {0,3}(```+|~~~+)\s*([\w#+.-]*)\s*$/;
@@ -89,8 +97,11 @@ function inline(source: string, options: MarkdownOptions): DocumentFragment {
     }
 
     if (code !== undefined) {
-      if (options.command && isCommandName(code)) fragment.appendChild(commandChip(code, options.command));
-      else {
+      const key = normaliseCommand(code);
+      if (options.command && isCommandName(code) && !options.seen?.has(key)) {
+        options.seen?.add(key);
+        fragment.appendChild(commandChip(code, options.command));
+      } else {
         const node = element('code');
         node.textContent = code;
         fragment.appendChild(node);
@@ -321,7 +332,8 @@ function blocks(lines: readonly string[], options: MarkdownOptions): DocumentFra
 }
 
 export function renderMarkdown(source: string, options: MarkdownOptions = {}): DocumentFragment {
-  return blocks(source.replace(/\r\n?/g, '\n').split('\n'), options);
+  const seen = new Set<string>(options.command?.seenBefore?.() ?? []);
+  return blocks(source.replace(/\r\n?/g, '\n').split('\n'), { ...options, seen });
 }
 
 function commandChip(name: string, command: CommandChipOptions): HTMLElement {
