@@ -25,6 +25,10 @@ const lines = (...parts: string[]) => parts.join('\n');
 let counter = 0;
 const nextId = (prefix: string) => `${prefix}-${++counter}`;
 
+/** Plan 021: base64 of a made-up 16x16 square, standing in for a toolbar button image. */
+const mockIcon = (fill: string): string =>
+  btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="${fill}"/></svg>`);
+
 // Rhino keeps the panel's zoom in its own settings; localStorage is this stand-in's equivalent.
 const ZOOM_KEY = 'rhino-ai.zoom';
 
@@ -861,6 +865,18 @@ export class MockHost implements Bridge {
               ? [{ group: 'Main', tab: 'Surface', path: 'Surface Tools', button: 'Loft', click: 'left', hidden: false }]
               : [],
         });
+        return;
+
+      // Plan 021: a tiny made-up image for two commands (different fills per scheme); nothing for the rest.
+      case 'toolbar.icon':
+        for (const name of command.names) {
+          const fills = name === '_Loft' ? ['#336699', '#99ccff'] : name === '_Box' ? ['#996633', '#ffcc99'] : null;
+          this.emit(
+            fills
+              ? { type: 'toolbar.icon.found', name, light: mockIcon(fills[0]!), dark: mockIcon(fills[1]!) }
+              : { type: 'toolbar.icon.found', name },
+          );
+        }
         return;
 
       case 'project.choose':

@@ -18,6 +18,8 @@ export interface CommandChipOptions {
   locate?: (name: string) => void;
   /** Accessible label for that button, e.g. "Where is _Loft on the toolbars?". */
   locateLabel?: (name: string) => string;
+  /** Plan 021: a data: URL of the real toolbar button image, or null to keep the generic glyph. */
+  icon?: (name: string) => string | null;
   /**
    * Normalised names of commands already used as chips in earlier text blocks of the same turn
    * (plan 019). Only the first mention of a command in an answer becomes a chip.
@@ -362,7 +364,15 @@ function commandChip(name: string, command: CommandChipOptions): HTMLElement {
     const label = command.locateLabel ? command.locateLabel(name) : name;
     where.title = label;
     where.setAttribute('aria-label', label);
-    where.appendChild(command.glyph('toolbar'));
+    const src = command.icon?.(name) ?? null;
+    if (src) {
+      const image = element('img', 'md-cmd-icon') as HTMLImageElement;
+      image.alt = '';
+      image.src = src;
+      where.appendChild(image);
+    } else {
+      where.appendChild(command.glyph('toolbar'));
+    }
     where.addEventListener('click', () => locate(name));
     chip.appendChild(where);
   }

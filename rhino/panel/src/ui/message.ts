@@ -33,6 +33,10 @@ export function agentMessage(
       label: (name) => t('command.copyNamed', name),
       locate: (name) => openLocationPopover(ctx, turnId, name),
       locateLabel: (name) => t('command.whereNamed', name),
+      icon: (name) => {
+        ctx.requestToolbarIcon(name);
+        return ctx.store.iconUrl(name);
+      },
       seenBefore,
     },
   };
@@ -40,6 +44,9 @@ export function agentMessage(
 
   bind(() => {
     text();
+    // Plan 021: a late button image or a theme change redraws the chips.
+    ctx.store.icons();
+    ctx.store.scheme();
     if (queued) return;
     queued = true;
     requestAnimationFrame(() => {

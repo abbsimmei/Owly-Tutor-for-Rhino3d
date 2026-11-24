@@ -203,6 +203,8 @@ export type HostEvent =
   | { type: 'attachments.add'; attachments: Attachment[] }
   | { type: 'notice'; level: NoticeLevel; text: string }
   | { type: 'toolbar.found'; name: string; turnId: string; places: ToolbarPlace[] }
+  // Plan 021: a command's toolbar button image, as base64 of SVG text. Both absent means none was found.
+  | { type: 'toolbar.icon.found'; name: string; light?: string; dark?: string }
   | { type: 'status'; text: string | null }
   // Plan 025: this document's project. `pending`: Owly doesn't know the file's project yet, so the
   // project card asks once a question has been sent. `suggestion` is an id from `projects`.
@@ -248,6 +250,8 @@ export type PanelCommand =
   | { type: 'command.copy'; name: string }
   // Plan 015: where is this command on the toolbars? Read-only (ADR-0007).
   | { type: 'toolbar.find'; name: string; turnId: string }
+  // Plan 021: which of these commands have a toolbar button image? Read-only. Answered per name by toolbar.icon.found.
+  | { type: 'toolbar.icon'; names: string[] }
   // Plan 025: projects. `choose` makes a project current (and files a file Owly didn't know under it),
   // `create` does the same for a new one, `move` files this document under another project.
   | { type: 'project.choose'; id: string }

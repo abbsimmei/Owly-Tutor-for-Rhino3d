@@ -7,6 +7,7 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(SaveImageCommand), "image.save")]
 [JsonDerivedType(typeof(CopyCommandCommand), "command.copy")]
 [JsonDerivedType(typeof(FindToolbarCommand), "toolbar.find")]
+[JsonDerivedType(typeof(ToolbarIconCommand), "toolbar.icon")]
 [JsonDerivedType(typeof(ChooseProjectCommand), "project.choose")]
 [JsonDerivedType(typeof(CreateProjectCommand), "project.create")]
 [JsonDerivedType(typeof(RenameProjectCommand), "project.rename")]
@@ -25,6 +26,9 @@ internal sealed record CopyCommandCommand(string Name) : PanelCommand;
 
 // Plan 015 / ADR-0007: where is this command on the toolbars? Read-only.
 internal sealed record FindToolbarCommand(string Name, string TurnId) : PanelCommand;
+
+// Plan 021: which of these commands have a toolbar button image? Read-only. The answers are toolbar.icon.found.
+internal sealed record ToolbarIconCommand(IReadOnlyList<string> Names) : PanelCommand;
 
 // Plan 025: projects. Choose makes a project current for this document (and remembers it for a file
 // Owly didn't know yet); Create does the same for a new project; Move re-files this document.

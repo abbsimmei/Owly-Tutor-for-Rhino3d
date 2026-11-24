@@ -529,6 +529,7 @@ a:hover { text-decoration: underline; }
   color: var(--text-dim);
   margin-inline-start: 2px;
 }
+.md-cmd-icon { width: 14px; height: 14px; display: block; background: none; filter: none; mix-blend-mode: normal; }
 .md-cmd-where:hover { color: var(--accent); }
 .md-cmd-where:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; }
 
@@ -545,7 +546,9 @@ a:hover { text-decoration: underline; }
   box-shadow: var(--shadow);
 }
 .location-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.location-lead { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .location-title { font-weight: 600; }
+.location-icon { width: 24px; height: 24px; display: block; flex: none; background: none; filter: none; mix-blend-mode: normal; }
 .location-popover p { margin: 2px 0 0; }
 .location-tag {
   display: inline-block;

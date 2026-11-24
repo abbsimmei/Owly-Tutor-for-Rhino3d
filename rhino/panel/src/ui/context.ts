@@ -15,6 +15,8 @@ export interface PanelContext {
   copyCommand(name: string): void;
   /** Plan 015: ask the host where a command is on the toolbars; the answer arrives as toolbar.found and fills the location popover. */
   findToolbar(name: string, turnId: string): void;
+  /** Plan 021: ask the host for a command's toolbar button image, once per name. The answer fills store.icons. */
+  requestToolbarIcon(name: string): void;
   openLink(url: string): void;
   /** Sends the composer's draft, attachments and picked context as one prompt. */
   submit(text?: string): void;

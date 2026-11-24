@@ -128,3 +128,48 @@ test('a project event is kept with absent fields as null', () => {
   store.apply({ type: 'project', id: 'p-1', name: 'Pavilion', pending: false, projects });
   assert.deepEqual(store.project(), { id: 'p-1', name: 'Pavilion', pending: false, suggestion: null, projects });
 });
+
+// Plan 021: toolbar button images.
+test('an icon answer is kept whether it was asked for or not, and builds a data URL for the scheme', () => {
+  const store = new Store();
+  store.apply({ type: 'toolbar.icon.found', name: '_Loft', light: 'TElHSFQ=', dark: 'REFSSw==' });
+
+  store.apply({ type: 'theme', scheme: 'light' });
+  assert.equal(store.iconUrl('_Loft'), 'data:image/svg+xml;base64,TElHSFQ=');
+  store.apply({ type: 'theme', scheme: 'dark' });
+  assert.equal(store.iconUrl('_Loft'), 'data:image/svg+xml;base64,REFSSw==');
+});
+
+test('a missing variant falls back to the other one, and an empty answer gives no URL', () => {
+  const store = new Store();
+  store.apply({ type: 'toolbar.icon.found', name: '_Box', light: 'TElHSFQ=' });
+  store.apply({ type: 'toolbar.icon.found', name: '_Sphere' });
+
+  store.apply({ type: 'theme', scheme: 'dark' });
+  assert.equal(store.iconUrl('_Box'), 'data:image/svg+xml;base64,TElHSFQ=');
+  assert.equal(store.iconUrl('_Sphere'), null);
+  assert.equal(store.iconUrl('_Unknown'), null);
+});
+
+test('a name is asked about once, and never again once it is known', () => {
+  const store = new Store();
+
+  assert.equal(store.markIconAsked('_Loft'), true);
+  assert.equal(store.markIconAsked('_Loft'), false);
+
+  store.apply({ type: 'toolbar.icon.found', name: '_Box' });
+  assert.equal(store.markIconAsked('_Box'), false);
+});
+
+test('icons survive a new conversation', () => {
+  const store = new Store();
+  store.apply({ type: 'toolbar.icon.found', name: '_Loft', light: 'TElHSFQ=' });
+
+  store.apply({
+    type: 'conversation',
+    snapshot: { sessionId: 's', agent: 'Owly', docTitle: 'd', startedAt: '2026-01-01T00:00:00Z', turns: [] },
+  });
+
+  assert.equal(store.iconUrl('_Loft'), 'data:image/svg+xml;base64,TElHSFQ=');
+  assert.equal(store.markIconAsked('_Loft'), false);
+});

@@ -121,6 +121,12 @@ export class Store {
   private readonly cache = new Map<string, readonly ToolbarPlace[]>();
   // Names the panel has asked the host about; an answer nobody asked for opens nothing.
   private readonly asked = new Set<string>();
+  /**
+   * Plan 021: button images by chip name (`_Loft`), as base64 SVG. Not conversation content, so a new
+   * conversation keeps them. An entry with neither variant means the host looked and found none.
+   */
+  readonly icons = signal<ReadonlyMap<string, { light?: string; dark?: string }>>(new Map());
+  private readonly iconAsked = new Set<string>();
   readonly notices = signal<readonly Notice[]>([]);
   readonly status = signal<string | null>(null);
   readonly project = signal<ProjectView | null>(null);
@@ -277,6 +283,15 @@ export class Store {
         return;
       }
 
+      // Plan 021: always kept, asked for or not. It is harmless data.
+      case 'toolbar.icon.found': {
+        const entry: { light?: string; dark?: string } = {};
+        if (event.light) entry.light = event.light;
+        if (event.dark) entry.dark = event.dark;
+        this.icons.set((map) => new Map(map).set(event.name, entry));
+        return;
+      }
+
       // The same remark twice is still one remark: a repeat bumps the toast already showing.
       case 'notice': {
         const showing = this.notices().find((n) => n.level === event.level && n.text === event.text);
@@ -317,6 +332,21 @@ export class Store {
     if (places) return false;
     this.asked.add(name);
     return true;
+  }
+
+  /** True the first time a name needs asking; false once it is asked or known. Streaming re-renders call this every frame. */
+  markIconAsked(name: string): boolean {
+    if (this.iconAsked.has(name) || this.icons.peek().has(name)) return false;
+    this.iconAsked.add(name);
+    return true;
+  }
+
+  /** A data: URL for the chip's button image in the current scheme, or null when there is none. */
+  iconUrl(name: string): string | null {
+    const entry = this.icons().get(name);
+    if (!entry) return null;
+    const svg = this.scheme() === 'dark' ? (entry.dark ?? entry.light) : (entry.light ?? entry.dark);
+    return svg ? `data:image/svg+xml;base64,${svg}` : null;
   }
 
   closeLocation(): void {

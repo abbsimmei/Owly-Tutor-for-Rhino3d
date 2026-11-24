@@ -124,6 +124,18 @@ public class ToolbarIndexTests
     }
 
     [Test]
+    public void The_toolbar_icon_found_event_has_the_json_the_panel_fixture_pins()
+    {
+        const string light = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#336699"/></svg>""";
+        const string dark = """<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#99ccff"/></svg>""";
+        var json = PanelJson.Serialize(new ToolbarIconFoundEvent("_Loft",
+            Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(light)),
+            Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(dark))));
+
+        Assert.That(json, Is.EqualTo("""{"type":"toolbar.icon.found","name":"_Loft","light":"PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI\u002BPHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSIjMzM2Njk5Ii8\u002BPC9zdmc\u002B","dark":"PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxNiI\u002BPHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjE2IiBmaWxsPSIjOTljY2ZmIi8\u002BPC9zdmc\u002B"}"""));
+    }
+
+    [Test]
     public void The_toolbar_find_command_the_panel_sends_is_understood()
     {
         var command = PanelJson.Deserialize("""{"type":"toolbar.find","name":"_Loft","turnId":"turn-0"}""");

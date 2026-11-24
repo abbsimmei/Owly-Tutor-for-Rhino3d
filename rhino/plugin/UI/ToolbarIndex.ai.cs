@@ -24,12 +24,13 @@ internal sealed class ToolbarIndex
         public List<string> Parents { get; } = new();
     }
 
-    private sealed record Hit(string ToolbarId, string Button, string Click, string Command);
+    private sealed record Hit(string ToolbarId, string Button, string Click, string Command, string? BitmapId);
 
     private sealed record Where(string Group, string Tab, string Path, Guid GroupId);
 
     private readonly Dictionary<string, ToolbarInfo> _toolbars = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<Hit> _hits = new();
+    private readonly Dictionary<string, (string? Light, string? Dark)> _icons = new(StringComparer.OrdinalIgnoreCase);
 
     private ToolbarIndex() { }
 
@@ -58,6 +59,13 @@ internal sealed class ToolbarIndex
     {
         var root = doc.Root;
         if (root is null) return;
+
+        foreach (var icon in root.Descendants("icons").Elements("icon"))
+        {
+            var iconId = (string?)icon.Attribute("guid");
+            if (string.IsNullOrWhiteSpace(iconId)) continue;
+            _icons[iconId.Trim()] = (IconSvg(icon.Element("light")), IconSvg(icon.Element("dark")));
+        }
 
         var macros = new Dictionary<string, XElement>(StringComparer.OrdinalIgnoreCase);
         foreach (var macro in root.Descendants("macro_item"))
@@ -119,7 +127,8 @@ internal sealed class ToolbarIndex
                         Localised(macro, "button_text", languageId),
                         Localised(macro, "text", languageId),
                         Localised(item, "text", languageId));
-                    _hits.Add(new Hit(toolbarId, label, click, command));
+                    var bitmapId = ((string?)macro.Attribute("bitmap_id"))?.Trim();
+                    _hits.Add(new Hit(toolbarId, label, click, command, string.IsNullOrEmpty(bitmapId) ? null : bitmapId));
                 }
             }
         }
@@ -152,6 +161,33 @@ internal sealed class ToolbarIndex
             .ThenBy(p => p.Path, StringComparer.Ordinal)
             .Take(MaxPlaces)
             .ToList();
+    }
+
+    // Plan 021: the button image id of a command's macro. Left-click macros win over right-click ones.
+    public string? BitmapIdFor(string command)
+    {
+        var key = Key(command);
+        if (key.Length == 0) return null;
+        foreach (var click in new[] { "left", "right" })
+        {
+            var hit = _hits.FirstOrDefault(h => h.Click == click && h.BitmapId is not null
+                && string.Equals(h.Command, key, StringComparison.OrdinalIgnoreCase));
+            if (hit is not null) return hit.BitmapId;
+        }
+        return null;
+    }
+
+    // Plan 021: an icon stored inline in the .rui (plug-in buttons). Built-in icons are not here.
+    public (string? Light, string? Dark)? InlineIcon(string bitmapId) =>
+        _icons.TryGetValue(bitmapId.Trim(), out var icon) ? icon : null;
+
+    private static string? IconSvg(XElement? variant)
+    {
+        if (variant is null) return null;
+        if (variant.FirstNode is not null && variant.Elements().FirstOrDefault() is { } svg)
+            return svg.ToString(SaveOptions.DisableFormatting);
+        var text = variant.Value.Trim();
+        return text.Length > 0 ? text : null;
     }
 
     private List<Where> Resolve(string toolbarId)
