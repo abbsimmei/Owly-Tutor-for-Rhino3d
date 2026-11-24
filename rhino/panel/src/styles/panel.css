@@ -554,7 +554,35 @@ a:hover { text-decoration: underline; }
 }
 .cmd-run:hover { filter: brightness(1.08); }
 .cmd-run:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 2px; }
-.cmd-card-note { margin: 0; font-size: var(--fs-xs); color: var(--text-dim); }
+.cmd-card-note { margin: 2px 0; font-size: var(--fs-xs); color: var(--text-dim); }
+/* Plan 023: one row per command option. */
+.cmd-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 2px 0; font-size: var(--fs-xs); }
+.cmd-opt-name { font-weight: 600; margin-inline-end: 2px; }
+.cmd-opt-value {
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.cmd-opt-value[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.cmd-opt-value:focus-visible, .cmd-opt-explain:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; }
+.cmd-opt-suggested { color: var(--text-dim); font-style: italic; }
+.cmd-opt-explain {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: auto;
+  padding: 2px;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.cmd-opt-explain:hover { color: var(--accent); }
+.explain-values { margin: 2px 0 0; padding-inline-start: 16px; }
+.explain-note, .explain-source { color: var(--text-dim); }
 
 /* Plan 020: positioned by script in the panel's own units (the panel carries a CSS zoom). Not .popover: its top/inset fight that. */
 .location-popover {

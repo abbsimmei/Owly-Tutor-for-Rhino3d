@@ -40,7 +40,7 @@ export function agentMessage(
       },
       seenBefore,
       // Plan 022: the Run card under the block holding a command's chip.
-      card: (name) => commandCard(ctx, name),
+      card: (name, suggested) => commandCard(ctx, turnId, name, suggested),
     },
   };
   let queued = false;
@@ -52,6 +52,9 @@ export function agentMessage(
     ctx.store.scheme();
     // Plan 022: a Run answer, and the end of streaming (which releases the open block's cards), redraw the cards.
     ctx.store.runnable();
+    // Plan 023: option data and what the card has set redraw the cards.
+    ctx.store.commandOptions();
+    ctx.store.cardValues();
     streaming();
     if (queued) return;
     queued = true;

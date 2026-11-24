@@ -792,6 +792,8 @@ try {
     await wait(100);
     check('clicking Run sends command.run with the name',
       (await host.evaluate(() => window.__sent.some((m) => m.type === 'command.run' && m.name === '_Pyramid'))) === true);
+    check('Run with nothing changed sends no options key',
+      (await host.evaluate(() => window.__sent.filter((m) => m.type === 'command.run' && m.name === '_Pyramid').every((m) => !('options' in m)))) === true);
     await turnText('turn-0-run2', 'Again `_Pyramid` here.\n\nEnd.');
     await wait(250);
     check('a second mention of the command makes no second card',
@@ -809,7 +811,7 @@ try {
     await wait(250);
     const delCard = await host.evaluate(`(() => {
       const m = ${messageWith('it.')};
-      return { runs: m.querySelectorAll('.cmd-run').length, note: m.querySelector('.cmd-card .cmd-card-note')?.textContent ?? '' };
+      return { runs: m.querySelectorAll('.cmd-run').length, note: [...m.querySelectorAll('.cmd-card .cmd-card-note')].map((n) => n.textContent).join(' ') };
     })()`);
     check('a blocked command gets a card with the note and no Run button',
       delCard.runs === 0 && delCard.note.includes("can't start"), JSON.stringify(delCard));
@@ -830,6 +832,72 @@ try {
     check('each list item holds exactly one card, and no card is a direct child of the list',
       listCards.items === 2 && listCards.each.every((n) => n === 1) && listCards.loose === 0
         && listCards.labels.join() === 'Run _Box,Run _Cap', JSON.stringify(listCards));
+
+    // Plan 023: the options card. The contract's command.options.found line for _Pyramid (one invented choice, Shape:
+    // Round or Square) was replayed in the first batch, so the card under "Make it with" already has its rows.
+    const pyrCard = (js) => host.evaluate(`(() => { const card = ${messageWith('Make it with')}.querySelector('.cmd-card[data-cmd="_Pyramid"]'); ${js} })()`);
+    const rowInfo = await pyrCard(`return [...card.querySelectorAll('.cmd-opt')].map((r) => ({ opt: r.dataset.opt,
+      values: [...r.querySelectorAll('.cmd-opt-value')].map((b) => b.textContent), explain: r.querySelector('.cmd-opt-explain') !== null }));`);
+    check('the _Pyramid card has a row per fixture option, with a value button per choice and an explain button',
+      rowInfo.length === 1 && rowInfo[0].opt === 'Shape' && rowInfo[0].values.join() === 'Round,Square' && rowInfo[0].explain === true, JSON.stringify(rowInfo));
+    const pressed = () => pyrCard(`return [...card.querySelectorAll('.cmd-opt-value')].map((b) => b.getAttribute('aria-pressed')).join();`);
+    const clickValue = async (text) => {
+      await pyrCard(`[...card.querySelectorAll('.cmd-opt-value')].find((b) => b.textContent === ${JSON.stringify(text)}).click(); return 0;`);
+      await wait(250);
+    };
+    check('no value is selected to start with (fields start blank)', (await pressed()) === 'false,false');
+    await clickValue('Round');
+    check('clicking a value sets aria-pressed', (await pressed()) === 'true,false');
+    await clickValue('Round');
+    check('clicking it again clears it', (await pressed()) === 'false,false');
+    await clickValue('Round');
+    await pyrCard(`card.querySelector('.cmd-run').click(); return 0;`);
+    await wait(100);
+    const optionRuns = await host.evaluate(() => window.__sent.filter((m) => m.type === 'command.run' && m.name === '_Pyramid' && 'options' in m));
+    check('selecting one value and clicking Run sends only that option',
+      optionRuns.length === 1 && JSON.stringify(optionRuns[0].options) === JSON.stringify({ Shape: 'Round' }), JSON.stringify(optionRuns));
+    await clickValue('Round');
+
+    // A suggestion in the code span: the chip stays the name, a real option is pre-selected and marked, an invented one
+    // is dropped. _Demo is a second command whose answers are injected by hand.
+    await host.evaluate(() => {
+      window.rhinoAI.receive({ type: 'command.checked', name: '_Demo', run: 'ok' });
+      window.rhinoAI.receive({ type: 'command.options.found', name: '_Demo', options: [{ name: 'Shape', kind: 'choice',
+        values: [{ name: 'Round', description: 'Demo round.' }, { name: 'Square', description: 'Demo square.' }], description: 'Demo shape option.' }] });
+    });
+    await turnText('turn-0-demo', 'Use `_Demo Shape=Square Bogus=Yes` for it.\n\nMore.');
+    await wait(300);
+    const demo = await host.evaluate(`(() => {
+      const m = ${messageWith('for it.')};
+      const card = m.querySelector('.cmd-card[data-cmd="_Demo"]');
+      const chip = m.querySelector('.md-cmd[data-cmd="_Demo"]');
+      return { chip: chip?.textContent ?? '', rows: [...card.querySelectorAll('.cmd-opt')].map((r) => r.dataset.opt),
+        pressed: [...card.querySelectorAll('.cmd-opt-value')].map((b) => b.textContent + ':' + b.getAttribute('aria-pressed')).join(),
+        suggested: card.querySelectorAll('.cmd-opt-suggested').length };
+    })()`);
+    check('a suggested pair keeps the chip as the command name only',
+      demo.chip.includes('_Demo') && !demo.chip.includes('Shape') && !demo.chip.includes('Bogus'), JSON.stringify(demo));
+    check('Square is selected and marked as suggested, and the invented Bogus draws no row',
+      demo.rows.join() === 'Shape' && demo.pressed === 'Round:false,Square:true' && demo.suggested === 1, JSON.stringify(demo));
+    await host.evaluate(`(() => { ${messageWith('for it.')}.querySelector('.cmd-card[data-cmd="_Demo"] .cmd-run').click(); })()`);
+    await wait(100);
+    const demoRun = await host.evaluate(() => window.__sent.filter((m) => m.type === 'command.run' && m.name === '_Demo'));
+    check('Run sends the accepted suggestion and never the invented option',
+      demoRun.length === 1 && JSON.stringify(demoRun[0].options) === JSON.stringify({ Shape: 'Square' }), JSON.stringify(demoRun));
+
+    // The explain button opens one dialog with the option's description; Escape closes it.
+    await pyrCard(`card.querySelector('.cmd-opt-explain').click(); return 0;`);
+    await wait(250);
+    const explained = await host.evaluate(() => {
+      const pops = document.querySelectorAll('.explain-popover[role="dialog"]');
+      return { count: pops.length, text: pops[0]?.textContent ?? '' };
+    });
+    check('the explain button opens one dialog with the description and the values',
+      explained.count === 1 && explained.text.includes('Demo shape option.') && explained.text.includes('Demo square.'), JSON.stringify(explained));
+    await host.keyboard.press('Escape');
+    await wait(100);
+    check('Escape closes the explain popover',
+      (await host.evaluate(() => document.querySelectorAll('.explain-popover, .scrim').length)) === 0);
 
     // Plan 020 (the old card's class name is split so a grep for the removed code finds nothing): the toolbar.found line of the contract fixture was never asked for, so the replay opens nothing.
     check('the contract replay opens no location popover and draws no location card',

@@ -5,6 +5,7 @@ import type { ToolbarPlace } from '../protocol/events.js';
 import type { LocationView } from '../state/store.js';
 import type { PanelContext } from './context.js';
 import { icon } from './icons.js';
+import { placeBeside } from './popoverPlacement.js';
 
 // Plan 015 / ADR-0007, Plan 020: a text-only answer to "where is this button?", drawn as one popover over the
 // transcript next to the clicked chip. It never shows, hides or changes a toolbar.
@@ -94,14 +95,11 @@ export function locationPopover(ctx: PanelContext): Child {
     },
   );
 
-  // The panel carries a CSS zoom, so the position is worked out in the panel's own unzoomed units: the scale
-  // is measured, which cancels the zoom whether the engine reports rects zoomed or not.
+  // The placement itself lives in popoverPlacement.ts (shared with the explain popover).
   const reposition = (): void => {
     const entry = store.location.peek();
     const panel = root.closest<HTMLElement>('.panel');
-    const stream = panel?.querySelector<HTMLElement>('.stream');
-    const view = panel?.querySelector<HTMLElement>('.transcript');
-    if (!entry || !panel || !stream || !view) return;
+    if (!entry || !panel) return;
     const anchor = panel.querySelector<HTMLElement>(
       `[data-turn="${CSS.escape(entry.turnId)}"] .md-cmd[data-cmd="${CSS.escape(entry.name)}"]`,
     );
@@ -110,29 +108,7 @@ export function locationPopover(ctx: PanelContext): Child {
       closePopover(ctx);
       return;
     }
-    const pr = panel.getBoundingClientRect();
-    const scale = pr.width / panel.offsetWidth || 1;
-    const ar = anchor.getBoundingClientRect();
-    const sr = stream.getBoundingClientRect();
-    const vr = view.getBoundingClientRect();
-    const viewTop = (vr.top - pr.top) / scale;
-    const bottom = (vr.bottom - pr.top) / scale;
-    // At a high zoom 300px is wider than the stream: narrow it first, so the measurements below are the final size.
-    root.style.maxWidth = `${Math.min(300, (sr.width) / scale)}px`;
-    const width = root.offsetWidth;
-    const height = root.offsetHeight;
-
-    const minLeft = (sr.left - pr.left) / scale;
-    const maxLeft = Math.max(minLeft, (sr.right - pr.left) / scale - width);
-    const left = Math.min(Math.max((ar.left - pr.left) / scale, minLeft), maxLeft);
-    let top = (ar.bottom - pr.top) / scale + 4;
-    // Flip above only when it doesn't fit below and there is more room above; never rise over the header.
-    if (top + height > bottom && (ar.top - pr.top) / scale - viewTop > bottom - top)
-      top = (ar.top - pr.top) / scale - height - 4;
-    top = Math.max(top, viewTop);
-
-    root.style.left = `${Math.round(left)}px`;
-    root.style.top = `${Math.round(top)}px`;
+    placeBeside(root, anchor);
   };
 
   // Every frame, because streaming rebuilds the chip and autoscroll moves it.

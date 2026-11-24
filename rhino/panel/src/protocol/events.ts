@@ -40,6 +40,20 @@ export interface ToolbarPlace {
   hidden: boolean;
 }
 
+/** Plan 023: one value of a command option, with its description from McNeel's help page. */
+export interface CommandOptionValue {
+  name: string;
+  description: string;
+}
+
+/** Plan 023: one option of a command. `info` options have no editable value; Run never writes them. */
+export interface CommandOptionInfo {
+  name: string;
+  kind: 'choice' | 'toggle' | 'info';
+  values: CommandOptionValue[];
+  description: string;
+}
+
 /** Plan 025: a project the student named, or the built-in Unsorted one. */
 export interface ProjectInfo {
   id: string;
@@ -207,6 +221,8 @@ export type HostEvent =
   | { type: 'toolbar.icon.found'; name: string; light?: string; dark?: string }
   // Plan 022 / ADR-0008: whether a command may get a Run button. The host decides (blocklist, aliases, unknown names).
   | { type: 'command.checked'; name: string; run: 'ok' | 'blocked' | 'unknown' }
+  // Plan 023: a command's options from McNeel's help page. Only choice and toggle are editable; info is read-only.
+  | { type: 'command.options.found'; name: string; options: CommandOptionInfo[] }
   | { type: 'status'; text: string | null }
   // Plan 025: this document's project. `pending`: Owly doesn't know the file's project yet, so the
   // project card asks once a question has been sent. `suggestion` is an id from `projects`.
@@ -257,7 +273,9 @@ export type PanelCommand =
   // Plan 022 / ADR-0008: may these commands get a Run button? Read-only. Answered per name by command.checked.
   | { type: 'command.check'; names: string[] }
   // Plan 022 / ADR-0008: the student clicked Run on a command card. The host re-checks and starts the command.
-  | { type: 'command.run'; name: string }
+  | { type: 'command.run'; name: string; options?: Record<string, string> }
+  // Plan 023: what options do these commands have? Read-only. Answered per name by command.options.found.
+  | { type: 'command.options'; names: string[] }
   // Plan 025: projects. `choose` makes a project current (and files a file Owly didn't know under it),
   // `create` does the same for a new one, `move` files this document under another project.
   | { type: 'project.choose'; id: string }

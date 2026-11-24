@@ -863,9 +863,50 @@ export class MockHost implements Bridge {
         }
         return;
 
-      case 'command.run':
-        this.emit({ type: 'notice', level: 'info', text: `The Rhino host would start ${command.name} now.` });
+      // Plan 023: synthetic option data (invented descriptions, no McNeel text) for _Pyramid only.
+      case 'command.options':
+        for (const name of command.names) {
+          this.emit({
+            type: 'command.options.found',
+            name,
+            options:
+              name === '_Pyramid'
+                ? [
+                    {
+                      name: 'DirectionConstraint',
+                      kind: 'choice',
+                      description: 'Demo: limits which way the pyramid points.',
+                      values: [
+                        { name: 'None', description: 'Demo: no limit.' },
+                        { name: 'Vertical', description: 'Demo: straight up.' },
+                        { name: 'AroundCurve', description: 'Demo: follows a curve.' },
+                      ],
+                    },
+                    {
+                      name: 'Solid',
+                      kind: 'toggle',
+                      description: 'Demo: make a closed solid.',
+                      values: [
+                        { name: 'Yes', description: 'Demo: closed.' },
+                        { name: 'No', description: 'Demo: open.' },
+                      ],
+                    },
+                    { name: 'BothSides', kind: 'info', description: 'Demo: build on both sides.', values: [] },
+                  ]
+                : [],
+          });
+        }
         return;
+
+      case 'command.run': {
+        const set = command.options ? Object.entries(command.options).map(([k, v]) => `${k}=${v}`).join(' ') : '';
+        this.emit({
+          type: 'notice',
+          level: 'info',
+          text: `The Rhino host would start ${command.name}${set ? ' ' + set : ''} now.`,
+        });
+        return;
+      }
 
       case 'command.copy':
         void navigator.clipboard?.writeText(command.name);
