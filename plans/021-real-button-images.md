@@ -1,7 +1,7 @@
 # 021: Show the real toolbar button image
 
 - **Written against:** `40f2c38` on `rhino-9.x`.
-- **Status:** TODO
+- **Status:** DONE (`d104884`, advisor-approved, merged into `rhino-9.x`; the manual Rhino check is pending)
 - **Effort:** M
 - **Risk:** Medium. Built-in icons live in Rhino-internal resources whose names can change in a Rhino update. Any failure falls back to the generic glyph.
 - **Phase:** Phase 5 rework, commands & tools. Glossary: **Button image**, **Tool highlight**.
