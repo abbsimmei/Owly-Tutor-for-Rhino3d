@@ -1,4 +1,10 @@
+---
+status: superseded by ADR-0009
+---
+
 # Owly keeps no saved conversations, only the live transcript
+
+> Superseded by [ADR-0009](0009-saved-conversations-per-project.md). Kept for history.
 
 RhinoAI saved every conversation to Rhino's settings (`ConversationStore`, the newest 50, no expiry) and offered a searchable history drawer, a read-only review and Resume. For the Owly prototype we delete all of that, on both the C# and panel sides. A conversation lives only in memory. It ends when the student presses New conversation, closes the file (on Windows this includes File › Open and File › New) or quits Rhino. Closing or hiding the panel does not end it. When Owly loads, it deletes any `Conversations` settings node left by earlier builds. We chose this because PRD §7 asks for minimal data retention, and a tutor prototype doesn't need students to look up old chats. PRD §3.3's "displays conversation history" is met by the transcript of the current conversation.
 

@@ -127,6 +127,83 @@ Decisions the product owner made in the grilling session (each plan repeats the 
 - **Follow-up suggestions** move to Phase 5.
 - **Prompt.** The model tells the student to click a command to copy it, and never claims it typed, ran or highlighted anything. A new prompt-checks row covers this.
 
+## Phase 5 rework: commands & tools → memory → user level
+
+Written by an advisor pass (`/grill-with-docs`) against commit `40f2c38` on `rhino-9.x`, after the product owner changed direction on 2026-11-24 (two mock-ups: an options card with a green Run button, and a strip of owl buttons for saved conversations).
+- New decisions: [ADR-0008](../docs/adr/0008-run-on-student-click-and-option-probe.md) supersedes ADR-0007 (Run on click, guarded option probe), and [ADR-0009](../docs/adr/0009-saved-conversations-per-project.md) supersedes ADR-0006 (saved conversations per project).
+- Glossary: **Options card**, **Run**, **Blocked command**, **Option probe**, **Button image**, **Location popover** (replaces Location card), **Project**, **Unsorted**, **Project notes**, **Main memory**, **Level**, **Level check-in**. **Conversation** is kept as the term; "chat" stays an avoid-word.
+- PRD §3.2, §3.3, §4 and the new §3.4 carry notes.
+- CLAUDE.md marks the rules being replaced.
+
+The product owner set the priority: **commands and tools first, then memory, then user level.** Every plan is a separate deliverable. Dependencies are only where listed.
+
+```
+A  018 lookup lines   019 once/in order   020 popover   021 button images      (independent; build in this order)
+   022 Run ──► 023 options card ──► 024 option probe spike (may end "not feasible")
+B  025 projects ──► 026 saved conversations + owl strip ──► 027 project notes ──► 028 main memory
+C  029 level at start ──► 030 level check-in
+```
+
+| # | Plan | Status | Depends on |
+|---|---|---|---|
+| 018 | [Remove the lookup lines](018-remove-lookup-lines.md) | TODO | — |
+| 019 | [Name each command once, in order](019-commands-once-in-order.md) | TODO | — |
+| 020 | ["Where to find" popover](020-location-popover.md) | TODO | — (best after 019) |
+| 021 | [Real toolbar button images](021-real-button-images.md) | TODO | — (the popover image needs 020) |
+| 022 | [Run button](022-run-button.md) | TODO | — (best after 019) |
+| 023 | [Options card from help pages, with suggested values](023-options-card-from-help-pages.md) | TODO | 022 |
+| 024 | [Spike: silent option probe](024-option-probe-spike.md) | TODO | 023 |
+| 025 | [Projects](025-projects.md) | TODO | — |
+| 026 | [Saved conversations and the owl strip](026-saved-conversations.md) | TODO | 025 |
+| 027 | [Project notes](027-project-notes.md) | TODO | 026 |
+| 028 | [Main memory (opt-in)](028-main-memory.md) | TODO | 027 |
+| 029 | [Choose a level at the start](029-level-at-start.md) | TODO | — (adds the main-memory switch if 028 is done) |
+| 030 | [Level check-in](030-level-check-in.md) | TODO | 029 |
+
+Decisions the product owner made in the grilling session (each plan repeats the ones it needs):
+- **Lookup lines.** All of them go. The thinking strip stays.
+- **Commands.**
+  - Each command is named once, in order: a prompt rule, plus only the first mention per answer becoming a chip.
+  - The chip still copies.
+  - One options card per step, under the step that names the command.
+- **Run.**
+  - It starts the command with the student's options, and the student does the picks.
+  - It is refused while Rhino is in a command.
+  - Blocked: script and plug-in runners, Grasshopper, Owly's commands, file and app commands, Delete and Purge, Undo and Redo, settings and layout. A blocked card has options but no Run.
+  - The AI never triggers it.
+- **Options.**
+  - The silent probe is used if its Rhino 9 test passes, with four guards (idle, nothing selected, not blocked, help page lists options). A history line is an acceptable trace.
+  - McNeel's help pages are the fallback and the complement.
+  - Fields start blank, meaning keep Rhino's value.
+  - Unknown choices are read-only with a hint.
+  - Each row has an explain icon.
+  - Owly may pre-fill only verified values.
+- **Where to find:** a popover over the transcript.
+- **Button images:** local Rhino install only, on chips and in the popover.
+- **Projects.**
+  - Named by the student, mapped by file path, stored in `%AppData%\Owly` and shared by R8 and R9.
+  - Header menu.
+  - A card for unknown or Untitled files, with a folder suggestion and Unsorted.
+  - Kept until deleted, with Delete all.
+- **Conversations.**
+  - The owl strip with tooltips and right-click rename/delete.
+  - Reopening a file starts an empty conversation.
+  - Old conversations continue (`--resume`, else the saved transcript as context).
+- **Notes.** A Haiku summary at the end of each conversation, injected into new conversations, viewable and deletable.
+- **Main memory.** Opt-in, off by default, viewable and clearable.
+- **Level.**
+  - Beginner, Intermediate or Advanced, global, chosen in the welcome popup and changeable in settings.
+  - The popup re-shows once to existing installs.
+  - Check-in after answer 10 and then every 30, at most once per conversation. It offers a level change and changes nothing without a click.
+
+Facts found during planning:
+- **cmd.exe limit.** The CLI is launched through `cmd.exe`, which caps the command line at 8,191 characters, and the steers already take about 5.6k. So notes, main memory and resume context go in the first user message over stdin, never in `--system-prompt`.
+- **Resume and working directory.** `--resume` only finds a session from its original working directory, so plan 026 fixes the CLI's working directory at `%AppData%\Owly\cli`.
+- **`RunScript`** blocks while a command waits for picks. Post it with `AsyncInvoke`, never inside the WebView handler.
+- **Built-in button images** are embedded resources of `Rhino.UI.dll`, mapped by the `.rui` `bitmap_id`. Never copy them into the repo.
+- **Localisation ID ranges** per plan: 020: 290-299, 021: 300-309, 022: 310-329, 023: 330-349, 025: 360-389, 026: 390-409, 027: 410-429, 028: 430-439, 029: 440-449, 030: 450-459.
+- **Expect merge friction** in `markdown.ts`, `AIPanelViewModel.ai.cs`, `AgentPrompts.cs`, the protocol mirrors (`events.ts`, `PanelEvents`/`PanelCommands`, `mockHost.ts`, `host-events.json`), `verify.mjs` and `WelcomeDialog.ai.cs`. Run the plans in table order.
+
 ## Shared verification gates
 
 Every plan must leave these passing. Run them from the repo root.
@@ -166,3 +243,9 @@ Expected: `Build succeeded` with 0 errors, and all tests passing. Debug builds a
 - **An end-of-answer "Commands" strip instead of inline chips.** Rejected by the product owner. Commands are clickable where they appear.
 - **AI-proposed command options in an editable macro now.** Rejected for Phase 4: they can't be verified before the command runs. Moved to Phase 5 with verified docs.
 - **Reflection into Rhino's internal toolbar types for the flash.** Rejected (plan 016): it is fragile across Rhino updates.
+- **A team-verified allowlist of commands for Run.** Rejected by the product owner for the Phase 5 rework in favour of a blocklist (ADR-0008).
+- **Reading options only after the student clicks Run.** Rejected in favour of the silent probe, if its test passes (ADR-0008).
+- **Loading button images from docs.mcneel.com.** Rejected: local install only, with no web requests for images.
+- **"Chat" as the product term.** Rejected: "conversation" stays.
+- **Notes or main memory in `--system-prompt`.** Rejected: cmd.exe's 8,191-character limit (ADR-0009).
+- **Project ID inside the .3dm, or folder/file as the project.** Rejected in ADR-0009.

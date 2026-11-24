@@ -1,4 +1,10 @@
+---
+status: superseded by ADR-0008
+---
+
 # A student's click in the panel may touch Rhino's UI, never the model
+
+> Superseded by [ADR-0008](0008-run-on-student-click-and-option-probe.md). Kept for history.
 
 PRD Phase 4 asks Owly to highlight toolbar tools and the command line and to let students copy commands. None of that can be an agent tool: ADR-0002 keeps the AI's toolset at five read-only tools and treats a tool that changes UI state as acting, which is why `get_viewport_image` was removed. So Phase 4's actions are **panel buttons the student clicks**. On a click, the host may do four things: write a command name to the clipboard, move keyboard focus to Rhino's main window, read Rhino's loaded toolbar files from disk (read-only) to find where a command's button is, and show a temporary on-screen flash drawn by Owly. The host never touches the document. It never types into the command line, never runs a command, and never shows, hides, moves or edits Rhino's toolbars or panels. The AI cannot trigger any of these actions; it can only write `` `_Name` `` in an answer, which the panel turns into a button.
 

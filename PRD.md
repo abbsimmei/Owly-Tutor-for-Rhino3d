@@ -52,6 +52,8 @@ When recommending a Rhino toolbar tool:
 * Use a clear visual indication (e.g. blinking, colour change or outline).  
 * Explain where the tool is located and how to use it.
 
+(Phase 5 rework: the toolbar button's own image from the student's Rhino is shown on the command button and in a "where to find" popover over the transcript, plans 020-021.)
+
 When recommending a Rhino command:
 
 * Display the command in the chat.  
@@ -59,17 +61,24 @@ When recommending a Rhino command:
 * Do NOT automatically execute the command.  
 * Allow users to configure supported command parameters in the chat before insertion.
 
+(Phase 5 rework, ADR-0008: each command is named once, in order. Under its step an options card lets the student set the command's options and click **Run**, which starts the command in Rhino with those options. Rhino then waits for the student's own picks. Blocked commands, such as script runners, Save, Delete, Undo and Options, have no Run button. Plans 019 and 022-024.)
+
 The user must remain in control of all modelling operations.
 
 ## **3.3 <!-- gdoc_comment_begin: c1 -->Conversation Interface<!-- gdoc_comment_end: c1 -->**
 
 * Accessible through an Owly owl icon in Rhino's interface.  
 * Opens a chat panel, preferably on the right-hand side.  
-* Displays the transcript of the current conversation and the AI's responses. Owly keeps no saved conversations (ADR-0006).  
+* Displays the transcript of the current conversation and the AI's responses. Conversations are saved per project on the student's computer and reopened from a strip of owl buttons on the panel's right edge. Each project keeps short project notes, and an opt-in main memory spans all projects (ADR-0009, plans 025-028; this replaces ADR-0006).  
 * Includes a text input field.  
 * Supports suggested follow-up questions.
 
 On first installation, display a welcome popup with the Owly logo and a short description.
+
+## **3.4 Student Level**
+
+* The student chooses a level (Beginner, Intermediate or Advanced) in the welcome popup and can change it in settings. Owly pitches its explanations to that level.  
+* Now and then Owly asks whether its explanations are good, too easy or too hard, and offers a one-click level change. (Plans 029-030.)
 
 # **4\. AI Behaviour & Restrictions**
 
@@ -80,7 +89,7 @@ Owly must behave like a patient, knowledgeable Rhino tutor.
 * Never generate geometry.  
 * Never create or modify the user's model.  
 * Never automatically perform modelling operations.  
-* Never execute Rhino commands on behalf of the user.  
+* Never execute Rhino commands on behalf of the user. (Phase 5 rework, ADR-0008: Owly starts a command only when the student clicks Run, and never supplies the picks. The one exception is the guarded option probe, which starts and cancels a command to read its options.)  
 * Never invent commands, shortcuts or settings.  
 * Never claim to have performed an action it has not performed.  
 * Focus exclusively on teaching Rhino.
@@ -205,6 +214,12 @@ Document any unresolved privacy or security concerns.
 * Improve error handling.  
 * Test AI restrictions and response accuracy.
 * Configurable command options, based on verified documentation (moved from Phase 4).
+
+## **Phase 5 rework (product owner, 2026-11-24; plans 018-030)**
+
+* Commands and tools (first): remove the lookup lines; name each command once, in order; "where to find" popover; real button images; Run button; options card from help pages with Owly's suggested values; option probe test.  
+* Memory (second): projects; saved conversations per project with the owl strip; project notes; opt-in main memory.  
+* Student level (last): level choice in the welcome popup; level check-in.
 
 ## **Phase 6 — Testing**
 
