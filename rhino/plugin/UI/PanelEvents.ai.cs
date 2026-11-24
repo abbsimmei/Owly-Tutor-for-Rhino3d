@@ -27,6 +27,7 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(AttachmentsAddEvent), "attachments.add")]
 [JsonDerivedType(typeof(NoticeEvent), "notice")]
 [JsonDerivedType(typeof(ToolbarFoundEvent), "toolbar.found")]
+[JsonDerivedType(typeof(ToolbarIconFoundEvent), "toolbar.icon.found")]
 [JsonDerivedType(typeof(ProjectEvent), "project")]
 [JsonDerivedType(typeof(StatusEvent), "status")]
 [JsonDerivedType(typeof(ZoomEvent), "zoom")]
@@ -51,6 +52,8 @@ internal sealed record AttachmentsAddEvent(IReadOnlyList<PanelAttachment> Attach
 internal sealed record NoticeEvent(string Level, string Text) : PanelEvent;
 internal sealed record ToolbarFoundEvent(string Name, string TurnId, IReadOnlyList<PanelToolbarPlace> Places) : PanelEvent;
 internal sealed record PanelToolbarPlace(string Group, string Tab, string Path, string Button, string Click, bool Hidden);
+// Plan 021: the button image of a command, as base64 of the SVG text. Absent means none was found.
+internal sealed record ToolbarIconFoundEvent(string Name, string? Light, string? Dark) : PanelEvent;
 internal sealed record StatusEvent(string? Text) : PanelEvent;
 
 // Plan 025: this document's project. Pending means Owly doesn't know which project the file belongs

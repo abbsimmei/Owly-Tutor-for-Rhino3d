@@ -52,6 +52,29 @@ internal static class ToolbarLocator
         return result.Take(MaxPlaces).ToList();
     }
 
+    // Plan 021: the parsed index of every loaded toolbar file, through the same cache as Find. UI thread only.
+    internal static IEnumerable<ToolbarIndex> LoadedIndexes()
+    {
+        var indexes = new List<ToolbarIndex>();
+        try
+        {
+            var language = Localization.CurrentLanguageId;
+            int parsed = 0;
+            foreach (ToolbarFile file in RhinoApp.ToolbarFiles)
+            {
+                var path = file.Path;
+                if (string.IsNullOrEmpty(path) || !File.Exists(path)) continue;
+                var index = IndexFor(path, language, ref parsed);
+                if (index is not null) indexes.Add(index);
+            }
+        }
+        catch (Exception ex)
+        {
+            HostUtils.LogDebugEvent($"[owly] toolbar index failed: {ex.Message}\n");
+        }
+        return indexes;
+    }
+
     private static ToolbarIndex? IndexFor(string path, int language, ref int parsed)
     {
         try

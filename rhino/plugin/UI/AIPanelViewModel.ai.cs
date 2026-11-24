@@ -186,6 +186,7 @@ internal partial class AIPanelViewModel : IDisposable
             ClipboardCommand copy => CopyToClipboard(copy.Text),
             CopyCommandCommand chip => CopyCommand(chip.Name),
             FindToolbarCommand find => FindToolbar(find.Name, find.TurnId),
+            ToolbarIconCommand icons => FindToolbarIcons(icons.Names),
             OpenMenuCommand menu => ShowMenu(menu),
             ChooseProjectCommand choose => ChooseProject(choose.Id),
             CreateProjectCommand create => CreateProject(create.Name),
@@ -426,6 +427,21 @@ internal partial class AIPanelViewModel : IDisposable
         if (!CommandName.IsValid(name)) return false;
         Bridge.Post(new ToolbarFoundEvent(name, turnId, ToolbarLocator.Find(name)));
         return true;
+    }
+
+    // Plan 021 / ADR-0007: the panel shows chips for these commands. Read-only lookup of each button image. One answer
+    // per valid name, even when nothing was found, so the panel never waits.
+    private bool FindToolbarIcons(IReadOnlyList<string> names)
+    {
+        foreach (var name in names.Distinct(StringComparer.Ordinal).Take(20))
+        {
+            if (!CommandName.IsValid(name)) continue;
+            var (light, dark) = ToolbarIcons.TryGet(name);
+            Bridge.Post(new ToolbarIconFoundEvent(name, ToBase64(light), ToBase64(dark)));
+        }
+        return true;
+
+        static string? ToBase64(string? svg) => svg is null ? null : Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(svg));
     }
 
     // Plan 014 / ADR-0007: the student clicked a command chip. Copy it and hand focus to Rhino so they can paste

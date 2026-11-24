@@ -749,6 +749,25 @@ try {
       (await host.evaluate(() => [...document.querySelectorAll('.notice.info')]
         .some((el) => el.textContent.includes('_Loft')))) === true);
 
+    // Plan 021: the contract's toolbar.icon.found line gives _Loft its real button image; an unknown command asks once and keeps the glyph.
+    const loftIcon = () => host.evaluate(() => document.querySelector('.md-cmd[data-cmd="_Loft"] .md-cmd-where img.md-cmd-icon')?.getAttribute('src') ?? '');
+    check('the _Loft chip shows its button image as a data: img instead of the glyph',
+      (await loftIcon()).startsWith('data:image/svg+xml;base64,'));
+    await host.evaluate(() => window.rhinoAI.receive({ type: 'turn.text', turnId: 'turn-0', blockId: 'turn-0-cmd',
+      delta: ' Try `_Sphere` next.' }));
+    await wait(200);
+    await host.evaluate(() => window.rhinoAI.receive({ type: 'turn.text', turnId: 'turn-0', blockId: 'turn-0-cmd',
+      delta: ' And more words.' }));
+    await wait(200);
+    const iconAsks = await host.evaluate(() => window.__sent.filter((m) => m.type === 'toolbar.icon' && m.names.includes('_Sphere')));
+    check('an unknown command asks for its image exactly once, even after another delta redraws it',
+      iconAsks.length === 1 && iconAsks[0].names.length === 1, JSON.stringify(iconAsks));
+    check('that chip keeps the generic glyph',
+      (await host.evaluate(() => {
+        const where = document.querySelector('.md-cmd[data-cmd="_Sphere"] .md-cmd-where');
+        return where !== null && where.querySelector('img') === null && where.querySelector('svg') !== null;
+      })) === true);
+
     // Plan 020 (the old card's class name is split so a grep for the removed code finds nothing): the toolbar.found line of the contract fixture was never asked for, so the replay opens nothing.
     check('the contract replay opens no location popover and draws no location card',
       (await host.evaluate(() => document.querySelectorAll('.location-popover, .location-' + 'card').length)) === 0);
@@ -775,6 +794,8 @@ try {
     await wait(100);
     check('the host answer puts Surface Tools in the open popover',
       (await host.evaluate(() => document.querySelector('.location-popover')?.textContent.includes('Surface Tools') ?? false)) === true);
+    check('the _Loft popover shows its button image',
+      (await host.evaluate(() => document.querySelector('.location-popover img.location-icon')?.getAttribute('src')?.startsWith('data:image/svg+xml;base64,') ?? false)) === true);
     const placed = await host.evaluate(() => {
       const pop = document.querySelector('.location-popover').getBoundingClientRect();
       const chip = document.querySelector('.md-cmd[data-cmd="_Loft"]').getBoundingClientRect();
@@ -799,6 +820,15 @@ try {
       (await host.evaluate(() => document.querySelectorAll('.location-popover, .scrim').length)) === 0);
     check('no location card exists any more',
       (await host.evaluate(() => document.querySelectorAll('.location-' + 'card').length)) === 0);
+
+    const originalSrc = await loftIcon();
+    await host.evaluate(() => window.rhinoAI.receive({ type: 'theme', scheme: document.documentElement.dataset.scheme === 'dark' ? 'light' : 'dark' }));
+    await wait(200);
+    const flippedSrc = await loftIcon();
+    check('a theme event switching the scheme changes the chip image',
+      flippedSrc.startsWith('data:image/svg+xml;base64,') && flippedSrc !== originalSrc);
+    await host.evaluate((scheme) => window.rhinoAI.receive({ type: 'theme', scheme }), await host.evaluate(() => document.documentElement.dataset.scheme === 'dark' ? 'light' : 'dark'));
+    await wait(200);
 
     // Plan 025: the contract's project event is pending, so the card asks, suggestion first.
     const hostProject = await host.evaluate(() => ({

@@ -20,6 +20,8 @@ const store = new Store();
 const ui = new UiState();
 const zoom = new Zoom((level) => bridge.send({ type: 'zoom.set', level }));
 
+const iconQueue: string[] = [];
+
 const ctx: PanelContext = {
   store,
   ui,
@@ -38,6 +40,13 @@ const ctx: PanelContext = {
     store.apply({ type: 'notice', level: 'info', text: t(mac ? 'command.copiedMac' : 'command.copied', name) });
   },
   findToolbar: (name, turnId) => bridge.send({ type: 'toolbar.find', name, turnId }),
+  requestToolbarIcon: (name) => {
+    if (!store.markIconAsked(name)) return;
+    iconQueue.push(name);
+    if (iconQueue.length > 1) return;
+    // One request per microtask, however many chips a render drew.
+    queueMicrotask(() => bridge.send({ type: 'toolbar.icon', names: iconQueue.splice(0) }));
+  },
   openLink: (url) => bridge.send({ type: 'url.open', url }),
   submit: (override) => {
     if (!store.hasReadyAgent.peek()) return;

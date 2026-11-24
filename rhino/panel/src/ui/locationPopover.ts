@@ -76,7 +76,16 @@ export function locationPopover(ctx: PanelContext): Child {
     el(
       'div',
       { class: 'location-head' },
-      el('span', { class: 'location-title', text: () => t('location.title', name()) }),
+      el(
+        'span',
+        { class: 'location-lead' },
+        // Plan 021: the real button image, when the host found one.
+        () => {
+          const src = store.iconUrl(name());
+          return src ? el('img', { class: 'location-icon', alt: '', src }) : null;
+        },
+        el('span', { class: 'location-title', text: () => t('location.title', name()) }),
+      ),
       close,
     ),
     () => {
