@@ -71,6 +71,86 @@ The help pages miss options. The Pyramid page has no NumSides or Mode, which the
 
 **If A says not feasible:** record it in the spike doc, add a one-line note to PRD Phase 5 and plan 023 ("options come from help pages only; probe not feasible, see docs/owly/option-probe-spike.md"), and set this plan to DONE (not feasible).
 
+## Advisor addendum at `4ea69f1`: the Part A test command (read before building it; it overrides Part A's first bullet)
+
+Plans 022 and 023 are merged. Run already posts `RhinoApp.RunScript` with `Application.Instance.AsyncInvoke` (`RunCommand` in `UI/AIPanelViewModel.ai.cs`). Option data from the help pages comes from `UI/CommandOptionsSource.ai.cs`. RhinoCommon 9.0.26300 has everything Part A needs; checked in `RhinoCommon.xml`:
+- `RhinoApp.CommandPromptChanged` (an event) and `RhinoApp.CommandPrompt`
+- `RhinoApp.PostCancelEvent(uint)`
+- `RhinoApp.CommandHistoryWindowText`
+- `RhinoApp.CommandWindowCaptureEnabled` and `RhinoApp.CapturedCommandWindowStrings(bool)`
+- `RhinoDoc.NextUndoRecordSerialNumber` and `CurrentUndoRecordSerialNumber`
+- `RhinoDoc.Modified`
+- the `RhinoDoc` events `AddRhinoObject`, `DeleteRhinoObject`, `ReplaceRhinoObject`, `UndeleteRhinoObject`, `ModifyObjectAttributes`, `SelectObjects`, `DeselectObjects` and `DeselectAllObjects`
+- `Command.GetMostRecentCommands()`, `Command.InCommand()` and `Command.UndoRedo`
+
+**Two facts that shape the test:**
+1. **The probe must not run inside a command.** If a test command ran the probe directly, the test command itself would become "the last command", which spoils the "Enter repeats the student's command" check. Running from Idle is also how the real probe would run. So the test command only **arms** the probe on a delay and returns. The student then runs a command of their own, and the probe fires from `RhinoApp.Idle` once the delay has passed and `Command.InCommand()` is false.
+2. **`RunScript` doesn't return while the started command waits for input.** The cancel must therefore be queued **before** the command starts, or be sent **from inside** the `CommandPromptChanged` handler, which runs in the nested command loop.
+
+**The throwaway command.**
+- Build it on branch `owly/probe-spike` in its own worktree. That branch is **never merged** into `rhino-9.x`, and it is deleted once the results are recorded.
+- Put it in `rhino/plugin/Commands/ProbeTestCommand.ai.cs`, inside `#if R9`, with `[CommandStyle(Style.Hidden)]` and `EnglishName => "OwlyProbeTest"`.
+- Change nothing else in the repo.
+
+`OwlyProbeTest` asks with `GetOption` (Enter accepts):
+- `Method`: `PreCancel`, `PromptCancel` or `CancelToken`, default `PromptCancel`
+- `Set`: `All` or `One`, default `All`. With `One`, it then asks for a command name as a string; the name must pass `CommandName.IsValid`.
+- `Delay`: an integer number of seconds, default 8, from 0 to 60
+
+It refuses, with a message, if anything is selected. It prints "Probe armed: runs in N s. Run a command of your own now (for example _Circle, then Esc), then wait." Then it subscribes to `RhinoApp.Idle` and returns `Success`.
+
+The `All` list, in this order, is Pyramid, Box, Cylinder, Loft, ExtrudeCrv, Fillet, Offset, Polygon, Circle, Rectangle, Sweep2, Revolve, Pipe, Array, Text, Hatch and Explode. Hatch may open a dialog; Explode acts on a selection, and with nothing selected it should only prompt.
+
+**On Idle, once the delay has passed:** one probe per Idle tick, and only while `!Command.InCommand()` and nothing is selected. If either fails, wait for the next tick. For each command `X`:
+1. **Snapshot:**
+   - `doc.NextUndoRecordSerialNumber` and `doc.CurrentUndoRecordSerialNumber`
+   - `doc.Modified`
+   - `Command.GetMostRecentCommands()`, as the first 3 entries' names, with a property name found by reflection over the returned type only if needed for printing. The plain `ToString()` is acceptable.
+   - `RhinoApp.CommandHistoryWindowText.Length`
+   - zeroed counters, subscribed to the eight `RhinoDoc` events above and to `Command.UndoRedo`
+   - `CommandWindowCaptureEnabled = true`, then `CapturedCommandWindowStrings(true)` to clear the buffer
+   - a `Stopwatch`
+2. **Subscribe to `CommandPromptChanged`.** Record every distinct non-empty `RhinoApp.CommandPrompt` value, up to 10.
+3. **Run by method:**
+   - `PreCancel`: `RhinoApp.PostCancelEvent(doc.RuntimeSerialNumber)`, then `RhinoApp.RunScript(doc.RuntimeSerialNumber, "_" + X, false)`.
+   - `PromptCancel`: `RunScript(serial, "_" + X, false)`. On the **first** prompt that contains `(` (an options prompt), or on the second prompt of any kind, call `PostCancelEvent(serial)` once.
+   - `CancelToken`: `RunScript(serial, "_" + X + " _Cancel", false)`. As a watchdog, the handler calls `PostCancelEvent(serial)` once if a third prompt appears, because `_Cancel` may not be a recognised token.
+   - Everything is in try/catch, and an exception is recorded.
+4. **Afterwards:** unsubscribe everything and read the same values again. Record:
+   - the new part of the history text (its last 400 characters)
+   - the captured strings
+   - `InCommand()`
+   - the elapsed ms
+   - set `CommandWindowCaptureEnabled = false`
+5. **Append one block per probe** to `%TEMP%\owly-probe-test.txt` (UTF-8). Start each run with a header line: the Rhino version, the method, the set, the date and time. Also `RhinoApp.WriteLine` a one-line summary.
+
+   The block format:
+   ```
+   ### _Pyramid · PromptCancel
+   prompts: ["…", "…"]
+   history: "…"
+   captured: ["…"]
+   inCommandAfter: False
+   doc: add=0 delete=0 replace=0 undelete=0 modifyAttr=0 | select=0 deselect=0 deselectAll=0 | undoRedo=0
+   undo: next 41->41, current 40->40 | modified False->False
+   mru: [Circle, Line, Box] -> [Circle, Line, Box]
+   ms: 85
+   error: (none)
+   ```
+6. When the set is done, print "Probe done. Press Enter now and note which command starts. Results: <path>". Unsubscribe from Idle.
+
+**Build gate for the executor:** only `dotnet build rhino/plugin/RhinoAI.csproj -p:RhinoTarget=R9` with 0 errors. Run no tests and make no panel changes. Commit on `owly/probe-spike`.
+
+**What the product owner runs** (Rhino 9, a **new empty file**, Rhino closed first). Launch Rhino 9 with that worktree's build, the same way the "Rhino 9" configuration in `.vscode/launch.json` does it, pointing at the probe worktree's `rhino/plugin/bin/R9-win/Debug`. Then:
+1. `OwlyProbeTest`, `Method=PromptCancel`, `Set=All`, `Delay=8`. Within the 8 s, run `_Circle` and press Esc. Wait for "Probe done", press **Enter**, and note what starts.
+2. Repeat with `Method=PreCancel`.
+3. Repeat with `Method=CancelToken`.
+4. Note any dialog that appeared, and any command that stayed waiting until you pressed Esc.
+5. Press Ctrl+Z once and note whether anything is undone (it should say nothing to undo, or undo your own last action).
+6. Send `%TEMP%\owly-probe-test.txt` back, plus notes 1-5.
+
+The advisor then records the per-command table and the verdict in this plan. The Part B executor (or a doc-only step) writes `docs/owly/option-probe-spike.md` from it.
+
 ## Done criteria
 
 - Part A: the spike doc exists with the per-command table and verdict.
