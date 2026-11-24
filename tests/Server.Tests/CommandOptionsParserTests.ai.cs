@@ -213,6 +213,94 @@ public class CommandOptionsParserTests
     }
 
     [Test]
+    public void Only_the_first_h1_block_counts_in_both_layouts()
+    {
+        var html = Page("""
+            <h1>Demo</h1>
+            <p class="Dialog_Box_Title">Command-line options</p>
+            <h5>Shape</h5><p>Demo.</p>
+            <table><tr><th colspan="2">Command-line options</th></tr><tr><td><p>Sides</p></td><td>Demo sides.</td></tr></table>
+            <h1><a name="Other"></a>OtherDemo</h1>
+            <p class="Dialog_Box_Title">Command-line options</p>
+            <h5>Extra</h5><p>Second command.</p>
+            <table><tr><th colspan="2">Command-line options</th></tr><tr><td><p>Density</p></td><td>Second command.</td></tr></table>
+            """);
+        Assert.That(CommandOptionsParser.Parse(html).Options.Select(x => x.Name), Is.EqualTo(new[] { "Sides", "Shape" }));
+    }
+
+    [Test]
+    public void An_indent_block_with_a_nested_indent_block_holds_sub_options_not_values()
+    {
+        var html = Page("""
+            <p class="Dialog_Box_Title">Command-line options</p>
+            <h5>Chain</h5><p>Demo chain.</p>
+            <div class="Indent_Level_2">
+              <h5>Continuity</h5><p>Sub-option.</p>
+              <h5>Direction</h5><p>Sub-option.</p>
+              <div class="Indent_Level_2"><h5>Forward</h5><p>x</p><h5>Backward</h5><p>y</p></div>
+            </div>
+            <h5>Shape</h5><p>Demo.</p>
+            <div class="Indent_Level_2"><h5>Round</h5><p>x</p><h5>Square</h5><p>y</p></div>
+            """);
+        var o = CommandOptionsParser.Parse(html);
+        Assert.That(o.Options.Select(x => x.Name), Is.EqualTo(new[] { "Chain", "Shape" }));
+        Assert.That(Opt(o, "Chain").Kind, Is.EqualTo("info"));
+        Assert.That(Opt(o, "Chain").Values, Is.Empty);
+        Assert.That(Opt(o, "Shape").Kind, Is.EqualTo("choice"));
+    }
+
+    [Test]
+    public void Table_cell_values_only_count_before_a_tutorial()
+    {
+        var html = Page("""
+            <table>
+              <tr><th colspan="2">Command-line options</th></tr>
+              <tr><td><p>Mode</p></td><td><h5>Inner</h5><p>Inner demo.</p><h5>Outer</h5><p>Outer demo.</p></td></tr>
+              <tr><td><p>Tangent</p></td><td>Demo tangent text.
+                <div class="tutorialblock"><h4>Tangent steps</h4><p>Steps.</p></div>
+                <h5>FromFirst</h5><p>Sub.</p><h5>Radius</h5><p>Sub.</p></td></tr>
+              <tr><td><p>Edge</p></td><td>Demo edge text.<div class="tutorialblock"><h4>Edge steps</h4><h5>Flip</h5><p>Inside a tutorial.</p></div></td></tr>
+            </table>
+            """);
+        var o = CommandOptionsParser.Parse(html);
+        Assert.That(Opt(o, "Mode").Kind, Is.EqualTo("choice"));
+        Assert.That(Opt(o, "Mode").Values.Select(v => v.Name), Is.EqualTo(new[] { "Inner", "Outer" }));
+        Assert.That(Opt(o, "Tangent").Kind, Is.EqualTo("info"));
+        Assert.That(Opt(o, "Tangent").Values, Is.Empty);
+        Assert.That(Opt(o, "Edge").Values, Is.Empty);
+    }
+
+    [Test]
+    public void A_table_description_stops_at_tutorial_text_or_a_heading()
+    {
+        var html = Page("""
+            <table>
+              <tr><th colspan="2">Command-line options</th></tr>
+              <tr><td><p>Edge</p></td><td>Demo edge text. <h4>Edge steps</h4><p>Pick something.</p></td></tr>
+              <tr><td><p>Star</p></td><td>Demo star text. <div class="tutorialblock"><p>Tutorial.</p></div></td></tr>
+              <tr><td><p>Mode</p></td><td>Demo mode text. <h5>Inner</h5><p>x</p></td></tr>
+            </table>
+            """);
+        var o = CommandOptionsParser.Parse(html);
+        Assert.That(Opt(o, "Edge").Description, Is.EqualTo("Demo edge text."));
+        Assert.That(Opt(o, "Star").Description, Is.EqualTo("Demo star text."));
+        Assert.That(Opt(o, "Mode").Description, Is.EqualTo("Demo mode text."));
+    }
+
+    [Test]
+    public void Yes_no_on_off_are_never_option_names()
+    {
+        var html = Page("""
+            <p class="Dialog_Box_Title">Command-line options</p>
+            <h5>Trim</h5><p>Demo.</p>
+            <table><tr><td><h5 style="text-align: center;">Yes</h5></td><td><h5 style="text-align: center;">No</h5></td></tr></table>
+            <h5>ON</h5><p>x</p><h5>off</h5><p>y</p>
+            <h5>Shape</h5><p>Demo.</p>
+            """);
+        Assert.That(CommandOptionsParser.Parse(html).Options.Select(x => x.Name), Is.EqualTo(new[] { "Trim", "Shape" }));
+    }
+
+    [Test]
     public void The_options_found_event_has_the_json_the_panel_fixture_pins()
     {
         var ev = new CommandOptionsFoundEvent("_Pyramid", new[]

@@ -82,12 +82,25 @@ internal static class CommandOptionsParser
             tags.Add(new Tag { Start = m.Index, End = m.Index + m.Length, Closing = m.Groups[1].Length > 0, Name = m.Groups[2].Value.ToLowerInvariant(), Attrs = m.Groups[3].Value });
         }
 
+        // A page can document several commands; a later <h1> starts another one. Only the first counts.
+        var seenH1 = false;
+        for (var i = 0; i < tags.Count; i++)
+        {
+            if (tags[i].Closing || tags[i].Name != "h1") continue;
+            if (!seenH1) seenH1 = true;
+            else { tags.RemoveRange(i, tags.Count - i); break; }
+        }
+
         var options = new List<CommandOption>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         void Add(string name, List<CommandOptionValue> values, string description)
         {
-            if (options.Count >= MaxOptions || !Ident.IsMatch(name) || !seen.Add(name)) return;
+            if (options.Count >= MaxOptions || !Ident.IsMatch(name)) return;
+            // Yes/No/On/Off are values (sometimes drawn in layout tables), never options.
+            if (name.Equals("yes", StringComparison.OrdinalIgnoreCase) || name.Equals("no", StringComparison.OrdinalIgnoreCase)
+                || name.Equals("on", StringComparison.OrdinalIgnoreCase) || name.Equals("off", StringComparison.OrdinalIgnoreCase)) return;
+            if (!seen.Add(name)) return;
             var vals = values.GroupBy(v => v.Name, StringComparer.OrdinalIgnoreCase).Select(g => g.First()).ToList();
             options.Add(new CommandOption(name, KindOf(vals), vals, description));
         }
@@ -228,7 +241,13 @@ internal static class CommandOptionsParser
             {
                 var c = FindClose(tags, i);
                 var end = c < 0 ? tags.Count : c;
-                if (curName != null && !skipping) CollectValues(html, tags, i + 1, end, curValues!);
+                // A nested Indent_Level_2 means the block holds sub-options, not values: the option stays info and
+                // nothing in the block becomes an option.
+                var nested = false;
+                for (var k = i + 1; k < end && k < tags.Count; k++)
+                    if (!tags[k].Closing && tags[k].Name == "div" && tags[k].HasClass("Indent_Level_2")) { nested = true; break; }
+                if (nested) curValues?.Clear();
+                else if (curName != null && !skipping) CollectValues(html, tags, i + 1, end, curValues!);
                 i = end + 1;
                 continue;
             }
@@ -288,17 +307,30 @@ internal static class CommandOptionsParser
 
             var (o, c2) = cells[1];
             var values = new List<CommandOptionValue>();
+            // Values only count before the first tutorial (an <h4> or a tutorialblock div); the description stops at
+            // the first of those or the first <h5>.
+            var tutorial = -1;
             var firstHeading = -1;
             for (var j = o + 1; j < c2; j++)
+            {
+                var tj = tags[j];
+                if (tj.Closing) continue;
+                if (tutorial < 0 && (tj.Name == "h4" || (tj.Name == "div" && tj.HasClass("tutorialblock")))) tutorial = j;
+                if (firstHeading < 0 && tj.Name == "h5") firstHeading = j;
+            }
+            var valuesEnd = tutorial >= 0 ? tutorial : c2;
+            for (var j = o + 1; j < valuesEnd; j++)
             {
                 if (tags[j].Closing || tags[j].Name != "h5") continue;
                 var vn = HeadingText(html, tags, j, out var vclose);
                 if (vclose < 0) continue;
-                if (firstHeading < 0) firstHeading = j;
                 if (Ident.IsMatch(vn)) values.Add(new CommandOptionValue(vn, DescriptionAfter(html, tags, vclose + 1)));
                 j = vclose;
             }
-            var descEnd = firstHeading >= 0 ? tags[firstHeading].Start : tags[c2].Start;
+            var stop = c2;
+            if (firstHeading >= 0 && firstHeading < stop) stop = firstHeading;
+            if (tutorial >= 0 && tutorial < stop) stop = tutorial;
+            var descEnd = tags[stop].Start;
             add(name, values, Cap(Clean(html, tags[o].End, descEnd)));
         }
     }
