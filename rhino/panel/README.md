@@ -37,7 +37,7 @@ flowchart LR
   B --> N[one DOM text node]
   H -->|turn.tool.patch| S
   S -->|call.set| K((signal))
-  K --> T[one tool card]
+  K --> T[stored, drawn as nothing]
 ```
 
 `turn.text` names the block it extends. `turn.tool.patch` names the call it completes. A full `conversation` snapshot exists only for attach and reconnect. Nothing re-flattens, nothing re-diffs, no row is rebuilt, no width is measured.

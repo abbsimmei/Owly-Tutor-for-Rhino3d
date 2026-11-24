@@ -583,71 +583,6 @@ a:hover { text-decoration: underline; }
 .tok-fn { color: var(--tok-fn); }
 .tok-attr { color: var(--tok-attr); }
 
-/* -------------------------------------------------------------- tool card */
-
-.tool {
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  background: var(--surface);
-  overflow: hidden;
-  min-width: 0;
-}
-.tool.running { border-color: var(--accent-line); }
-.tool.failed { border-color: var(--err-line); }
-.tool.unknown { border-style: dashed; }
-
-.tool-head {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  min-width: 0;
-}
-.tool-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6.3px;
-  flex: 1;
-  min-width: 0;
-  padding: 4.5px 7.2px;
-  text-align: start;
-}
-.tool-toggle:hover { background: var(--surface-2); }
-.tool-toggle .fam { color: var(--text-faint); flex: none; }
-.tool.running .tool-toggle .fam { color: var(--accent); }
-.tool.failed .tool-toggle .fam { color: var(--err); }
-.tool-toggle .title {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--fs);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.tool-toggle .wire {
-  font: 400 var(--fs-xs)/1 var(--mono);
-  color: var(--text-faint);
-  white-space: nowrap;
-}
-.tool-toggle .dur { font-size: var(--fs-xs); color: var(--text-faint); font-variant-numeric: tabular-nums; }
-.tool-toggle .chev { color: var(--text-faint); transition: transform .15s ease; flex: none; }
-.tool-toggle[aria-expanded='true'] .chev { transform: rotate(90deg); }
-
-.tool-chips { display: flex; align-items: center; gap: 3.6px; flex: none; padding-inline-end: 5.4px; }
-.tool-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 3.6px;
-  padding: 1.8px 7.2px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--control);
-  color: var(--text-dim);
-  font-size: var(--fs-xs);
-  white-space: nowrap;
-}
-.tool-chip:hover { background: var(--control-hover); color: var(--text); }
-.tool-chip.danger:hover { border-color: var(--err); color: var(--err); }
-
 .spinner {
   inline-size: 10.8px;
   block-size: 10.8px;
@@ -658,59 +593,6 @@ a:hover { text-decoration: underline; }
   flex: none;
 }
 @keyframes spin { to { transform: rotate(1turn); } }
-
-.tool-body {
-  border-top: 1px solid var(--border);
-  padding: 7.2px;
-  display: flex;
-  flex-direction: column;
-  gap: 7.2px;
-  background: var(--bg);
-}
-.tool-section { display: flex; flex-direction: column; gap: 2.7px; min-width: 0; }
-.tool-section-head { display: flex; align-items: center; gap: 5.4px; }
-.tool-copy {
-  margin-inline-start: auto;
-  display: inline-flex;
-  padding: 1.8px 3.6px;
-  border-radius: var(--r-sm);
-  color: var(--text-faint);
-}
-.tool-copy:hover { background: var(--surface-3); color: var(--text); }
-.tool-section h4 {
-  margin: 0;
-  font: 500 var(--fs-xs)/1 var(--mono);
-  letter-spacing: .05em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-.tool-section pre {
-  margin: 0;
-  padding: 5.4px 7.2px;
-  max-height: 234px;
-  overflow: auto;
-  scrollbar-width: thin;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  font: 400 var(--fs-sm)/1.5 var(--mono);
-  white-space: pre;
-}
-.tool-error {
-  font-size: var(--fs-sm);
-  color: var(--err);
-  background: var(--err-soft);
-  border: 1px solid var(--err-line);
-  border-radius: var(--r-sm);
-  padding: 4.5px 6.3px;
-}
-.tool-note {
-  font-size: var(--fs-sm);
-  color: var(--text-faint);
-  border: 1px dashed var(--border);
-  border-radius: var(--r-sm);
-  padding: 4.5px 6.3px;
-}
 
 /* ------------------------------------------------------------- image block */
 
@@ -990,8 +872,6 @@ a:hover { text-decoration: underline; }
 
 /* --------------------------------------------------------------- overlays */
 
-.tool-inline { padding: 0 7.2px 7.2px; }
-
 .jump {
   position: absolute;
   inset-inline: 0;
@@ -1147,7 +1027,6 @@ a:hover { text-decoration: underline; }
 /* -------------------------------------------------- narrow docked layout */
 
 @container panel (max-width: 297px) {
-  .tool-head .wire { display: none; }
   .msg-user { max-width: 100%; }
   .composer-hint { display: none; }
   :root { --pad: 7.2px; }
