@@ -187,6 +187,8 @@ internal partial class AIPanelViewModel : IDisposable
             CopyCommandCommand chip => CopyCommand(chip.Name),
             FindToolbarCommand find => FindToolbar(find.Name, find.TurnId),
             ToolbarIconCommand icons => FindToolbarIcons(icons.Names),
+            CheckCommandsCommand check => CheckCommands(check.Names),
+            RunCommandCommand run => RunCommand(run.Name),
             OpenMenuCommand menu => ShowMenu(menu),
             ChooseProjectCommand choose => ChooseProject(choose.Id),
             CreateProjectCommand create => CreateProject(create.Name),
@@ -442,6 +444,104 @@ internal partial class AIPanelViewModel : IDisposable
         return true;
 
         static string? ToBase64(string? svg) => svg is null ? null : Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(svg));
+    }
+
+    private static RunVerdict ClassifyForRun(string? name) =>
+        CommandBlocklist.Classify(name, Rhino.Commands.Command.IsCommand, Rhino.ApplicationSettings.CommandAliasList.IsAlias);
+
+    // Plan 022 / ADR-0008: may these commands get a Run button? Read-only. One answer per valid name. Busy is not
+    // checked here: it is a moment, not a property of the command.
+    private bool CheckCommands(IReadOnlyList<string> names)
+    {
+        foreach (var name in names.Distinct(StringComparer.Ordinal).Take(20))
+        {
+            if (!CommandName.IsValid(name)) continue;
+            string run;
+            try
+            {
+                run = ClassifyForRun(name) switch
+                {
+                    RunVerdict.Ok => "ok",
+                    RunVerdict.Unknown => "unknown",
+                    _ => "blocked",
+                };
+            }
+            catch (Exception ex)
+            {
+                HostUtils.LogDebugEvent($"[owly] command.check failed for {name}: {ex.Message}\n");
+                run = "blocked";
+            }
+            Bridge.Post(new CommandCheckedEvent(name, run));
+        }
+        return true;
+    }
+
+    // Plan 022 / ADR-0008: the student clicked Run. Starts the command; Rhino then waits for the student's picks.
+    // Posted with AsyncInvoke because RunScript blocks until the command ends and would stall the WebView otherwise.
+    private bool RunCommand(string name)
+    {
+        RunVerdict verdict;
+        try { verdict = ClassifyForRun(name); }
+        catch (Exception ex)
+        {
+            HostUtils.LogDebugEvent($"[owly] Run refused, could not check the command: {ex.Message}\n");
+            return false;
+        }
+
+        switch (verdict)
+        {
+            case RunVerdict.Invalid:
+                HostUtils.LogDebugEvent("[owly] command.run ignored a value that is not a command name.\n");
+                return false;
+            case RunVerdict.Unknown:
+                HostUtils.LogDebugEvent($"[owly] Run refused (unknown command): {name}\n");
+                Bridge.Post(new NoticeEvent("info", string.Format(Localization.LocalizeString("Rhino doesn't know {0} here, so Owly can't start it.", 312), name)));
+                return false;
+            case RunVerdict.Blocked:
+                HostUtils.LogDebugEvent($"[owly] Run refused (blocked): {name}\n");
+                Bridge.Post(new NoticeEvent("info", Localization.LocalizeString("Owly can't start this command. Copy it and run it yourself.", 313)));
+                return false;
+        }
+
+        if (Rhino.Commands.Command.InCommand())
+        {
+            HostUtils.LogDebugEvent($"[owly] Run refused (Rhino is busy): {name}\n");
+            PostBusy();
+            return false;
+        }
+
+        HostUtils.LogDebugEvent($"[owly] Run: {name}\n");
+        var doc = Document;
+        try
+        {
+            if (doc is not null) RhinoApp.SetFocusToMainWindow(doc);
+            else RhinoApp.SetFocusToMainWindow();
+        }
+        catch (Exception ex)
+        {
+            HostUtils.LogDebugEvent($"[owly] could not focus Rhino before Run: {ex.Message}\n");
+        }
+
+        Application.Instance.AsyncInvoke(() =>
+        {
+            try
+            {
+                if (Rhino.Commands.Command.InCommand())
+                {
+                    PostBusy();
+                    return;
+                }
+                if (doc is not null) RhinoApp.RunScript(doc.RuntimeSerialNumber, name, true);
+                else RhinoApp.RunScript(name, true);
+            }
+            catch (Exception ex)
+            {
+                HostUtils.LogDebugEvent($"[owly] Run failed: {ex.Message}\n");
+            }
+        });
+        return true;
+
+        void PostBusy() => Bridge.Post(new NoticeEvent("info", Localization.LocalizeString("Finish or cancel the current command first (Esc), then click Run again.", 314)));
     }
 
     // Plan 014 / ADR-0007: the student clicked a command chip. Copy it and hand focus to Rhino so they can paste

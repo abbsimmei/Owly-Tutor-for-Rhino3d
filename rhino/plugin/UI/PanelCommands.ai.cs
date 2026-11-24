@@ -8,6 +8,8 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(CopyCommandCommand), "command.copy")]
 [JsonDerivedType(typeof(FindToolbarCommand), "toolbar.find")]
 [JsonDerivedType(typeof(ToolbarIconCommand), "toolbar.icon")]
+[JsonDerivedType(typeof(RunCommandCommand), "command.run")]
+[JsonDerivedType(typeof(CheckCommandsCommand), "command.check")]
 [JsonDerivedType(typeof(ChooseProjectCommand), "project.choose")]
 [JsonDerivedType(typeof(CreateProjectCommand), "project.create")]
 [JsonDerivedType(typeof(RenameProjectCommand), "project.rename")]
@@ -29,6 +31,13 @@ internal sealed record FindToolbarCommand(string Name, string TurnId) : PanelCom
 
 // Plan 021: which of these commands have a toolbar button image? Read-only. The answers are toolbar.icon.found.
 internal sealed record ToolbarIconCommand(IReadOnlyList<string> Names) : PanelCommand;
+
+// Plan 022 / ADR-0008: the student clicked Run on a command card. Starts the command in Rhino (RunScript, posted),
+// after the host re-checks it. Only a click sends this; the AI cannot.
+internal sealed record RunCommandCommand(string Name) : PanelCommand;
+
+// Plan 022 / ADR-0008: may these commands get a Run button? Read-only. The answers are command.checked.
+internal sealed record CheckCommandsCommand(IReadOnlyList<string> Names) : PanelCommand;
 
 // Plan 025: projects. Choose makes a project current for this document (and remembers it for a file
 // Owly didn't know yet); Create does the same for a new project; Move re-files this document.

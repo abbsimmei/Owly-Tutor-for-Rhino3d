@@ -5,6 +5,7 @@ import type { Signal } from '../core/signal.js';
 import { t } from '../i18n/t.js';
 import type { PanelContext } from './context.js';
 import { icon } from './icons.js';
+import { commandCard } from './commandCard.js';
 import { openLocationPopover } from './locationPopover.js';
 
 /**
@@ -38,6 +39,8 @@ export function agentMessage(
         return ctx.store.iconUrl(name);
       },
       seenBefore,
+      // Plan 022: the Run card under the block holding a command's chip.
+      card: (name) => commandCard(ctx, name),
     },
   };
   let queued = false;
@@ -47,11 +50,14 @@ export function agentMessage(
     // Plan 021: a late button image or a theme change redraws the chips.
     ctx.store.icons();
     ctx.store.scheme();
+    // Plan 022: a Run answer, and the end of streaming (which releases the open block's cards), redraw the cards.
+    ctx.store.runnable();
+    streaming();
     if (queued) return;
     queued = true;
     requestAnimationFrame(() => {
       queued = false;
-      host.replaceChildren(renderMarkdown(text.peek(), options));
+      host.replaceChildren(renderMarkdown(text.peek(), { ...options, growing: streaming() }));
     });
   });
 

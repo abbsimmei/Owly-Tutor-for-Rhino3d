@@ -21,6 +21,7 @@ const ui = new UiState();
 const zoom = new Zoom((level) => bridge.send({ type: 'zoom.set', level }));
 
 const iconQueue: string[] = [];
+const checkQueue: string[] = [];
 
 const ctx: PanelContext = {
   store,
@@ -47,6 +48,13 @@ const ctx: PanelContext = {
     // One request per microtask, however many chips a render drew.
     queueMicrotask(() => bridge.send({ type: 'toolbar.icon', names: iconQueue.splice(0) }));
   },
+  requestCommandCheck: (name) => {
+    if (!store.markCheckAsked(name)) return;
+    checkQueue.push(name);
+    if (checkQueue.length > 1) return;
+    queueMicrotask(() => bridge.send({ type: 'command.check', names: checkQueue.splice(0) }));
+  },
+  runCommand: (name) => bridge.send({ type: 'command.run', name }),
   openLink: (url) => bridge.send({ type: 'url.open', url }),
   submit: (override) => {
     if (!store.hasReadyAgent.peek()) return;

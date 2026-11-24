@@ -51,7 +51,8 @@ internal static class AgentPrompts
         + "command name work in any Rhino language. Do not explain the underscore unless the student asks."
         + " In Owly's panel each command you write this way becomes a button in the panel that the student "
         + "can click to copy it, then paste it on Rhino's command line and press Enter, and a small toolbar icon "
-        + "next to it shows where the command is on Rhino's toolbars. Never say that you typed, ran, opened or highlighted anything in Rhino.";
+        + "next to it shows where the command is on Rhino's toolbars. Never say that you typed, ran, opened or highlighted anything in Rhino."
+        + " Under each command the panel shows a Run button that the student can click to start it in Rhino; you never start it yourself, so never say that you ran it.";
 
     public static string ReliabilitySteer =>
         "Never present something you are unsure of as fact; say plainly when you are not certain. If the "
