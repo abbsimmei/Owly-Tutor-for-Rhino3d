@@ -107,3 +107,18 @@ test('a card can be dismissed and a new conversation clears them all', () => {
   });
   assert.equal(store.locations().size, 0);
 });
+
+// Plan 025: absent id, name and suggestion are unset, which is how the host's serialiser sends nulls.
+test('a project event is kept with absent fields as null', () => {
+  const store = new Store();
+  const projects = [
+    { id: 'p-1', name: 'Pavilion', builtin: false },
+    { id: 'unsorted', name: 'Unsorted', builtin: true },
+  ];
+
+  store.apply({ type: 'project', pending: true, suggestion: 'p-1', projects });
+  assert.deepEqual(store.project(), { id: null, name: null, pending: true, suggestion: 'p-1', projects });
+
+  store.apply({ type: 'project', id: 'p-1', name: 'Pavilion', pending: false, projects });
+  assert.deepEqual(store.project(), { id: 'p-1', name: 'Pavilion', pending: false, suggestion: null, projects });
+});

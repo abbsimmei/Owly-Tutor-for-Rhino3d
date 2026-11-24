@@ -20,5 +20,6 @@
   {"type":"turn.end","turnId":"turn-0","status":"ok"},
   {"type":"question","question":{"id":"question-1","question":"Split the worst panels?","options":["Yes","No"],"mode":"single","allowOther":true}},
   {"type":"question","question":{"id":"question-2","question":"Which levels should I check?","options":["L12","L13","L14"],"mode":"multi","allowOther":true}},
-  {"type":"toolbar.found","name":"_Loft","turnId":"turn-0","places":[{"group":"Main","tab":"Surface","path":"Surface Tools","button":"Loft","click":"left","hidden":false}]}
+  {"type":"toolbar.found","name":"_Loft","turnId":"turn-0","places":[{"group":"Main","tab":"Surface","path":"Surface Tools","button":"Loft","click":"left","hidden":false}]},
+  {"type":"project","pending":true,"suggestion":"p-1","projects":[{"id":"p-1","name":"Pavilion","builtin":false},{"id":"unsorted","name":"Unsorted","builtin":true}]}
 ]

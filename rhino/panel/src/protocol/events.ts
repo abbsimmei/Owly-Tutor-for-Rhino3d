@@ -40,6 +40,14 @@ export interface ToolbarPlace {
   hidden: boolean;
 }
 
+/** Plan 025: a project the student named, or the built-in Unsorted one. */
+export interface ProjectInfo {
+  id: string;
+  name: string;
+  /** Unsorted: it can't be renamed or deleted. */
+  builtin: boolean;
+}
+
 export type AttachmentKind = 'image' | 'text';
 
 export interface Attachment {
@@ -196,6 +204,9 @@ export type HostEvent =
   | { type: 'notice'; level: NoticeLevel; text: string }
   | { type: 'toolbar.found'; name: string; turnId: string; places: ToolbarPlace[] }
   | { type: 'status'; text: string | null }
+  // Plan 025: this document's project. `pending`: Owly doesn't know the file's project yet, so the
+  // project card asks once a question has been sent. `suggestion` is an id from `projects`.
+  | { type: 'project'; id?: string; name?: string; pending: boolean; suggestion?: string; projects: ProjectInfo[] }
   // The host owns the right-click menu, but the panel owns the zoom ladder, so the menu sends back
   // an intent rather than a level. `set` is the other direction: the level the host had stored.
   | { type: 'zoom'; action: 'in' | 'out' | 'reset' }
@@ -237,6 +248,13 @@ export type PanelCommand =
   | { type: 'command.copy'; name: string }
   // Plan 015: where is this command on the toolbars? Read-only (ADR-0007).
   | { type: 'toolbar.find'; name: string; turnId: string }
+  // Plan 025: projects. `choose` makes a project current (and files a file Owly didn't know under it),
+  // `create` does the same for a new one, `move` files this document under another project.
+  | { type: 'project.choose'; id: string }
+  | { type: 'project.create'; name: string }
+  | { type: 'project.rename'; id: string; name: string }
+  | { type: 'project.delete'; id: string }
+  | { type: 'project.move'; id: string }
   | {
       type: 'menu.open';
       x: number;

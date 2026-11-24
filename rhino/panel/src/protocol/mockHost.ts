@@ -9,6 +9,7 @@ import type {
   ConversationSnapshot,
   HostEvent,
   PanelCommand,
+  ProjectInfo,
   ToolCall,
   ToolPatch,
   TokenUsage,
@@ -748,6 +749,15 @@ export class MockHost implements Bridge {
   private activeTurn: string | null = null;
   private booted = false;
 
+  // Plan 025: the host's project registry, in memory. tower-study.3dm starts out filed under Tower study.
+  private projects: ProjectInfo[] = [
+    { id: 'p-pavilion', name: 'Summer pavilion', builtin: false },
+    { id: 'p-tower', name: 'Tower study', builtin: false },
+    { id: 'unsorted', name: 'Unsorted', builtin: true },
+  ];
+  private fileProject: string | null = 'p-tower';
+  private projectId: string | null = 'p-tower';
+
   subscribe(handler: (event: HostEvent) => void): () => void {
     this.handlers.add(handler);
     if (!this.booted) {
@@ -853,9 +863,68 @@ export class MockHost implements Bridge {
         });
         return;
 
+      case 'project.choose':
+        if (!this.projects.some((p) => p.id === command.id)) return;
+        if (this.fileProject === null) this.fileProject = command.id;
+        this.projectId = command.id;
+        this.emitProject();
+        return;
+
+      case 'project.create': {
+        const name = command.name.trim();
+        if (name.length === 0 || name.length > 60 || /\p{Cc}/u.test(name)) {
+          this.notice('error', 'A project name needs 1 to 60 characters and no line breaks.');
+          return;
+        }
+        const id = nextId('p');
+        this.projects = [...this.projects.filter((p) => !p.builtin), { id, name, builtin: false }]
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .concat(this.projects.filter((p) => p.builtin));
+        this.send({ type: 'project.choose', id });
+        return;
+      }
+
+      case 'project.rename': {
+        const name = command.name.trim();
+        if (name.length === 0 || name.length > 60) return;
+        this.projects = this.projects.map((p) => (p.id === command.id && !p.builtin ? { ...p, name } : p));
+        this.emitProject();
+        return;
+      }
+
+      case 'project.delete':
+        if (!this.projects.some((p) => p.id === command.id && !p.builtin)) return;
+        this.projects = this.projects.filter((p) => p.id !== command.id);
+        if (this.fileProject === command.id) this.fileProject = null;
+        if (this.projectId === command.id) this.projectId = this.fileProject;
+        this.emitProject();
+        return;
+
+      case 'project.move':
+        if (!this.projects.some((p) => p.id === command.id)) return;
+        this.fileProject = command.id;
+        this.projectId = command.id;
+        this.emitProject();
+        return;
+
       default:
         return;
     }
+  }
+
+  // Mirrors AIPanelViewModel.SendProject. A pending file is offered the first project as if another
+  // file in its folder belonged to it.
+  private emitProject(): void {
+    const current = this.projects.find((p) => p.id === this.projectId);
+    const pending = current === undefined;
+    const suggestion = pending ? this.projects.find((p) => !p.builtin)?.id : undefined;
+    this.emit({
+      type: 'project',
+      ...(current ? { id: current.id, name: current.name } : {}),
+      pending,
+      ...(suggestion ? { suggestion } : {}),
+      projects: [...this.projects],
+    });
   }
 
   emit(event: HostEvent): void {
@@ -985,6 +1054,7 @@ export class MockHost implements Bridge {
     });
     this.emit({ type: 'agents', agents: [...AGENTS], active: 'claude' });
     this.emit({ type: 'context', items: [...CONTEXT] });
+    this.emitProject();
     this.emit({ type: 'conversation', snapshot: seeded() });
   }
 

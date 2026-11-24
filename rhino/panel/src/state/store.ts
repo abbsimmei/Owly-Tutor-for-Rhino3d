@@ -16,6 +16,7 @@ import {
   type NoticeLevel,
   type PendingQuestion,
   type PlanStep,
+  type ProjectInfo,
   type TokenUsage,
   type ToolCall,
   type TurnImage,
@@ -53,6 +54,15 @@ export interface SessionView {
   sessionId: string;
   docTitle: string;
   startedAt: string;
+}
+
+/** Plan 025: this document's project, as the host last reported it. */
+export interface ProjectView {
+  id: string | null;
+  name: string | null;
+  pending: boolean;
+  suggestion: string | null;
+  projects: readonly ProjectInfo[];
 }
 
 export interface Notice {
@@ -107,6 +117,7 @@ export class Store {
   readonly locations = signal<ReadonlyMap<string, readonly LocationEntry[]>>(new Map());
   readonly notices = signal<readonly Notice[]>([]);
   readonly status = signal<string | null>(null);
+  readonly project = signal<ProjectView | null>(null);
 
   readonly activeAgent: ReadSignal<AgentInfo | null> = computed(() => {
     const name = this.activeAgentName();
@@ -282,6 +293,16 @@ export class Store {
 
       case 'status':
         this.status.set(event.text);
+        return;
+
+      case 'project':
+        this.project.set({
+          id: event.id ?? null,
+          name: event.name ?? null,
+          pending: event.pending,
+          suggestion: event.suggestion ?? null,
+          projects: event.projects,
+        });
         return;
     }
   }

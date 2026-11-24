@@ -53,6 +53,8 @@
     <Compile Include="../../rhino/plugin/UI/ImageMentions.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/GeneratedImages.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/UI/ConversationFeed.ai.cs" LinkBase="PanelSources" />
+    <Compile Include="../../rhino/plugin/Agents/Memory/OwlyStore.ai.cs" LinkBase="MemorySources" />
+    <Compile Include="../../rhino/plugin/Agents/Memory/ProjectRegistry.ai.cs" LinkBase="MemorySources" />
   </ItemGroup>
 
   <ItemGroup>

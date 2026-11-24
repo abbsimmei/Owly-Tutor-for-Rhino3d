@@ -28,6 +28,7 @@ internal partial class AIPanelViewModel
         View = view;
         Bridge = new PanelBridge(view, IncomingCommand);
         DocumentSerialNumber = documentSerialNumber;
+        SubscribeProjects();
 
         StartPageServer();
     }
