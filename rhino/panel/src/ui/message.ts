@@ -5,6 +5,7 @@ import type { Signal } from '../core/signal.js';
 import { t } from '../i18n/t.js';
 import type { PanelContext } from './context.js';
 import { icon } from './icons.js';
+import { openLocationPopover } from './locationPopover.js';
 
 /**
  * Markdown re-rendered on the animation frame after a delta lands, so a fast stream costs one
@@ -30,7 +31,7 @@ export function agentMessage(
       copy: ctx.copyCommand,
       glyph: (name) => icon(name, 12),
       label: (name) => t('command.copyNamed', name),
-      locate: (name) => ctx.findToolbar(name, turnId),
+      locate: (name) => openLocationPopover(ctx, turnId, name),
       locateLabel: (name) => t('command.whereNamed', name),
       seenBefore,
     },

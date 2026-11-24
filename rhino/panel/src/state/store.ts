@@ -25,9 +25,11 @@ import {
   type TurnStatus,
 } from '../protocol/events.js';
 
-export interface LocationEntry {
+/** Plan 020: the one open "Where to find" popover. `places` stays undefined while the host is still looking. */
+export interface LocationView {
+  turnId: string;
   name: string;
-  places: readonly ToolbarPlace[];
+  places?: readonly ToolbarPlace[];
 }
 
 export type BlockView =
@@ -113,8 +115,12 @@ export class Store {
   readonly session = signal<SessionView | null>(null);
   readonly turns = signal<readonly TurnView[]>([]);
   readonly questions = signal<readonly PendingQuestion[]>([]);
-  /** Plan 015: location cards by turn. They belong to the conversation: cleared with it, never kept (ADR-0006). */
-  readonly locations = signal<ReadonlyMap<string, readonly LocationEntry[]>>(new Map());
+  /** Plan 020: the one open location popover. It belongs to the conversation: cleared with it, never kept (ADR-0006). */
+  readonly location = signal<LocationView | null>(null);
+  // Answers for this conversation, so a second click on the same command opens at once.
+  private readonly cache = new Map<string, readonly ToolbarPlace[]>();
+  // Names the panel has asked the host about; an answer nobody asked for opens nothing.
+  private readonly asked = new Set<string>();
   readonly notices = signal<readonly Notice[]>([]);
   readonly status = signal<string | null>(null);
   readonly project = signal<ProjectView | null>(null);
@@ -173,7 +179,9 @@ export class Store {
         this.activeAgentName.set(event.snapshot.agent);
         this.turns.set(event.snapshot.turns.map(turnFrom));
         this.questions.set([]);
-        this.locations.set(new Map());
+        this.location.set(null);
+        this.cache.clear();
+        this.asked.clear();
         return;
 
       // Idempotent on id. A host that re-announces a turn or a call must not be able to put two
@@ -259,18 +267,13 @@ export class Store {
         this.questions.set((list) => list.filter((q) => q.id !== event.id));
         return;
 
-      // A location card answers one chip click. Latest wins, one card per command per turn; a turn that is
-      // already gone (a race with New conversation) gets none.
+      // Plan 020: an answer to one chip click. A turn that is already gone (a race with New conversation) and
+      // an answer nobody asked for are both ignored.
       case 'toolbar.found': {
-        if (!this.turn(event.turnId)) return;
-        const map = new Map(this.locations());
-        const entries = [...(map.get(event.turnId) ?? [])];
-        const entry: LocationEntry = { name: event.name, places: event.places };
-        const at = entries.findIndex((existing) => existing.name === event.name);
-        if (at >= 0) entries[at] = entry;
-        else entries.push(entry);
-        map.set(event.turnId, entries);
-        this.locations.set(map);
+        if (!this.turn(event.turnId) || !this.asked.has(event.name)) return;
+        this.cache.set(event.name, event.places);
+        const open = this.location.peek();
+        if (open && open.name === event.name) this.location.set({ ...open, places: event.places });
         return;
       }
 
@@ -307,14 +310,17 @@ export class Store {
     }
   }
 
-  dismissLocation(turnId: string, name: string): void {
-    const entries = this.locations().get(turnId);
-    if (!entries) return;
-    const map = new Map(this.locations());
-    const rest = entries.filter((entry) => entry.name !== name);
-    if (rest.length > 0) map.set(turnId, rest);
-    else map.delete(turnId);
-    this.locations.set(map);
+  /** Opens the popover. True means the host has to be asked; the caller sends toolbar.find. */
+  openLocation(turnId: string, name: string): boolean {
+    const places = this.cache.get(name);
+    this.location.set(places ? { turnId, name, places } : { turnId, name });
+    if (places) return false;
+    this.asked.add(name);
+    return true;
+  }
+
+  closeLocation(): void {
+    this.location.set(null);
   }
 
   dismissNotice(id: string): void {

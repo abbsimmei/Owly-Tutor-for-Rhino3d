@@ -532,17 +532,21 @@ a:hover { text-decoration: underline; }
 .md-cmd-where:hover { color: var(--accent); }
 .md-cmd-where:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; }
 
-.location-card {
-  margin: 0 0 .7em;
+/* Plan 020: positioned by script in the panel's own units (the panel carries a CSS zoom). Not .popover: its top/inset fight that. */
+.location-popover {
+  position: absolute;
+  z-index: 9;
+  max-width: 300px;
   padding: 5px 8px;
   border: 1px solid var(--border);
   border-radius: var(--r);
   background: var(--surface);
   font-size: var(--fs-xs);
+  box-shadow: var(--shadow);
 }
 .location-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
 .location-title { font-weight: 600; }
-.location-card p { margin: 2px 0 0; }
+.location-popover p { margin: 2px 0 0; }
 .location-tag {
   display: inline-block;
   padding: 0 4px;
@@ -919,6 +923,7 @@ a:hover { text-decoration: underline; }
 }
 
 .scrim { position: absolute; inset: 0; z-index: 8; background: rgb(0 0 0 / 22%); }
+.scrim.clear { background: transparent; }
 
 .popover {
   position: absolute;

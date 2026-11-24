@@ -338,6 +338,8 @@ export function renderMarkdown(source: string, options: MarkdownOptions = {}): D
 
 function commandChip(name: string, command: CommandChipOptions): HTMLElement {
   const chip = element('span', 'md-cmd');
+  // Plan 020: the location popover finds its anchor again by this, because every render rebuilds the chip.
+  chip.dataset['cmd'] = name;
   const button = element('button', 'md-cmd-copy') as HTMLButtonElement;
   button.type = 'button';
   button.title = command.label(name);

@@ -56,6 +56,7 @@ internal static class PanelStrings
         ["location.right"] = Localization.LocalizeString("right-click", 287),
         ["location.hidden"] = Localization.LocalizeString("hidden", 288),
         ["location.close"] = Localization.LocalizeString("Close", 289),
+        ["location.looking"] = Localization.LocalizeString("Looking for {0} on the toolbars…", 290),
         ["command.copiedMac"] = Localization.LocalizeString("Copied {0}. Paste it on the command line with ⌘V, then press Enter.", 279),
         ["turn.agentName"] = Localization.LocalizeString("Owly", 266),
         ["turn.stopped"] = Localization.LocalizeString("stopped", 81),

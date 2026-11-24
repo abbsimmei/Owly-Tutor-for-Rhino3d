@@ -8,7 +8,6 @@ import type { PanelContext } from './context.js';
 import { emptyState } from './empty.js';
 import { icon } from './icons.js';
 import { imageBlock } from './imageBlock.js';
-import { locationCards } from './locationCard.js';
 import { notices } from './notices.js';
 import { owl } from './owl.js';
 import { commandsIn, normaliseCommand } from '../core/commandMentions.js';
@@ -92,7 +91,7 @@ function turnFooter(ctx: PanelContext, turn: TurnView): Child {
 function turnView(ctx: PanelContext, turn: TurnView): Child {
   return el(
     'article',
-    { class: () => `turn ${turn.status()}` },
+    { class: () => `turn ${turn.status()}`, 'data-turn': turn.id },
     when(
       () => turn.attachments.length > 0,
       () =>
@@ -112,7 +111,6 @@ function turnView(ctx: PanelContext, turn: TurnView): Child {
       (view) => view.id,
       (view) => block(ctx, turn, view),
     ),
-    locationCards(ctx, turn.id),
     when(
       () => turn.status() === 'error' && turn.error !== undefined,
       () => el('div', { class: 'turn-error' }, icon('alert', 14), el('span', { text: () => turn.error() ?? '' })),

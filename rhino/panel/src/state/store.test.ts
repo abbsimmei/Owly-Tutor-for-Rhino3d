@@ -61,51 +61,57 @@ function storeWithTurn(): Store {
   return store;
 }
 
-test('a toolbar answer for a known turn adds a location card', () => {
+test('opening a location asks the host, and the answer fills the open popover', () => {
   const store = storeWithTurn();
 
-  store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [place] });
+  assert.equal(store.openLocation('turn-0', '_Loft'), true);
+  assert.deepEqual(store.location(), { turnId: 'turn-0', name: '_Loft' });
 
-  assert.deepEqual(store.locations().get('turn-0'), [{ name: '_Loft', places: [place] }]);
+  store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [place] });
+  assert.deepEqual(store.location(), { turnId: 'turn-0', name: '_Loft', places: [place] });
 });
 
-test('a second answer for the same command replaces the first', () => {
+test('an answer nobody asked for opens nothing', () => {
   const store = storeWithTurn();
 
   store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [place] });
-  store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [] });
-  store.apply({ type: 'toolbar.found', name: '_Extrude', turnId: 'turn-0', places: [] });
 
-  assert.deepEqual(
-    store.locations().get('turn-0')?.map((entry) => [entry.name, entry.places.length]),
-    [
-      ['_Loft', 0],
-      ['_Extrude', 0],
-    ],
-  );
+  assert.equal(store.location(), null);
+  assert.equal(store.openLocation('turn-0', '_Loft'), true);
+});
+
+test('a second open of the same name is answered from the cache', () => {
+  const store = storeWithTurn();
+  store.openLocation('turn-0', '_Loft');
+  store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [place] });
+  store.closeLocation();
+  assert.equal(store.location(), null);
+
+  assert.equal(store.openLocation('turn-0', '_Loft'), false);
+  assert.deepEqual(store.location()?.places, [place]);
 });
 
 test('a toolbar answer for a turn that is gone is ignored', () => {
   const store = storeWithTurn();
+  store.openLocation('turn-0', '_Loft');
 
   store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-9', places: [place] });
 
-  assert.equal(store.locations().size, 0);
+  assert.equal(store.location()?.places, undefined);
 });
 
-test('a card can be dismissed and a new conversation clears them all', () => {
+test('a new conversation clears the popover and the cache', () => {
   const store = storeWithTurn();
+  store.openLocation('turn-0', '_Loft');
   store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [place] });
 
-  store.dismissLocation('turn-0', '_Loft');
-  assert.equal(store.locations().size, 0);
-
-  store.apply({ type: 'toolbar.found', name: '_Loft', turnId: 'turn-0', places: [place] });
   store.apply({
     type: 'conversation',
     snapshot: { sessionId: 's', agent: 'Owly', docTitle: 'd', startedAt: '2026-01-01T00:00:00Z', turns: [] },
   });
-  assert.equal(store.locations().size, 0);
+
+  assert.equal(store.location(), null);
+  assert.equal(store.openLocation('turn-0', '_Loft'), true);
 });
 
 // Plan 025: absent id, name and suggestion are unset, which is how the host's serialiser sends nulls.

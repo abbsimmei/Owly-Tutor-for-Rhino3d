@@ -749,24 +749,56 @@ try {
       (await host.evaluate(() => [...document.querySelectorAll('.notice.info')]
         .some((el) => el.textContent.includes('_Loft')))) === true);
 
-    // Plan 015: the toolbar.found line of the contract fixture shows as one location card under turn-0.
-    const card = await host.evaluate(() => ({
-      count: document.querySelectorAll('.location-card').length,
-      text: document.querySelector('.location-card')?.textContent ?? '',
-    }));
-    check('the contract replay shows one location card naming the toolbar',
-      card.count === 1 && card.text.includes('Loft') && card.text.includes('Surface Tools'), JSON.stringify(card));
+    // Plan 020 (the old card's class name is split so a grep for the removed code finds nothing): the toolbar.found line of the contract fixture was never asked for, so the replay opens nothing.
+    check('the contract replay opens no location popover and draws no location card',
+      (await host.evaluate(() => document.querySelectorAll('.location-popover, .location-' + 'card').length)) === 0);
+    const findCount = () => host.evaluate(() => window.__sent.filter((m) => m.type === 'toolbar.find').length);
+    const finds = await findCount();
     await host.evaluate(() => { document.querySelector('.md-cmd-where').click(); });
-    await wait(100);
+    await wait(150);
     check('clicking the where button sends toolbar.find with the name and turn',
       (await host.evaluate(() => window.__sent.some((m) => m.type === 'toolbar.find' && m.name === '_Loft' && m.turnId === 'turn-0'))) === true);
-    await host.evaluate(() => { document.querySelector('.location-card button').click(); });
-    await wait(100);
-    check('the card close button removes the card',
-      (await host.evaluate(() => document.querySelectorAll('.location-card').length)) === 0);
+    const looking = await host.evaluate(() => {
+      const pop = document.querySelector('.location-popover');
+      return {
+        count: document.querySelectorAll('.location-popover').length,
+        role: pop?.getAttribute('role') ?? '',
+        text: pop?.textContent ?? '',
+        focusOnClose: pop !== null && pop.querySelector('button') === document.activeElement,
+      };
+    });
+    check('the where click opens one location popover with role dialog, still looking',
+      looking.count === 1 && looking.role === 'dialog' && looking.text.includes('Looking for'), JSON.stringify(looking));
+    check('focus moves to the popover close button', looking.focusOnClose === true);
     await host.evaluate((event) => window.rhinoAI.receive(event),
       events.find((event) => event.type === 'toolbar.found'));
     await wait(100);
+    check('the host answer puts Surface Tools in the open popover',
+      (await host.evaluate(() => document.querySelector('.location-popover')?.textContent.includes('Surface Tools') ?? false)) === true);
+    const placed = await host.evaluate(() => {
+      const pop = document.querySelector('.location-popover').getBoundingClientRect();
+      const chip = document.querySelector('.md-cmd[data-cmd="_Loft"]').getBoundingClientRect();
+      const panel = document.querySelector('.panel').getBoundingClientRect();
+      return { pop: [pop.left, pop.top, pop.right, pop.bottom], chip: [chip.left, chip.top, chip.right, chip.bottom], panel: [panel.left, panel.right] };
+    });
+    check('the popover sits next to its chip inside the panel',
+      placed.pop[0] >= placed.panel[0] - 1 && placed.pop[2] <= placed.panel[1] + 1
+      && (Math.abs(placed.pop[1] - placed.chip[3]) < 12 || Math.abs(placed.pop[3] - placed.chip[1]) < 12), JSON.stringify(placed));
+    await host.keyboard.press('Escape');
+    await wait(100);
+    check('Escape closes the popover and its scrim',
+      (await host.evaluate(() => document.querySelectorAll('.location-popover, .scrim').length)) === 0);
+    await host.evaluate(() => { document.querySelector('.md-cmd-where').click(); });
+    await wait(100);
+    check('a second where click opens at once from the cache, without a new toolbar.find',
+      (await host.evaluate(() => document.querySelector('.location-popover')?.textContent.includes('Surface Tools') ?? false)) === true
+      && (await findCount()) === finds + 1);
+    await host.evaluate(() => { document.querySelector('.scrim').click(); });
+    await wait(100);
+    check('a click outside closes the popover',
+      (await host.evaluate(() => document.querySelectorAll('.location-popover, .scrim').length)) === 0);
+    check('no location card exists any more',
+      (await host.evaluate(() => document.querySelectorAll('.location-' + 'card').length)) === 0);
 
     // Plan 025: the contract's project event is pending, so the card asks, suggestion first.
     const hostProject = await host.evaluate(() => ({
@@ -1019,14 +1051,16 @@ try {
       return { gap: Math.round(t.scrollHeight - t.scrollTop - t.clientHeight), turns: document.querySelectorAll('.turn').length };
     });
 
-    // Plan 015: a location card belongs to the conversation, so the empty snapshot that opens a replay clears it.
+    // Plan 020: the open popover belongs to the conversation, so the empty snapshot that opens a replay closes it.
     const firstReplay = replay('sess-a', 8);
-    check('a location card is still showing before the replay starts',
-      (await host.evaluate(() => document.querySelectorAll('.location-card').length)) === 1);
+    await host.evaluate(() => { document.querySelector('.md-cmd-where').click(); });
+    await wait(100);
+    check('a location popover is showing before the replay starts',
+      (await host.evaluate(() => document.querySelectorAll('.location-popover').length)) === 1);
     await host.evaluate((e) => window.rhinoAI.receive(e), firstReplay[0]);
     await wait(100);
-    check('the empty conversation snapshot of a replay clears the location cards',
-      (await host.evaluate(() => document.querySelectorAll('.location-card').length)) === 0);
+    check('the empty conversation snapshot of a replay closes the popover and its scrim',
+      (await host.evaluate(() => document.querySelectorAll('.location-popover, .scrim').length)) === 0);
     await post(firstReplay.slice(1));
     await wait(1600);
     await host.evaluate(() => document.querySelector('.transcript').scrollTo({ top: 0 }));
