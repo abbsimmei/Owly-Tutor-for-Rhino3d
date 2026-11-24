@@ -318,14 +318,26 @@ internal static class CommandOptionsParser
                 if (tutorial < 0 && (tj.Name == "h4" || (tj.Name == "div" && tj.HasClass("tutorialblock")))) tutorial = j;
                 if (firstHeading < 0 && tj.Name == "h5") firstHeading = j;
             }
-            var valuesEnd = tutorial >= 0 ? tutorial : c2;
-            for (var j = o + 1; j < valuesEnd; j++)
+            // Mode shape: the first <h5> comes before any tutorial, so every <h5> outside a tutorialblock is a value.
+            // Tangent shape: a tutorial comes first, so there are no values. An <h5> inside a tutorialblock is never one.
+            if (firstHeading >= 0 && (tutorial < 0 || firstHeading < tutorial))
             {
-                if (tags[j].Closing || tags[j].Name != "h5") continue;
-                var vn = HeadingText(html, tags, j, out var vclose);
-                if (vclose < 0) continue;
-                if (Ident.IsMatch(vn)) values.Add(new CommandOptionValue(vn, DescriptionAfter(html, tags, vclose + 1)));
-                j = vclose;
+                for (var j = o + 1; j < c2; j++)
+                {
+                    var tj = tags[j];
+                    if (tj.Closing) continue;
+                    if (tj.Name == "div" && tj.HasClass("tutorialblock"))
+                    {
+                        var tc = FindClose(tags, j);
+                        j = tc < 0 ? c2 : tc;
+                        continue;
+                    }
+                    if (tj.Name != "h5") continue;
+                    var vn = HeadingText(html, tags, j, out var vclose);
+                    if (vclose < 0) continue;
+                    if (Ident.IsMatch(vn)) values.Add(new CommandOptionValue(vn, DescriptionAfter(html, tags, vclose + 1)));
+                    j = vclose;
+                }
             }
             var stop = c2;
             if (firstHeading >= 0 && firstHeading < stop) stop = firstHeading;

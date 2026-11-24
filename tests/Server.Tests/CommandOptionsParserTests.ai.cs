@@ -255,7 +255,7 @@ public class CommandOptionsParserTests
         var html = Page("""
             <table>
               <tr><th colspan="2">Command-line options</th></tr>
-              <tr><td><p>Mode</p></td><td><h5>Inner</h5><p>Inner demo.</p><h5>Outer</h5><p>Outer demo.</p></td></tr>
+              <tr><td><p>Mode</p></td><td><h5>Inner</h5><p>Inner demo.</p><div class="tutorialblock"><h4>Inner steps</h4><h5>Bogus</h5><p>Steps.</p></div><h5>Outer</h5><p>Outer demo.</p><div class="tutorialblock"><h4>Outer steps</h4><p>Steps.</p></div></td></tr>
               <tr><td><p>Tangent</p></td><td>Demo tangent text.
                 <div class="tutorialblock"><h4>Tangent steps</h4><p>Steps.</p></div>
                 <h5>FromFirst</h5><p>Sub.</p><h5>Radius</h5><p>Sub.</p></td></tr>
