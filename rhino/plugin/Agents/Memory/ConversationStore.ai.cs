@@ -52,6 +52,9 @@ internal sealed class ConversationStore
     // turns, or a discarded one, is not saved. True when a file was written.
     public bool Save(Conversation convo)
     {
+        // Cheap exit before the lock: throwaway probe runners are disposed (and saved) on the UI thread.
+        if (convo.Discarded || convo.Turns.Count == 0) return false;
+
         lock (SaveGate)
         {
             if (convo.Discarded) return false;
