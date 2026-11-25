@@ -46,11 +46,11 @@ A setting a Rhino command asks for while it runs (for example Loft's *Style*). O
 _Avoid_: parameter, argument
 
 **Options card**:
-The box under the step that names a command. It lists that command's options for the student to set, and holds the Run button.
+The box under the step that names a command. It lists that command's options for the student to set, and holds the Run button. Choices, Yes/No toggles and numbers at the command's first prompt can be set; other options are shown with an explanation only. A value Owly suggests is marked "suggested by Owly".
 _Avoid_: form, settings panel
 
 **Run**:
-The student clicks Run on an options card, and Owly starts that command in Rhino with the options the student set. Rhino then waits for the student's own picks.
+The student clicks Run on an options card, and Owly starts that command in Rhino with the options the student changed (never the current values it only shows). Rhino then waits for the student's own picks.
 _Avoid_: execute, insert, auto-run
 
 **Blocked command**:
@@ -58,7 +58,7 @@ A command Owly never starts with Run, for example a script runner, Save, Delete,
 _Avoid_: forbidden command, disabled command
 
 **Option probe**:
-Owly briefly starting a command and cancelling it at once, without a click, only to read the command's options and their current values.
+Owly briefly starting a command and cancelling it at once (`_X _Cancel`), without a click, only to read the options and current values at the command's first prompt. It runs only on Rhino 9 with an English interface, when no command is running, nothing is selected, the command isn't blocked and its help page lists options.
 _Avoid_: test run, dry run
 
 **Command copy**:

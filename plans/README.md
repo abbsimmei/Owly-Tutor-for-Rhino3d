@@ -172,7 +172,7 @@ Decisions the product owner made in the grilling session (each plan repeats the 
   - Blocked: script and plug-in runners, Grasshopper, Owly's commands, file and app commands, Delete and Purge, Undo and Redo, settings and layout. A blocked card has options but no Run.
   - The AI never triggers it.
 - **Options.**
-  - The silent probe is used if its Rhino 9 test passes, with four guards (idle, nothing selected, not blocked, help page lists options). A history line is an acceptable trace.
+  - The silent probe is used if its Rhino 9 test passes, with four guards (idle, nothing selected, not blocked, help page lists options). A history line is an acceptable trace. (Built in plan 024 with the `_X _Cancel` form, plus two guards: Rhino 9+ and an English UI.)
   - McNeel's help pages are the fallback and the complement.
   - Fields start blank, meaning keep Rhino's value.
   - Unknown choices are read-only with a hint.
@@ -201,7 +201,7 @@ Facts found during planning:
 - **Resume and working directory.** `--resume` only finds a session from its original working directory, so plan 026 fixes the CLI's working directory at `%AppData%\Owly\cli`.
 - **`RunScript`** blocks while a command waits for picks. Post it with `AsyncInvoke`, never inside the WebView handler.
 - **Built-in button images** are embedded resources of `Rhino.UI.dll`, mapped by the `.rui` `bitmap_id`. Never copy them into the repo.
-- **Localisation ID ranges** per plan: 020: 290-299, 021: 300-309, 022: 310-329, 023: 330-349, 025: 360-389, 026: 390-409, 027: 410-429, 028: 430-439, 029: 440-449, 030: 450-459.
+- **Localisation ID ranges** per plan: 020: 290-299, 021: 300-309, 022: 310-329, 023: 330-349, 024: 350-359, 025: 360-389, 026: 390-409, 027: 410-429, 028: 430-439, 029: 440-449, 030: 450-459.
 - **Expect merge friction** in `markdown.ts`, `AIPanelViewModel.ai.cs`, `AgentPrompts.cs`, the protocol mirrors (`events.ts`, `PanelEvents`/`PanelCommands`, `mockHost.ts`, `host-events.json`), `verify.mjs` and `WelcomeDialog.ai.cs`. Run the plans in table order.
 
 ## Shared verification gates

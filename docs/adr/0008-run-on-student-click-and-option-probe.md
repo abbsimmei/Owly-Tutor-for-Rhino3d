@@ -38,3 +38,4 @@ PRD §4's "Never execute Rhino commands on behalf of the user" now reads: Owly s
 - A command not on the blocklist that acts at once on a selection (for example `_BooleanUnion` with objects selected) runs when the student clicks Run. The student's click is the consent.
 - Letting the AI start Run, or adding any other click-less action, needs a new ADR that supersedes this one.
 - Plan 024 Part A passed with the `_X _Cancel` form only; see docs/owly/option-probe-spike.md.
+- As built, the probe adds two guards to the four above: Rhino 9 or later (Part A was tested only there) and an English Rhino interface (localised option names can't be matched to the help page). Adding a guard needs no ADR; removing one does.

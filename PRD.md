@@ -61,7 +61,11 @@ When recommending a Rhino command:
 * Do NOT automatically execute the command.  
 * Allow users to configure supported command parameters in the chat before insertion.
 
-(Phase 5 rework, ADR-0008: each command is named once, in order. Under its step an options card lets the student set the command's options and click **Run**, which starts the command in Rhino with those options. Rhino then waits for the student's own picks. Blocked commands, such as script runners, Save, Delete, Undo and Options, have no Run button. Plans 019 and 022-024.)
+(Phase 5 rework, ADR-0008: each command is named once, in order. Under its step an options card lets the student set the command's options and click **Run**, which starts the command in Rhino with those options. Rhino then waits for the student's own picks. Blocked commands, such as script runners, Save, Delete, Undo and Options, have no Run button. Built in plans 019 and 022-024:
+* the options come from McNeel's help page and, on Rhino 9, from the option probe
+* the editable options are choices, Yes/No toggles and numbers at the command's first prompt
+* Run writes only the values the student changed
+* Owly may suggest a value (`_Pyramid NumSides=6`), and the card marks it "suggested by Owly")
 
 The user must remain in control of all modelling operations.
 
@@ -89,7 +93,10 @@ Owly must behave like a patient, knowledgeable Rhino tutor.
 * Never generate geometry.  
 * Never create or modify the user's model.  
 * Never automatically perform modelling operations.  
-* Never execute Rhino commands on behalf of the user. (Phase 5 rework, ADR-0008: Owly starts a command only when the student clicks Run, and never supplies the picks. The one exception is the guarded option probe, which starts and cancels a command to read its options.)  
+* Never execute Rhino commands on behalf of the user. (Phase 5 rework, ADR-0008: Owly starts a command only when the student clicks Run, and never supplies the picks. The one exception is the guarded option probe, which starts and cancels a command to read its options. It is built in plan 024:
+* it runs `_X _Cancel` from Idle, on Rhino 9 with an English interface
+* it runs only when no command is running, nothing is selected, the command isn't blocked and its help page lists options
+* Rhino 9 tests showed no model change, no undo step and no selection change, and Enter still repeats the student's own command)  
 * Never invent commands, shortcuts or settings.  
 * Never claim to have performed an action it has not performed.  
 * Focus exclusively on teaching Rhino.
@@ -109,6 +116,8 @@ These restrictions should be implemented through both AI instructions and techni
 ## **5.1 Rhino Documentation**
 
 Investigate how Owly can access official McNeel Rhino documentation.
+
+(Phase 5, plan 023: Owly itself, not the AI, fetches a command's help page from docs.mcneel.com to fill the options card and its explanations. The AI's own access to the help pages, `command_help`, is still an MCP resource the Claude CLI probably can't read.)
 
 Prefer verified documentation over the AI model's general knowledge.
 
@@ -167,6 +176,8 @@ Ensure that:
 
 Document any unresolved privacy or security concerns.
 
+(Phase 5, plan 023: looking up a command's help page sends that command's name to docs.mcneel.com. The welcome popup's privacy line says so.)
+
 # **8\. Error Handling & Reliability**
 
 * Handle AI communication failures gracefully.  
@@ -205,7 +216,7 @@ Document any unresolved privacy or security concerns.
 * Implement command recommendations.  
 * Implement command copy.  
 * Implement command terminal highlight (copy, then Rhino gets focus for pasting; nothing is typed into Rhino, ADR-0007)  
-* Support configurable command parameters. (Moved to Phase 5: no Rhino API lists a command's options before it runs, so they wait for verified documentation.)
+* Support configurable command parameters. (Moved to Phase 5: no Rhino API lists a command's options before it runs, so they wait for verified documentation. Done in plans 023-024.)
 
 ## **Phase 5 — Quality & Knowledge**
 
@@ -213,11 +224,11 @@ Document any unresolved privacy or security concerns.
 * Investigate official Rhino documentation integration.  
 * Improve error handling.  
 * Test AI restrictions and response accuracy.
-* Configurable command options, based on verified documentation (moved from Phase 4).
+* Configurable command options, based on verified documentation (moved from Phase 4). Done: McNeel's help pages plus the option probe, plans 023-024.
 
 ## **Phase 5 rework (product owner, 2026-11-24; plans 018-030)**
 
-* Commands and tools (first): remove the lookup lines; name each command once, in order; "where to find" popover; real button images; Run button; options card from help pages with Owly's suggested values; option probe test.  
+* Commands and tools (first, **done**): remove the lookup lines; name each command once, in order; "where to find" popover; real button images; Run button; options card from help pages with Owly's suggested values; option probe.  
 * Memory (second): projects; saved conversations per project with the owl strip; project notes; opt-in main memory.  
 * Student level (last): level choice in the welcome popup; level check-in.
 
@@ -241,8 +252,8 @@ The initial version is considered functional when:
 1. Users can open and interact with Owly inside Rhino.  
 2. Users can ask natural-language questions about Rhino.  
 3. Owly recommends appropriate tools and commands.  
-4. Recommended toolbar tools and command terminal can be highlighted. (see ADR-0007)  
-5. Commands can be copied from the chat with configurable settings. (configurable settings from Phase 5)  
+4. Recommended toolbar tools and command terminal can be highlighted. (see ADR-0007 and ADR-0008: a "where to find" popover with the button's own image, and copy plus focus)  
+5. Commands can be copied from the chat with configurable settings. (configurable settings from Phase 5: the options card and Run, plans 022-024)  
 6. Owly explains how to use recommended tools and commands.  
 7. Users can ask follow-up questions and request clarification.  
 8. Owly does not generate geometry or modify the user's model.  
