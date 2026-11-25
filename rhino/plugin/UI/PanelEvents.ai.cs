@@ -33,6 +33,7 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(ProjectEvent), "project")]
 [JsonDerivedType(typeof(ConversationsEvent), "conversations")]
 [JsonDerivedType(typeof(NotesEvent), "notes")]
+[JsonDerivedType(typeof(CheckInEvent), "checkin")]
 [JsonDerivedType(typeof(StatusEvent), "status")]
 [JsonDerivedType(typeof(ZoomEvent), "zoom")]
 [JsonDerivedType(typeof(ReloadEvent), "reload")]
@@ -64,6 +65,9 @@ internal sealed record CommandCheckedEvent(string Name, string Run) : PanelEvent
 internal sealed record CommandOptionsFoundEvent(string Name, IReadOnlyList<PanelCommandOption> Options) : PanelEvent;
 internal sealed record PanelCommandOption(string Name, string Kind, IReadOnlyList<PanelCommandOptionValue> Values, string Description, string? Current = null, bool? FirstPrompt = null);
 internal sealed record PanelCommandOptionValue(string Name, string Description);
+// Plan 030: ask the student whether the explanations fit, under the answer of TurnId. Level is the current level
+// name (Beginner, Intermediate or Advanced). Not saved: a reload or a reopened conversation shows no card.
+internal sealed record CheckInEvent(string TurnId, string Level) : PanelEvent;
 internal sealed record StatusEvent(string? Text) : PanelEvent;
 
 // Plan 025: this document's project. Pending means Owly doesn't know which project the file belongs

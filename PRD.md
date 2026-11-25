@@ -82,7 +82,7 @@ On first installation, display a welcome popup with the Owly logo and a short de
 ## **3.4 Student Level**
 
 * The student chooses a level (Beginner, Intermediate or Advanced) in the welcome popup and can change it in settings. Owly pitches its explanations to that level. (Built: plan 029.)  
-* Now and then Owly asks whether its explanations are good, too easy or too hard, and offers a one-click level change. (Plans 029-030.)
+* Now and then Owly asks whether its explanations are good, too easy or too hard, and offers a one-click level change. (Built: plan 030.)
 
 # **4\. AI Behaviour & Restrictions**
 

@@ -52,6 +52,7 @@ internal partial class AIPanelViewModel : IDisposable
         Detach();
         UnsubscribeProjects();
         UnsubscribeConversations();
+        UnsubscribeCheckIns();
         Listener.Close();
     }
 
@@ -202,6 +203,8 @@ internal partial class AIPanelViewModel : IDisposable
             RenameConversationCommand rename => RenameConversation(rename.SessionId, rename.Title),
             DeleteConversationCommand delete => DeleteConversation(delete.SessionId),
             DeleteNoteCommand note => DeleteNote(note.Id),
+            CheckInAnswerCommand answer => AnswerCheckIn(answer.Verdict),
+            SetLevelCommand set => SetLevel(set.Level),
 
             _ => false
         };

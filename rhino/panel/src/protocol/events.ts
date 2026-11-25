@@ -253,6 +253,8 @@ export type HostEvent =
   | { type: 'conversations'; projectId?: string; items: ConversationItem[] }
   // Plan 027: the notes of the current project, newest first. No `projectId` while the project is pending.
   | { type: 'notes'; projectId?: string; items: NoteItem[] }
+  // Plan 030: ask whether the explanations fit, under the answer of `turnId`. `level` is the current level. Not saved.
+  | { type: 'checkin'; turnId: string; level: 'Beginner' | 'Intermediate' | 'Advanced' }
   // The host owns the right-click menu, but the panel owns the zoom ladder, so the menu sends back
   // an intent rather than a level. `set` is the other direction: the level the host had stored.
   | { type: 'zoom'; action: 'in' | 'out' | 'reset' }
@@ -315,6 +317,10 @@ export type PanelCommand =
   | { type: 'conversation.delete'; sessionId: string }
   // Plan 027: delete one note of the current project. The host checks the id.
   | { type: 'notes.delete'; id: string }
+  // Plan 030: the level check-in. `verdict` is only logged by the host. `level.set` changes the level and is sent
+  // only by the student's click on Switch; the host accepts an exact level name.
+  | { type: 'checkin.answer'; verdict: 'good' | 'easy' | 'hard' }
+  | { type: 'level.set'; level: 'Beginner' | 'Intermediate' | 'Advanced' }
   | {
       type: 'menu.open';
       x: number;

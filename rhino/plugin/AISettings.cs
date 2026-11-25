@@ -49,6 +49,20 @@ internal static class AISettings
         set => Settings.SetInteger(nameof(WelcomeVersion), value);
     }
 
+    // Plan 030: how many answers Owly has given in total, and whether a due level check-in is still waiting for a
+    // conversation that has not had one yet. Written only by CheckIns.
+    public static int AnswersGiven
+    {
+        get => Settings.GetInteger(nameof(AnswersGiven), 0);
+        set => Settings.SetInteger(nameof(AnswersGiven), value);
+    }
+
+    public static bool CheckInPending
+    {
+        get => Settings.GetBool(nameof(CheckInPending), false);
+        set => Settings.SetBool(nameof(CheckInPending), value);
+    }
+
     // How well the student knows Rhino (plan 029); stored as the enum name, Beginner when unset.
     public static OwlyLevel Level
     {

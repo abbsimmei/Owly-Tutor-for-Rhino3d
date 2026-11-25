@@ -20,6 +20,8 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(RenameConversationCommand), "conversation.rename")]
 [JsonDerivedType(typeof(DeleteConversationCommand), "conversation.delete")]
 [JsonDerivedType(typeof(DeleteNoteCommand), "notes.delete")]
+[JsonDerivedType(typeof(CheckInAnswerCommand), "checkin.answer")]
+[JsonDerivedType(typeof(SetLevelCommand), "level.set")]
 internal abstract partial record PanelCommand { }
 
 internal sealed record PromptCommand(PromptRequest Request) : PanelCommand;
@@ -64,5 +66,10 @@ internal sealed record DeleteConversationCommand(string SessionId) : PanelComman
 
 // Plan 027: delete one note. The host deletes only from the current project and checks the id.
 internal sealed record DeleteNoteCommand(string Id) : PanelCommand;
+
+// Plan 030: the level check-in. Verdict is "good", "easy" or "hard" and is only logged. SetLevel changes the level
+// only on the student's click; the host accepts an exact level name and ignores anything else.
+internal sealed record CheckInAnswerCommand(string Verdict) : PanelCommand;
+internal sealed record SetLevelCommand(string Level) : PanelCommand;
 
 internal sealed record PromptRequest(string Text, IReadOnlyList<PanelAttachment> Attachments);

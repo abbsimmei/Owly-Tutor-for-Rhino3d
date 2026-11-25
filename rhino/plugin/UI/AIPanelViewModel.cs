@@ -30,6 +30,7 @@ internal partial class AIPanelViewModel
         DocumentSerialNumber = documentSerialNumber;
         SubscribeProjects();
         SubscribeConversations();
+        SubscribeCheckIns();
 
         StartPageServer();
     }

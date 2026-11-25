@@ -284,6 +284,16 @@ interface Scenario {
 // ("organize ... in the active viewport into layers" contains "view").
 const SCENARIOS: readonly Scenario[] = [
   {
+    // Plan 030: a short answer that ends with the host asking for a level check-in under it.
+    match: /checkin/i,
+    async run(host, turnId, script) {
+      await script.pause(120);
+      await host.text(turnId, script, lines('Here is a short answer, so the level check-in can appear under it.'));
+      host.emit({ type: 'turn.end', turnId, status: 'ok' });
+      host.emit({ type: 'checkin', turnId, level: host.level });
+    },
+  },
+  {
     match: /tower|twist|loft|facade/i,
     async run(host, turnId, script) {
       host.status('Reading the selection…');
@@ -755,6 +765,9 @@ export class MockHost implements Bridge {
   private activeTurn: string | null = null;
   private booted = false;
 
+  // Plan 030: the level the mock explains at, which the check-in card offers to move one step.
+  level: 'Beginner' | 'Intermediate' | 'Advanced' = 'Intermediate';
+
   // Plan 025: the host's project registry, in memory. tower-study.3dm starts out filed under Tower study.
   private projects: ProjectInfo[] = [
     { id: 'p-pavilion', name: 'Summer pavilion', builtin: false },
@@ -1006,6 +1019,16 @@ export class MockHost implements Bridge {
         if (this.fileProject === command.id) this.fileProject = null;
         if (this.projectId === command.id) this.projectId = this.fileProject;
         this.emitProject();
+        return;
+
+      case 'checkin.answer':
+        return;
+
+      // Plan 030: the host accepts an exact level name, and tells the student what changed.
+      case 'level.set':
+        if (!['Beginner', 'Intermediate', 'Advanced'].includes(command.level) || command.level === this.level) return;
+        this.level = command.level;
+        this.notice('info', `Owly now explains at the ${command.level} level.`);
         return;
 
       case 'notes.delete': {
