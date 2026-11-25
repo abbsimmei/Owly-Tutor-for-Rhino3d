@@ -118,6 +118,7 @@ internal sealed class Conversation
             StartedAt = dto.StartedAt,
             ProjectId = string.IsNullOrEmpty(dto.ProjectId) ? null : dto.ProjectId,
             Title = dto.Title ?? string.Empty,
+            Restored = true,
         };
         if (validId)
             convo.SavedAs = (parsed, string.IsNullOrEmpty(dto.ProjectId) ? ProjectRegistry.UnsortedId : dto.ProjectId);
@@ -158,6 +159,10 @@ internal sealed class Conversation
 
     // Once set, every save is a no-op: the student deleted this conversation, its project or all of Owly's memory.
     public bool Discarded { get; set; }
+
+    // Plan 027: true for a conversation rebuilt from a saved file, which already has its context. A fresh
+    // one gets the project's notes in front of its first message.
+    public bool Restored { get; private set; }
 
     // Where ConversationStore last wrote this conversation. A save under a different session id or
     // project removes this old file, so a move or a rotated id never leaves a duplicate behind.

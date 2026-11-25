@@ -53,11 +53,17 @@ internal sealed class AgentRunner : IAgentRunner
         try
         {
             IAcpAgent connection = await EnsureStartedAsync(mcpUrl, cwd).ConfigureAwait(false);
+            // Plan 027: a fresh conversation starts with its project's notes, in front of the first message and
+            // over stdin like the rest. They are not part of the transcript (BeginTurn keeps only message.Text).
+            string notes = Conversation.Turns.Count == 0 && !Conversation.Restored ? ProjectNotesContext() : string.Empty;
             Conversation.BeginTurn(message.Text, [.. message.Attachments.Select(static a => a.Info)]);
+            Acp.ContentBlock[] blocks = AcpMessageMapper.Prompt(message);
+            if (notes.Length > 0)
+                blocks = [new TextContentBlock { Text = notes + "\n\n" }, .. blocks];
             await connection.SessionPromptAsync(new PromptRequest
             {
                 SessionId = SessionId,
-                Prompt = AcpMessageMapper.Prompt(message),
+                Prompt = blocks,
             }).ConfigureAwait(false);
         }
         finally
@@ -65,6 +71,19 @@ internal sealed class AgentRunner : IAgentRunner
             Conversation.CompleteTurn();
             PersistTurn();
             TurnGate.Release();
+        }
+    }
+
+    private string ProjectNotesContext()
+    {
+        try
+        {
+            string project = Conversation.ProjectId ?? ProjectRegistry.UnsortedId;
+            return NotesPrompt.ContextBlock(OwlyMemory.Notes.List(project).Select(note => note.Text).ToList());
+        }
+        catch (Exception)
+        {
+            return string.Empty;
         }
     }
 

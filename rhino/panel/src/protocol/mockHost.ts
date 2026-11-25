@@ -7,6 +7,7 @@ import type {
   Attachment,
   ContextItem,
   ConversationItem,
+  NoteItem,
   ConversationSnapshot,
   HostEvent,
   PanelCommand,
@@ -773,6 +774,15 @@ export class MockHost implements Bridge {
     ],
   };
 
+  // Plan 027: the notes of each project, newest first.
+  private notes: Record<string, NoteItem[]> = {
+    'p-tower': [
+      { id: 'n-3', text: 'Student is modelling a 40-storey tower with a twisting facade.', created: '2026-11-24T10:20:00.000Z' },
+      { id: 'n-2', text: 'Explained _Loft and how the seam direction affects the surface.', created: '2026-11-23T14:40:00.000Z' },
+      { id: 'n-1', text: 'Join and Group were compared; the student prefers Group for panels.', created: '2026-11-20T09:30:00.000Z' },
+    ],
+  };
+
   subscribe(handler: (event: HostEvent) => void): () => void {
     this.handlers.add(handler);
     if (!this.booted) {
@@ -998,6 +1008,14 @@ export class MockHost implements Bridge {
         this.emitProject();
         return;
 
+      case 'notes.delete': {
+        const list = this.projectId === null ? undefined : this.notes[this.projectId];
+        if (!list || !list.some((note) => note.id === command.id)) return;
+        this.notes[this.projectId as string] = list.filter((note) => note.id !== command.id);
+        this.emitNotes();
+        return;
+      }
+
       case 'project.move':
         if (!this.projects.some((p) => p.id === command.id)) return;
         this.fileProject = command.id;
@@ -1056,6 +1074,13 @@ export class MockHost implements Bridge {
       projects: [...this.projects],
     });
     this.emitConversations();
+    this.emitNotes();
+  }
+
+  // Plan 027: mirrors the host's notes for this document's project; nothing while the project is pending.
+  private emitNotes(): void {
+    const items = this.projectId === null ? [] : [...(this.notes[this.projectId] ?? [])];
+    this.emit({ type: 'notes', ...(this.projectId === null ? {} : { projectId: this.projectId }), items });
   }
 
   emit(event: HostEvent): void {

@@ -54,6 +54,17 @@ public class RhinoAIPlugin : PlugIn
             RhinoApp.WriteLine($"[owly] could not place Owly on first start: {ex.Message}");
         }
 
+        // Plan 027: notes of conversations that ended while Rhino was quitting (or whose request failed) are
+        // written now, in the background. Before the welcome block, which can return early.
+        try
+        {
+            ProjectNotesWriter.DrainPending();
+        }
+        catch (Exception ex)
+        {
+            RhinoApp.WriteLine($"[owly] could not queue the project notes: {ex.Message}");
+        }
+
         // Welcome popup, once per computer and Rhino version (plan 011). The flag is set before
         // showing, so a crash inside the dialog can never make it pop up on every start.
         try

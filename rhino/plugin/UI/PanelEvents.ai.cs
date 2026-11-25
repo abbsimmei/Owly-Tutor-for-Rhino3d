@@ -32,6 +32,7 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(CommandOptionsFoundEvent), "command.options.found")]
 [JsonDerivedType(typeof(ProjectEvent), "project")]
 [JsonDerivedType(typeof(ConversationsEvent), "conversations")]
+[JsonDerivedType(typeof(NotesEvent), "notes")]
 [JsonDerivedType(typeof(StatusEvent), "status")]
 [JsonDerivedType(typeof(ZoomEvent), "zoom")]
 [JsonDerivedType(typeof(ReloadEvent), "reload")]
@@ -76,6 +77,11 @@ internal sealed record PanelProject(string Id, string Name, bool Builtin);
 // is the transcript snapshot. StartedAt is ISO 8601.
 internal sealed record ConversationsEvent(string? ProjectId, IReadOnlyList<PanelConversationItem> Items) : PanelEvent;
 internal sealed record PanelConversationItem(string SessionId, string Title, string StartedAt, bool Current);
+
+// Plan 027: the notes of the current project, newest first. ProjectId is null while the project is pending.
+// Created is ISO 8601.
+internal sealed record NotesEvent(string? ProjectId, IReadOnlyList<PanelNote> Items) : PanelEvent;
+internal sealed record PanelNote(string Id, string Text, string Created);
 
 // The host owns the menu, the panel owns the zoom ladder, so this carries an intent rather than a
 // level and the ladder is never duplicated on this side. "set" is the exception: the stored level.

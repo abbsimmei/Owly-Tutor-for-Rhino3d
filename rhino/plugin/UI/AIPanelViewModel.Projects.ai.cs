@@ -69,6 +69,7 @@ internal partial class AIPanelViewModel
             suggestion,
             all.Select(p => new PanelProject(p.Id, p.Name, p.Builtin)).ToList()));
         SendConversations();
+        SendNotes();
     }
 
     // Switch project, or the project card's answer. A file Owly didn't know yet is filed under the

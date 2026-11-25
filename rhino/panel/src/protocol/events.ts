@@ -76,6 +76,13 @@ export interface ConversationItem {
   current: boolean;
 }
 
+/** Plan 027: one project note. `created` is ISO 8601. */
+export interface NoteItem {
+  id: string;
+  text: string;
+  created: string;
+}
+
 export type AttachmentKind = 'image' | 'text';
 
 export interface Attachment {
@@ -244,6 +251,8 @@ export type HostEvent =
   // Plan 026: the saved conversations of the current project, newest first, for the strip of owls. No
   // `projectId` while the project is pending. Not the same as `conversation`, the transcript snapshot.
   | { type: 'conversations'; projectId?: string; items: ConversationItem[] }
+  // Plan 027: the notes of the current project, newest first. No `projectId` while the project is pending.
+  | { type: 'notes'; projectId?: string; items: NoteItem[] }
   // The host owns the right-click menu, but the panel owns the zoom ladder, so the menu sends back
   // an intent rather than a level. `set` is the other direction: the level the host had stored.
   | { type: 'zoom'; action: 'in' | 'out' | 'reset' }
@@ -304,6 +313,8 @@ export type PanelCommand =
   | { type: 'conversation.open'; sessionId: string }
   | { type: 'conversation.rename'; sessionId: string; title: string }
   | { type: 'conversation.delete'; sessionId: string }
+  // Plan 027: delete one note of the current project. The host checks the id.
+  | { type: 'notes.delete'; id: string }
   | {
       type: 'menu.open';
       x: number;

@@ -40,4 +40,10 @@ internal sealed record ConversationDto(
 
     public string ProjectId { get; set; } = string.Empty;
     public string Title { get; set; } = string.Empty;
+
+    // Plan 027: project notes bookkeeping, kept on disk only. NotesPending means the conversation ended and
+    // its notes were not written yet; NotesThroughTurn is how many turns the notes already cover. A live
+    // conversation's save never changes them (ConversationStore.Save keeps what the file has).
+    public bool NotesPending { get; set; }
+    public int NotesThroughTurn { get; set; }
 }

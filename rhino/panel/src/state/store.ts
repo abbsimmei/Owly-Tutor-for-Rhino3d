@@ -13,6 +13,7 @@ import {
   type CommandOptionInfo,
   type ContextItem,
   type ConversationItem,
+  type NoteItem,
   type HostEvent,
   type HostInfo,
   type NoticeLevel,
@@ -86,6 +87,12 @@ export interface ProjectView {
 export interface ConversationsView {
   projectId: string | null;
   items: readonly ConversationItem[];
+}
+
+/** Plan 027: the notes of the current project, as the host last reported them. */
+export interface NotesView {
+  projectId: string | null;
+  items: readonly NoteItem[];
 }
 
 export interface Notice {
@@ -172,6 +179,7 @@ export class Store {
   readonly status = signal<string | null>(null);
   readonly project = signal<ProjectView | null>(null);
   readonly conversations = signal<ConversationsView | null>(null);
+  readonly notes = signal<NotesView | null>(null);
 
   readonly activeAgent: ReadSignal<AgentInfo | null> = computed(() => {
     const name = this.activeAgentName();
@@ -370,6 +378,10 @@ export class Store {
 
       case 'conversations':
         this.conversations.set({ projectId: event.projectId ?? null, items: event.items });
+        return;
+
+      case 'notes':
+        this.notes.set({ projectId: event.projectId ?? null, items: event.items });
         return;
 
       case 'project':
