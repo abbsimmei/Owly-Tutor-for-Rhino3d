@@ -1088,6 +1088,29 @@ a:hover { text-decoration: underline; }
 .project-choice.suggested { border-color: var(--accent); background: var(--accent-soft); }
 .project-choice.project-new { align-items: center; color: var(--text-dim); background: none; border-style: dashed; }
 
+.checkin-card {
+  position: relative;
+  margin: 5.4px 0 0;
+  padding: 7.2px 24px 7.2px 8.1px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--surface);
+  font-size: var(--fs-xs);
+}
+.checkin-body { display: flex; flex-wrap: wrap; align-items: center; gap: 5.4px 9px; }
+.checkin-text { color: var(--text-dim); text-wrap: pretty; }
+.checkin-buttons { display: flex; flex-wrap: wrap; gap: 4.5px; }
+.checkin-close {
+  position: absolute;
+  top: 4.5px;
+  inset-inline-end: 4.5px;
+  display: inline-flex;
+  padding: 2.7px;
+  border-radius: var(--r-sm);
+  color: var(--text-faint);
+}
+.checkin-close:hover { background: var(--surface-2); color: var(--text); }
+
 /* ------------------------------------------------------------ empty state */
 
 .empty {

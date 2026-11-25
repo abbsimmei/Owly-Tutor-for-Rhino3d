@@ -164,6 +164,9 @@ internal sealed class Conversation
     // one gets the project's notes in front of its first message.
     public bool Restored { get; private set; }
 
+    // Plan 030: a level check-in was already shown in this conversation. In memory only: never saved, never restored.
+    public bool CheckInShown { get; set; }
+
     // Where ConversationStore last wrote this conversation. A save under a different session id or
     // project removes this old file, so a move or a rotated id never leaves a duplicate behind.
     public (Guid SessionId, string ProjectId)? SavedAs { get; set; }

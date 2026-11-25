@@ -758,6 +758,69 @@ try {
   check('choosing a project hides the card', (await count('.project-card')) === 0);
   check('the header shows the chosen project', (await projectHeader()) === 'Unsorted', await projectHeader());
 
+  // ---------------------------------------------------------------- level check-in (plan 030)
+  // The mock answers a prompt with "checkin" and then asks, the way the host does after the 10th answer.
+  const checkin = () => page.evaluate(() => ({
+    cards: document.querySelectorAll('.checkin-card').length,
+    text: document.querySelector('.checkin-card')?.textContent ?? '',
+    buttons: [...document.querySelectorAll('.checkin-card .btn')].map((b) => b.textContent),
+    inLastTurn: (() => {
+      const turns = document.querySelectorAll('.turn');
+      return turns.length > 0 && turns[turns.length - 1].querySelector('.checkin-card') !== null;
+    })(),
+    owls: document.querySelectorAll('.checkin-card .owl').length,
+  }));
+  const clickIn = (sel) => page.evaluate((q) => { document.querySelector(q).click(); }, sel);
+  const askCheckin = async () => {
+    await type('checkin please');
+    await page.keyboard.press('Enter');
+    return until(page, () => document.querySelectorAll('.checkin-card').length === 1 ? true : null, 6000);
+  };
+  const levelNotice = (level) => until(page,
+    `[...document.querySelectorAll('.notice')].some((n) => n.textContent.includes('Owly now explains at the ${level} level.')) ? true : null`, 3000);
+
+  check('an ordinary answer shows no check-in card', (await checkin()).cards === 0);
+  check('a check-in event shows a card under the answer it names', (await askCheckin()) !== null);
+  const ask1 = await checkin();
+  check('the card asks with Good, Too easy and Too hard, under the latest turn, and has no owl',
+    ask1.inLastTurn && ask1.owls === 0 && JSON.stringify(ask1.buttons) === JSON.stringify(['Good', 'Too easy', 'Too hard']), JSON.stringify(ask1));
+  await clickIn('.checkin-card .btn:nth-child(2)');
+  await wait(100);
+  const offer = await checkin();
+  check('Too easy offers one level up', offer.text.includes('Switch to Advanced?') && offer.buttons.includes('Switch') && offer.buttons.includes('No thanks'), JSON.stringify(offer));
+  await clickIn('.checkin-card .checkin-switch');
+  check('Switch sends level.set Advanced (the host answers with a notice) and the card goes away',
+    (await levelNotice('Advanced')) !== null && (await checkin()).cards === 0);
+
+  await askCheckin();
+  await clickIn('.checkin-card .btn:nth-child(3)');
+  await wait(100);
+  check('with the level at Advanced, Too hard offers Intermediate', (await checkin()).text.includes('Switch to Intermediate?'));
+  await clickIn('.checkin-card .checkin-no');
+  await wait(1500);
+  check('No thanks closes the card and changes no level',
+    (await checkin()).cards === 0 && (await page.evaluate(() => [...document.querySelectorAll('.notice')].some((n) => n.textContent.includes('Intermediate level')))) === false);
+
+  await askCheckin();
+  await clickIn('.checkin-card .btn:nth-child(2)');
+  await wait(100);
+  const top = await checkin();
+  check('at the top level, Too easy shows only thanks',
+    top.text.includes('Thanks! Owly keeps the current level.') && !top.buttons.includes('Switch'), JSON.stringify(top));
+  await clickIn('.checkin-card .checkin-close');
+  await wait(100);
+  check('the close button clears the card', (await checkin()).cards === 0);
+
+  await askCheckin();
+  await clickIn('.checkin-card .btn:nth-child(1)');
+  await wait(100);
+  check('Good closes the card', (await checkin()).cards === 0);
+
+  await askCheckin();
+  await page.evaluate(() => [...document.querySelectorAll('.header .icon-btn')][0].click());
+  await wait(500);
+  check('a new conversation shows no card', (await checkin()).cards === 0);
+
   // ------------------------------------------------- the C# contract, replayed
   // host-events.json is written by PanelContractTests in the plug-in's test suite, using the real
   // serialiser. Replaying it here is the only place the two languages are checked against each
@@ -798,7 +861,7 @@ try {
     const settling = (event) =>
       event.type === 'turn.end' || (event.type === 'turn.tool.patch' && event.patch.status === 'unknown');
     await host.evaluate((batch) => { for (const event of batch) window.rhinoAI.receive(event); },
-      events.filter((event) => !settling(event)));
+      events.filter((event) => !settling(event) && event.type !== 'checkin'));
     await wait(600);
 
     const rendered = await host.evaluate(() => ({
@@ -1211,6 +1274,32 @@ try {
     }));
     check('an ended turn with unfinished calls draws no tool line and no spinner',
       ended.tools === 0 && ended.spinners === 0, JSON.stringify(ended));
+
+    // Plan 030: the contract's checkin event draws the card under its turn; clicks send the commands.
+    const checkinEvent = events.find((event) => event.type === 'checkin');
+    await host.evaluate((event) => window.rhinoAI.receive(event), checkinEvent);
+    await wait(150);
+    check('a C#-serialised checkin event draws the card under its turn',
+      (await host.evaluate((id) => document.querySelectorAll(`[data-turn="${id}"] .checkin-card`).length, checkinEvent.turnId)) === 1);
+    await host.evaluate(() => { window.__sent.length = 0; });
+    await host.evaluate(() => { document.querySelector('.checkin-card .btn:nth-child(2)').click(); });
+    await wait(100);
+    await host.evaluate(() => { document.querySelector('.checkin-card .checkin-switch').click(); });
+    await wait(100);
+    const levelSent = await host.evaluate(() => window.__sent.filter((m) => m.type === 'checkin.answer' || m.type === 'level.set'));
+    check('Too easy then Switch sends checkin.answer easy and level.set Advanced, then the card is gone',
+      JSON.stringify(levelSent) === JSON.stringify([{ type: 'checkin.answer', verdict: 'easy' }, { type: 'level.set', level: 'Advanced' }])
+        && (await host.evaluate(() => document.querySelectorAll('.checkin-card').length)) === 0, JSON.stringify(levelSent));
+    await host.evaluate((event) => window.rhinoAI.receive(event), checkinEvent);
+    await wait(100);
+    await host.evaluate(() => { window.__sent.length = 0; });
+    await host.evaluate(() => { document.querySelector('.checkin-card .btn:nth-child(3)').click(); });
+    await wait(100);
+    await host.evaluate(() => { document.querySelector('.checkin-card .checkin-no').click(); });
+    await wait(100);
+    check('Too hard then No thanks sends no level.set',
+      (await host.evaluate(() => window.__sent.some((m) => m.type === 'level.set'))) === false
+        && (await host.evaluate(() => document.querySelectorAll('.checkin-card').length)) === 0);
 
     // Switching Rhino's theme sends a second theme event. The panel has to restyle from it, both
     // the host-supplied tokens and the scheme attribute that drives everything the host does not

@@ -13,6 +13,7 @@ import { owl } from './owl.js';
 import { commandsIn, normaliseCommand } from '../core/commandMentions.js';
 import { agentMessage } from './message.js';
 import { conversationStrip } from './conversationStrip.js';
+import { checkInCard } from './checkInCard.js';
 
 function attachmentChip(attachment: Attachment): Child {
   return el(
@@ -121,6 +122,7 @@ function turnView(ctx: PanelContext, turn: TurnView): Child {
       () => el('div', { class: 'lifecycle', text: () => t('turn.stopped') }),
     ),
     turnFooter(ctx, turn),
+    checkInCard(ctx, turn),
   );
 }
 

@@ -95,6 +95,15 @@ export interface NotesView {
   items: readonly NoteItem[];
 }
 
+/** Plan 030: the level check-in card under one answer. Cleared by every close and by a new conversation. */
+export interface CheckInView {
+  turnId: string;
+  level: 'Beginner' | 'Intermediate' | 'Advanced';
+  step: 'ask' | 'offer' | 'thanks';
+  /** The level Switch would set; present on the `offer` step. */
+  target?: 'Beginner' | 'Intermediate' | 'Advanced';
+}
+
 export interface Notice {
   id: string;
   level: NoticeLevel;
@@ -180,6 +189,7 @@ export class Store {
   readonly project = signal<ProjectView | null>(null);
   readonly conversations = signal<ConversationsView | null>(null);
   readonly notes = signal<NotesView | null>(null);
+  readonly checkIn = signal<CheckInView | null>(null);
 
   readonly activeAgent: ReadSignal<AgentInfo | null> = computed(() => {
     const name = this.activeAgentName();
@@ -241,6 +251,7 @@ export class Store {
         this.cardSeeded.clear();
         this.cache.clear();
         this.asked.clear();
+        this.checkIn.set(null);
         return;
 
       // Idempotent on id. A host that re-announces a turn or a call must not be able to put two
@@ -378,6 +389,10 @@ export class Store {
 
       case 'conversations':
         this.conversations.set({ projectId: event.projectId ?? null, items: event.items });
+        return;
+
+      case 'checkin':
+        this.checkIn.set({ turnId: event.turnId, level: event.level, step: 'ask' });
         return;
 
       case 'notes':

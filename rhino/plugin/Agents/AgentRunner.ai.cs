@@ -53,29 +53,51 @@ internal sealed class AgentRunner : IAgentRunner
     public async Task PromptAsync(UserMessage message, string mcpUrl, string cwd)
     {
         await TurnGate.WaitAsync().ConfigureAwait(false);
+        bool answered = false;
         try
         {
             IAcpAgent connection = await EnsureStartedAsync(mcpUrl, cwd).ConfigureAwait(false);
             // Plan 027: a fresh conversation starts with its project's notes, in front of the first message and
             // over stdin like the rest. They are not part of the transcript (BeginTurn keeps only message.Text).
             string notes = Conversation.Turns.Count == 0 && !Conversation.Restored ? StartContext() : string.Empty;
-            Conversation.BeginTurn(message.Text, [.. message.Attachments.Select(static a => a.Info)]);
+            Turn turn = Conversation.BeginTurn(message.Text, [.. message.Attachments.Select(static a => a.Info)]);
             Acp.ContentBlock[] blocks = AcpMessageMapper.Prompt(message);
             if (notes.Length > 0)
                 blocks = [new TextContentBlock { Text = notes + "\n\n" }, .. blocks];
-            await connection.SessionPromptAsync(new PromptRequest
+            PromptResponse response = await connection.SessionPromptAsync(new PromptRequest
             {
                 SessionId = SessionId,
                 Prompt = blocks,
             }).ConfigureAwait(false);
+            // Plan 030: an answer is a live turn that ended normally with text. Cancelled or failed turns throw or
+            // end differently, and an ask_user pause ends without text.
+            answered = CheckInSchedule.ShouldCount(
+                response.StopReason == Acp.StopReason.EndTurn,
+                turn.Events.Any(static ev => ev.Kind == TurnEventKind.AssistantText));
         }
         finally
         {
             Conversation.CompleteTurn();
             PersistTurn();
+            if (answered)
+                CountAnswer();
             if (RestartPending)
                 RestartNow();
             TurnGate.Release();
+        }
+    }
+
+    // Plan 030: the one place that counts an answer. The panel's id for this turn is turn-{index}.
+    private void CountAnswer()
+    {
+        string turnId = $"turn-{Conversation.Turns.Count - 1}";
+        try
+        {
+            RhinoApp.InvokeOnUiThread(new Action(() => CheckIns.AnswerCompleted(Conversation, turnId)));
+        }
+        catch (Exception)
+        {
+            // Counting must never fault the turn the student just ran.
         }
     }
 
