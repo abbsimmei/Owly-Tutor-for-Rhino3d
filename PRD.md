@@ -207,7 +207,7 @@ Document any unresolved privacy or security concerns.
 
 * Implement Owly's icon.&nbsp;  
 * Create the chat panel.  
-* Implement the conversation transcript and message input (no saved history, ADR-0006).  
+* Implement the conversation transcript and message input (no saved history, ADR-0006). (Phase 5 rework: conversations are now saved per project and reopened from the owl strip, ADR-0009, plan 026.)  
 * Add the welcome popup.
 
 ## **Phase 4 — Rhino Integration**
@@ -229,13 +229,13 @@ Document any unresolved privacy or security concerns.
 ## **Phase 5 rework (product owner, 2026-11-24; plans 018-030)**
 
 * Commands and tools (first, **done**): remove the lookup lines; name each command once, in order; "where to find" popover; real button images; Run button; options card from help pages with Owly's suggested values; option probe.  
-* Memory (second): projects; saved conversations per project with the owl strip; project notes; opt-in main memory.  
-* Student level (last): level choice in the welcome popup; level check-in.
+* Memory (second, **done**): projects; saved conversations per project with the owl strip; project notes; opt-in main memory.  
+* Student level (last, **done**): level choice in the welcome popup; level check-in.
 
 **Status** (details in `plans/README.md`; manual Rhino checks still open for the done plans):
 
-* Done: 018 lookup lines, 019 commands once/in order, 020 "where to find" popover, 021 button images, 022 Run, 023 options card, 024 option probe, 025 projects.  
-* To do, in order: 026 saved conversations → 027 project notes → 028 main memory → 029 level → 030 level check-in.
+* Done: 018 lookup lines, 019 commands once/in order, 020 "where to find" popover, 021 button images, 022 Run, 023 options card, 024 option probe, 025 projects, 026 saved conversations, 027 project notes, 028 main memory, 029 level, 030 level check-in.  
+* Still to confirm in Rhino 9: a conversation continues after Claude Code's own session file has expired (026); the notes request works against the real Claude Code (027); a level change takes effect on the next answer, plus the prompt checks (029); the check-in card's timing and Switch (030).
 
 ## **Phase 6 — Testing**
 
