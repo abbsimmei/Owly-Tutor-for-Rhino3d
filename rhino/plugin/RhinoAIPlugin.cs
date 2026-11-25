@@ -65,13 +65,15 @@ public class RhinoAIPlugin : PlugIn
             RhinoApp.WriteLine($"[owly] could not queue the project notes: {ex.Message}");
         }
 
-        // Welcome popup, once per computer and Rhino version (plan 011). The flag is set before
-        // showing, so a crash inside the dialog can never make it pop up on every start.
+        // Welcome popup, once per computer and Rhino version, and once more whenever WelcomeDialog.CurrentVersion
+        // goes up (plans 011, 029). The flag and version are set before showing, so a crash inside the dialog
+        // can never make it pop up on every start.
         try
         {
-            if (RhinoApp.IsRunningHeadless || AISettings.WelcomeShown)
+            if (RhinoApp.IsRunningHeadless || AISettings.WelcomeVersion >= WelcomeDialog.CurrentVersion)
                 return;
 
+            AISettings.WelcomeVersion = WelcomeDialog.CurrentVersion;
             AISettings.WelcomeShown = true;
         }
         catch (Exception ex)

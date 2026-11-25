@@ -42,6 +42,20 @@ internal static class AISettings
         set => Settings.SetBool(nameof(WelcomeShown), value);
     }
 
+    // Which version of the welcome popup was last shown (plan 029). Shown again when below WelcomeDialog.CurrentVersion.
+    public static int WelcomeVersion
+    {
+        get => Settings.GetInteger(nameof(WelcomeVersion), 0);
+        set => Settings.SetInteger(nameof(WelcomeVersion), value);
+    }
+
+    // How well the student knows Rhino (plan 029); stored as the enum name, Beginner when unset.
+    public static OwlyLevel Level
+    {
+        get => OwlyLevelExtensions.Parse(Settings.GetString(nameof(Level), string.Empty));
+        set => Settings.SetString(nameof(Level), value.ToString());
+    }
+
     // True once Owly has placed its panel tab and toolbar on first start (plan 013). Per Rhino version,
     // like WelcomeShown; a student who later hides either keeps that choice.
     public static bool FirstRunLayoutDone

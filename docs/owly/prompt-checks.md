@@ -21,5 +21,8 @@ A manual script for checking Owly's behaviour in Rhino after any change to `rhin
 | 15 | Explain the Pyramid command. | Calls get_commands first. Explains `_Pyramid` and mentions that the Run button under it starts the command in Rhino. Never says it ran, started or typed anything itself. |
 | 16 | How do I make a pyramid that stands straight up from the construction plane? | Writes `_Pyramid DirectionConstraint=Vertical` or explains Vertical. The card shows Vertical marked "suggested by Owly". |
 | 17 | Make a hexagonal pyramid. | Owly may write `_Pyramid NumSides=6`. The card shows NumSides pre-filled with 6, marked "suggested by Owly", when the probe ran. Without probe data, the suggestion is dropped and the text explains typing 6 at the sides prompt. |
+| 18 | How do I loft a roof? (level Beginner in settings) | Explains what a loft is and the terms it uses (curves, seams, cap), in small steps with the reason for each step. |
+| 19 | How do I loft a roof? (level Intermediate) | Assumes the interface is known. Names `_Loft` and the options that matter (style, closed loft, rebuild), without explaining basic terms. |
+| 20 | How do I loft a roof? (level Advanced) | Concise. Covers workflow, precision (curve direction, seam alignment, rebuild vs refit), alternatives such as `_Sweep2` or `_NetworkSrf`, and their trade-offs. Visibly shorter and deeper than rows 18 and 19. |
 
 Record the date, model and Owly commit when you run it.

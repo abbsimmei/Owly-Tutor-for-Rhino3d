@@ -95,7 +95,7 @@ internal sealed partial class ClaudeStreamJsonParser : IStreamJsonParser
         psi.AddArgument(allowedTools);
         // Owly's prompt replaces Claude Code's default coding-agent prompt (ADR-0005).
         psi.AddArgument("--system-prompt");
-        psi.AddArgument(AgentPrompts.Compose(AISettings.EffectivePrompt(Definition)));
+        psi.AddArgument(AgentPrompts.Compose(AISettings.EffectivePrompt(Definition), AISettings.Level));
         psi.AddArgument(resume ? "--resume" : "--session-id");
         psi.AddArgument(agentSessionId);
 

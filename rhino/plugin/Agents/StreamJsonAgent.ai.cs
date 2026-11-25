@@ -545,6 +545,18 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
         }
     }
 
+    // Plan 029: ends the CLI between turns (a new level needs a new --system-prompt); the next prompt respawns
+    // with --resume. Does nothing during a turn, while a resumed session is unproven, or when no process runs.
+    internal void EndIdleProcess()
+    {
+        lock (Gate)
+        {
+            if (CurrentTurn is not null || ResumePending)
+                return;
+        }
+        Kill();
+    }
+
     public void Dispose()
     {
         // Inert when never started: Kill is a no-op while Proc is null (probe-then-dispose in the
