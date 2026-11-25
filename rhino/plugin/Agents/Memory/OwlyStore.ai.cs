@@ -108,6 +108,51 @@ internal sealed class OwlyStore
         }
     }
 
+    // Like Update, but the new content is built from what the file holds now (null leaves the file as it is).
+    public bool Replace<T>(string name, Func<T, T?> next) where T : class, new()
+    {
+        if (!Enter())
+        {
+            _log($"[owly] could not lock the Owly folder, so {name} was not changed.");
+            return false;
+        }
+        try
+        {
+            return next(Read<T>(name)) is { } value && Write(name, value);
+        }
+        finally
+        {
+            _lock.ReleaseMutex();
+        }
+    }
+
+    // The relative names of the sub-folders of a folder. A missing folder lists as empty.
+    public IReadOnlyList<string> ListFolders(string folder)
+    {
+        if (!Enter())
+        {
+            _log($"[owly] could not lock the Owly folder, so {folder} was not listed.");
+            return [];
+        }
+        try
+        {
+            string path = PathOf(folder);
+            if (!Directory.Exists(path)) return [];
+            return Directory.GetDirectories(path)
+                .Select(directory => Path.Combine(folder, Path.GetFileName(directory)))
+                .ToList();
+        }
+        catch (Exception ex) when (IsFileProblem(ex))
+        {
+            _log($"[owly] could not list {folder}: {ex.Message}");
+            return [];
+        }
+        finally
+        {
+            _lock.ReleaseMutex();
+        }
+    }
+
     // The relative names of the *.json files in a folder (never the .tmp leftovers of an interrupted
     // write). A missing folder lists as empty.
     public IReadOnlyList<string> ListJson(string folder)

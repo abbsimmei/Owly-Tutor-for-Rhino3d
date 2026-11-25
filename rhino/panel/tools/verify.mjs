@@ -691,11 +691,41 @@ try {
     open: document.querySelectorAll('.project-menu').length,
     items: [...document.querySelectorAll('.project-menu .project-item')].map((n) => n.textContent),
     selected: document.querySelector('.project-menu .project-item.selected')?.textContent ?? '',
-    actions: ['new', 'rename', 'delete', 'move'].filter((a) => document.querySelector(`.project-menu .project-${a}`)).length,
+    actions: ['new', 'rename', 'delete', 'move', 'notes'].filter((a) => document.querySelector(`.project-menu .project-${a}`)).length,
   }));
   check('the project menu opens with every project and its actions',
-    projectMenu.open === 1 && projectMenu.items.length === 3 && projectMenu.selected === 'Tower study' && projectMenu.actions === 4,
+    projectMenu.open === 1 && projectMenu.items.length === 3 && projectMenu.selected === 'Tower study' && projectMenu.actions === 5,
     JSON.stringify(projectMenu));
+
+  // ---------------------------------------------------------------- project notes (plan 027)
+  const notesNow = () => page.evaluate(() => ({
+    menu: document.querySelectorAll('.project-menu').length,
+    texts: [...document.querySelectorAll('.project-menu .note-item .note-text')].map((n) => n.textContent),
+    ids: [...document.querySelectorAll('.project-menu .note-item')].map((n) => n.getAttribute('data-note-id')),
+    labels: [...document.querySelectorAll('.project-menu .note-delete')].map((b) => b.getAttribute('aria-label')),
+    empty: document.querySelector('.project-menu .notes-empty')?.textContent ?? '',
+  }));
+  await page.click('.project-menu .project-notes');
+  await wait(100);
+  const notesList = await notesNow();
+  check('the project menu has a notes mode that lists the notes newest first with a delete button on each',
+    notesList.texts.length === 3 && notesList.texts[0].startsWith('Student is modelling')
+      && notesList.labels.every((l) => l === 'Delete note') && notesList.labels.length === 3, JSON.stringify(notesList));
+  await page.click('.project-menu .note-item:nth-child(2) .note-delete');
+  await wait(150);
+  const notesAfter = await notesNow();
+  check('deleting a note removes exactly that note and keeps the menu open',
+    notesAfter.menu === 1 && notesAfter.ids.length === 2 && !notesAfter.ids.includes(notesList.ids[1])
+      && notesAfter.ids[0] === notesList.ids[0] && notesAfter.ids[1] === notesList.ids[2], JSON.stringify(notesAfter));
+  await page.click('.project-menu .note-item:nth-child(1) .note-delete');
+  await wait(100);
+  await page.click('.project-menu .note-item:nth-child(1) .note-delete');
+  await wait(150);
+  const notesEmpty = await notesNow();
+  check('with no notes left the mode says so', notesEmpty.ids.length === 0 && notesEmpty.empty.startsWith('No notes yet'), JSON.stringify(notesEmpty));
+  await page.click('.project-menu .notes-back');
+  await wait(100);
+  check('Back returns to the project list', (await page.evaluate(() => document.querySelectorAll('.project-menu .project-item').length)) === 3);
 
   await page.click('.project-menu .project-delete');
   await wait(100);

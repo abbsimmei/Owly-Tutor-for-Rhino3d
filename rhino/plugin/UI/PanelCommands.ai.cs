@@ -19,6 +19,7 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(OpenConversationCommand), "conversation.open")]
 [JsonDerivedType(typeof(RenameConversationCommand), "conversation.rename")]
 [JsonDerivedType(typeof(DeleteConversationCommand), "conversation.delete")]
+[JsonDerivedType(typeof(DeleteNoteCommand), "notes.delete")]
 internal abstract partial record PanelCommand { }
 
 internal sealed record PromptCommand(PromptRequest Request) : PanelCommand;
@@ -60,5 +61,8 @@ internal sealed record MoveProjectCommand(string Id) : PanelCommand;
 internal sealed record OpenConversationCommand(string SessionId) : PanelCommand;
 internal sealed record RenameConversationCommand(string SessionId, string Title) : PanelCommand;
 internal sealed record DeleteConversationCommand(string SessionId) : PanelCommand;
+
+// Plan 027: delete one note. The host deletes only from the current project and checks the id.
+internal sealed record DeleteNoteCommand(string Id) : PanelCommand;
 
 internal sealed record PromptRequest(string Text, IReadOnlyList<PanelAttachment> Attachments);

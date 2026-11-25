@@ -47,7 +47,7 @@ internal static class ResumeContext
         return sb.ToString();
     }
 
-    private static string Render(TurnDto turn)
+    internal static string Render(TurnDto turn)
     {
         StringBuilder reply = new();
         foreach (TurnEventDto ev in turn.Events)
@@ -60,7 +60,7 @@ internal static class ResumeContext
     }
 
     // The last count characters, never starting inside a surrogate pair.
-    private static string Tail(string text, int count)
+    internal static string Tail(string text, int count)
     {
         int start = text.Length - count;
         if (start > 0 && char.IsLowSurrogate(text[start])) start++;

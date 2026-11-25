@@ -14,7 +14,7 @@ import { icon } from './icons.js';
 /** Matches ProjectRegistry.MaxNameLength on the host, which checks again. */
 export const MAX_PROJECT_NAME = 60;
 
-type Mode = 'main' | 'new' | 'rename' | 'delete' | 'move';
+type Mode = 'main' | 'new' | 'rename' | 'delete' | 'move' | 'notes';
 
 /** An inline name field with Cancel and a submit button. Enter submits; the host validates again. */
 export function nameField(
@@ -116,6 +116,45 @@ export function projectMenu(ctx: PanelContext): Child {
     action('settings', 'project.rename', () => mode.set('rename'), editable),
     action('close', 'project.delete', () => mode.set('delete'), editable),
     action('chevron', 'project.move', () => mode.set('move'), () => current() !== null),
+    action('chevron', 'project.notes', () => mode.set('notes'), () => current() !== null),
+  ];
+
+  // Plan 027: what Owly wrote down about this project. Deleting a note keeps the menu open.
+  const notesMode = (): Child => [
+    el('div', { class: 'menu-head', text: () => t('project.notes') }),
+    () => {
+      const items = store.notes()?.items ?? [];
+      return items.length === 0
+        ? el('div', { class: 'project-empty notes-empty', text: () => t('notes.empty') })
+        : el(
+            'div',
+            { class: 'note-list' },
+            items.map((note) =>
+              el(
+                'div',
+                { class: 'note-item', 'data-note-id': note.id },
+                el('span', { class: 'note-text', text: note.text }),
+                el(
+                  'button',
+                  {
+                    class: 'note-delete',
+                    type: 'button',
+                    'aria-label': () => t('notes.delete'),
+                    title: () => t('notes.delete'),
+                    onClick: () => ctx.send({ type: 'notes.delete', id: note.id }),
+                  },
+                  icon('close', 13),
+                ),
+              ),
+            ),
+          );
+    },
+    el('div', { class: 'menu-sep' }),
+    el(
+      'button',
+      { class: 'menu-item notes-back', type: 'button', onClick: back },
+      el('span', { class: 'body' }, el('b', { text: () => t('notes.back') })),
+    ),
   ];
 
   const create = (): Child => [
@@ -187,6 +226,8 @@ export function projectMenu(ctx: PanelContext): Child {
           return remove();
         case 'move':
           return move();
+        case 'notes':
+          return notesMode();
         default:
           return main();
       }

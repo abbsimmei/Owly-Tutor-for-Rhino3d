@@ -1049,6 +1049,11 @@ a:hover { text-decoration: underline; }
 }
 .project-name-field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
 .project-empty { padding: 5.4px 6.3px; font-size: var(--fs-xs); color: var(--text-faint); }
+.note-list { display: flex; flex-direction: column; gap: 2px; max-height: 260px; overflow-y: auto; }
+.note-item { display: flex; align-items: flex-start; gap: 6px; padding: 4px 6.3px; font-size: var(--fs-xs); }
+.note-item .note-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.note-item .note-delete { flex: none; display: inline-flex; padding: 2px; border: 0; background: transparent; color: var(--text-faint); cursor: pointer; border-radius: 4px; }
+.note-item .note-delete:hover { color: var(--text); background: var(--hover, rgba(127, 127, 127, 0.16)); }
 .btn.danger { border-color: var(--err); color: var(--err); background: none; }
 .btn.danger:hover { background: var(--surface-2); }
 

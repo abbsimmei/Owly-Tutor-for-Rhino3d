@@ -153,8 +153,9 @@ internal static class AgentHost
 
     public static void Shutdown()
     {
+        // Quitting: conversations are only marked "notes pending". The next start writes them (plan 027).
         foreach (IAgentRunner agent in Agents.Values.ToArray())
-            SafeDispose(agent);
+            SafeDispose(agent, queueNotes: false);
         Agents.Clear();
         ActiveNames.Clear();
     }
@@ -169,14 +170,23 @@ internal static class AgentHost
         ActiveNames.Remove(serial);
     }
 
-    private static void SafeDispose(IAgentRunner agent)
+    private static void SafeDispose(IAgentRunner agent, bool queueNotes = true)
     {
         // The conversation ends here (New conversation, another conversation opened, file closed, Rhino
-        // quitting), so it is saved once more before the agent goes.
+        // quitting), so it is saved once more before the agent goes. A conversation that was saved also gets
+        // its project notes written (plan 027); probe runners have no turns, so they save nothing.
         try
         {
-            if (OwlyMemory.Conversations.Save(agent.Conversation))
+            Conversation convo = agent.Conversation;
+            if (OwlyMemory.Conversations.Save(convo))
+            {
                 OwlyMemory.NotifyConversationsChanged();
+
+                string projectId = convo.ProjectId ?? ProjectRegistry.UnsortedId;
+                string sessionId = convo.AgentSessionId.ToString("D");
+                if (OwlyMemory.Conversations.MarkNotesPending(projectId, sessionId) && queueNotes)
+                    ProjectNotesWriter.Enqueue(projectId, sessionId);
+            }
         }
         catch (Exception ex)
         {

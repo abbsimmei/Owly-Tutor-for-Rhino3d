@@ -12,7 +12,7 @@ namespace Rhino.AI;
 // stays RhinoApp- and AISettings-free so it Compile Include's into a test project. Model, extra args
 // and the system prompt come from the ctor-injected Definition; the MCP server set is resolved by
 // the runner and handed in per spawn.
-internal sealed class ClaudeStreamJsonParser : IStreamJsonParser
+internal sealed partial class ClaudeStreamJsonParser : IStreamJsonParser
 {
     private AgentDefinition Definition { get; }
 
@@ -88,18 +88,14 @@ internal sealed class ClaudeStreamJsonParser : IStreamJsonParser
         psi.AddArgument("--verbose");
         psi.AddArgument("--mcp-config");
         psi.AddArgument(mcpConfig);
-        psi.AddArgument("--strict-mcp-config");
-        psi.AddArgument("--setting-sources");
-        psi.AddArgument(string.Empty);
-        // No built-in tools: the agent can only use Owly's read-only MCP tools.
-        psi.AddArgument("--tools");
-        psi.AddArgument(string.Empty);
+        // --strict-mcp-config, --setting-sources "", --tools "" (no built-in tools: only Owly's read-only
+        // MCP tools) and --disable-slash-commands, shared with the notes request.
+        AddLockdown(psi);
         psi.AddArgument("--allowedTools");
         psi.AddArgument(allowedTools);
         // Owly's prompt replaces Claude Code's default coding-agent prompt (ADR-0005).
         psi.AddArgument("--system-prompt");
         psi.AddArgument(AgentPrompts.Compose(AISettings.EffectivePrompt(Definition)));
-        psi.AddArgument("--disable-slash-commands");
         psi.AddArgument(resume ? "--resume" : "--session-id");
         psi.AddArgument(agentSessionId);
 

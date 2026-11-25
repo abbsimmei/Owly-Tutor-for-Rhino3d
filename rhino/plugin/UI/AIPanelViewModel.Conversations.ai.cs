@@ -14,12 +14,14 @@ internal partial class AIPanelViewModel
     private void SubscribeConversations()
     {
         OwlyMemory.ConversationsChanged += SendConversations;
+        OwlyMemory.NotesChanged += SendNotes;
         OwlyMemory.Cleared += OnMemoryCleared;
     }
 
     private void UnsubscribeConversations()
     {
         OwlyMemory.ConversationsChanged -= SendConversations;
+        OwlyMemory.NotesChanged -= SendNotes;
         OwlyMemory.Cleared -= OnMemoryCleared;
     }
 

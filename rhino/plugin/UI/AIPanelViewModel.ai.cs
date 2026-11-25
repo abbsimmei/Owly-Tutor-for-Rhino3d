@@ -201,6 +201,7 @@ internal partial class AIPanelViewModel : IDisposable
             OpenConversationCommand open => OpenConversation(open.SessionId),
             RenameConversationCommand rename => RenameConversation(rename.SessionId, rename.Title),
             DeleteConversationCommand delete => DeleteConversation(delete.SessionId),
+            DeleteNoteCommand note => DeleteNote(note.Id),
 
             _ => false
         };

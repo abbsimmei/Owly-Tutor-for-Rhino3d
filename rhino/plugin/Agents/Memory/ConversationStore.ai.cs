@@ -65,11 +65,24 @@ internal sealed class ConversationStore
             if (NameOf(projectId, dto.SessionId) is not { } name) return false;
 
             dto.ProjectId = projectId;
-            if (!_store.WriteJson(name, dto)) return false;
 
+            // The notes bookkeeping lives on disk only (plan 027): keep what the file has, or, when the save
+            // moves the conversation, what the file it moves from has.
+            string? oldName = null;
             if (convo.SavedAs is { } old && (old.SessionId != convo.AgentSessionId || old.ProjectId != projectId))
-                if (NameOf(old.ProjectId, old.SessionId.ToString("D")) is { } oldName)
-                    _store.Delete(oldName);
+                oldName = NameOf(old.ProjectId, old.SessionId.ToString("D"));
+            ConversationDto? moved = oldName is null ? null : _store.ReadJson<ConversationDto>(oldName);
+
+            if (!_store.Replace<ConversationDto>(name, existing =>
+            {
+                ConversationDto source = existing.SessionId.Length == 0 && moved is { SessionId.Length: > 0 } ? moved : existing;
+                dto.NotesPending = source.NotesPending;
+                dto.NotesThroughTurn = source.NotesThroughTurn;
+                return dto;
+            })) return false;
+
+            if (oldName is not null)
+                _store.Delete(oldName);
             convo.SavedAs = (convo.AgentSessionId, projectId);
             return true;
         }
@@ -102,6 +115,71 @@ internal sealed class ConversationStore
         if (NameOf(projectId, sessionId) is not { } name) return false;
         lock (SaveGate)
             return _store.Delete(name);
+    }
+
+    // Plan 027: project notes bookkeeping. Each method validates its ids and runs under the store's lock,
+    // so two Rhinos draining at start can't both summarize the same conversation.
+    public bool MarkNotesPending(string? projectId, string? sessionId) =>
+        ChangeNotes(projectId, sessionId, dto =>
+        {
+            dto.NotesPending = true;
+            return true;
+        });
+
+    // Takes the conversation's notes job: when it is pending, clears the flag and hands the saved conversation
+    // back. False when nothing is pending, or the conversation is gone (deleted, its project deleted, Delete all).
+    public bool TryClaimNotes(string? projectId, string? sessionId, out ConversationDto dto)
+    {
+        ConversationDto? claimed = null;
+        bool ok = ChangeNotes(projectId, sessionId, saved =>
+        {
+            if (!saved.NotesPending) return false;
+            saved.NotesPending = false;
+            claimed = saved;
+            return true;
+        });
+        dto = claimed ?? new ConversationDto();
+        return ok && claimed is not null;
+    }
+
+    // The notes now cover the first throughTurn turns. Whether more is pending is left as it is.
+    public bool FinishNotes(string? projectId, string? sessionId, int throughTurn) =>
+        ChangeNotes(projectId, sessionId, dto =>
+        {
+            dto.NotesThroughTurn = Math.Max(0, throughTurn);
+            return true;
+        });
+
+    // A claimed job failed for a reason that may pass (no CLI, timeout): it is pending again.
+    public bool ReleaseNotes(string? projectId, string? sessionId) => MarkNotesPending(projectId, sessionId);
+
+    // Every saved conversation whose notes are still to be written, across all projects (Unsorted included).
+    public IReadOnlyList<(string ProjectId, string SessionId)> ListPending()
+    {
+        List<(string, string)> pending = [];
+        foreach (string folder in _store.ListFolders("projects"))
+        {
+            string projectId = Path.GetFileName(folder);
+            if (!IsProjectId(projectId)) continue;
+            foreach (string name in _store.ListJson(FolderOf(projectId)))
+            {
+                ConversationDto dto = _store.ReadJson<ConversationDto>(name);
+                if (dto.NotesPending && Guid.TryParse(dto.SessionId, out Guid id)
+                    && string.Equals(Path.GetFileNameWithoutExtension(name), id.ToString("D"), StringComparison.OrdinalIgnoreCase))
+                    pending.Add((projectId, id.ToString("D")));
+            }
+        }
+        return pending;
+    }
+
+    private bool ChangeNotes(string? projectId, string? sessionId, Func<ConversationDto, bool> change)
+    {
+        if (NameOf(projectId, sessionId) is not { } name) return false;
+        lock (SaveGate)
+        {
+            return _store.Update<ConversationDto>(name, dto =>
+                Guid.TryParse(dto.SessionId, out _) && dto.Turns is { Count: > 0 } && change(dto));
+        }
     }
 
     // Everything saved for a project. Unsorted is never deleted this way.

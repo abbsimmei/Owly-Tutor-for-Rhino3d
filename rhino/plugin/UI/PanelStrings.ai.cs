@@ -43,6 +43,11 @@ internal static class PanelStrings
         ["project.suggestedHint"] = Localization.LocalizeString("like the other files in this folder", 385),
         ["project.unsortedHint"] = Localization.LocalizeString("decide later", 386),
 
+        ["project.notes"] = Localization.LocalizeString("Project notes", 410),
+        ["notes.empty"] = Localization.LocalizeString("No notes yet. Owly writes a few when a conversation ends.", 411),
+        ["notes.delete"] = Localization.LocalizeString("Delete note", 412),
+        ["notes.back"] = Localization.LocalizeString("Back", 413),
+
         ["convo.strip"] = Localization.LocalizeString("Saved conversations", 394),
         ["convo.rename"] = Localization.LocalizeString("Rename conversation", 395),
         ["convo.delete"] = Localization.LocalizeString("Delete conversation", 396),
