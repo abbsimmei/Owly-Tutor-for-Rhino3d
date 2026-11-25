@@ -105,11 +105,83 @@ internal sealed class Conversation
         StartedAt = DateTimeOffset.UtcNow;
     }
 
-    // The CLI's own session id: passed as --session-id on the first spawn and as --resume when the CLI is restarted after Stop.
+    // Rebuild a live conversation from a saved one (plan 026), so a reopened conversation shows its
+    // turns and carries the saved session id (the CLI's --resume token). The original StartedAt is
+    // kept, and the restored turns are marked complete. A malformed SessionId degrades to a fresh
+    // GUID, so a corrupt file can never throw here. SavedAs is the file it was read from, so the next
+    // save replaces that file instead of leaving a second one.
+    public static Conversation Restore(ConversationDto dto)
+    {
+        bool validId = Guid.TryParse(dto.SessionId, out Guid parsed);
+        Conversation convo = new(validId ? parsed : Guid.NewGuid(), dto.AgentName, dto.DocTitle)
+        {
+            StartedAt = dto.StartedAt,
+            ProjectId = string.IsNullOrEmpty(dto.ProjectId) ? null : dto.ProjectId,
+            Title = dto.Title ?? string.Empty,
+        };
+        if (validId)
+            convo.SavedAs = (parsed, string.IsNullOrEmpty(dto.ProjectId) ? ProjectRegistry.UnsortedId : dto.ProjectId);
+
+        foreach (TurnEventDto ev in dto.Lifecycle ?? [])
+            convo.LifecycleList.Add(new TurnEvent(ev.Kind, ev.Text, ev.At, ev.Args, ev.Result, ev.Id, ev.Failed));
+
+        foreach (TurnDto turnDto in dto.Turns ?? [])
+        {
+            Turn turn = new(turnDto.Prompt, turnDto.Attachments ?? [], convo.Sync, turnDto.StartedAt);
+            foreach (TurnEventDto ev in turnDto.Events ?? [])
+                turn.Add(new TurnEvent(ev.Kind, ev.Text, ev.At, ev.Args, ev.Result, ev.Id, ev.Failed, ev.Done));
+            turn.SetUsage(turnDto.Usage);
+            // Stamping now would date every restored turn to the restore, which is what bounds the search for images the agent wrote during it.
+            turn.Complete(turnDto.CompletedAt ?? turnDto.StartedAt);
+            convo.TurnList.Add(turn);
+        }
+        return convo;
+    }
+
+    // The CLI's own session id: passed as --session-id on the first spawn and as --resume when the CLI is
+    // restarted after Stop or reopened from a saved conversation. Mutable because a rejected resume
+    // makes the agent open a fresh session, and the saved id has to follow.
     public Guid AgentSessionId { get; private set; }
     public string AgentName { get; }
     public string DocTitle { get; }
     public DateTimeOffset StartedAt { get; private init; }
+
+    // Plan 026: the project this conversation is saved under; null while the project is unknown, which
+    // is saved as Unsorted. The panel keeps it equal to the panel's current project.
+    public string? ProjectId { get; set; }
+
+    // The first line of the first question, at most 80 characters. Set by BeginTurn while empty.
+    public string Title { get; set; } = string.Empty;
+
+    // Used for the title of a conversation that began with only attachments. The host sets it localised.
+    public string TitleFallback { get; set; } = "Conversation";
+
+    // Once set, every save is a no-op: the student deleted this conversation, its project or all of Owly's memory.
+    public bool Discarded { get; set; }
+
+    // Where ConversationStore last wrote this conversation. A save under a different session id or
+    // project removes this old file, so a move or a rotated id never leaves a duplicate behind.
+    public (Guid SessionId, string ProjectId)? SavedAs { get; set; }
+
+    public const int MaxTitleLength = 80;
+
+    // The first non-blank line, trimmed and cut at 80 characters on a character boundary.
+    public static string TitleFrom(string prompt, string fallback)
+    {
+        foreach (string raw in (prompt ?? string.Empty).Split('\n'))
+        {
+            string line = raw.Trim();
+            if (line.Length == 0) continue;
+            if (line.Length > MaxTitleLength)
+            {
+                int cut = MaxTitleLength;
+                if (char.IsHighSurrogate(line[cut - 1])) cut--;
+                line = line.Substring(0, cut).TrimEnd();
+            }
+            return line;
+        }
+        return fallback;
+    }
 
     // Raised after every mutation so a panel can re-render. Fired OUTSIDE the lock: handlers
     // marshal to the UI thread and read the graph, which would deadlock if we still held Sync.
@@ -126,6 +198,8 @@ internal sealed class Conversation
         {
             turn = new(prompt, attachments ?? [], Sync);
             TurnList.Add(turn);
+            if (Title.Length == 0)
+                Title = TitleFrom(prompt, TitleFallback);
             Current = turn;
         }
         Changed?.Invoke();

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json.Serialization;
 using System.Threading;
 
 namespace Rhino.AI;
@@ -13,6 +14,11 @@ internal sealed class OwlyStore
 {
     public const string MutexName = @"Local\OwlyStore";
 
+    // Plan 026: the Claude Code CLI's fixed working directory (%AppData%\Owly\cli). Claude Code finds a
+    // session only from the directory it was started in, so --resume needs this to be the same for every
+    // document. A running CLI holds it open, so "Delete all Owly memory" leaves the folder itself alone.
+    public const string CliFolder = "cli";
+
     private static readonly TimeSpan LockTimeout = TimeSpan.FromSeconds(5);
 
     private static JsonSerializerOptions Options { get; } = new()
@@ -20,6 +26,8 @@ internal sealed class OwlyStore
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true,
         WriteIndented = true,
+        // Enums are stored by name, so reordering TurnEventKind can't corrupt saved conversations.
+        Converters = { new JsonStringEnumConverter() },
     };
 
     private readonly Mutex _lock;
@@ -29,6 +37,8 @@ internal sealed class OwlyStore
 
     public static string DefaultRoot =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Owly");
+
+    public static string CliDirectory(string root) => Path.Combine(root, CliFolder);
 
     public OwlyStore(string root, Action<string>? log = null)
     {
@@ -98,7 +108,74 @@ internal sealed class OwlyStore
         }
     }
 
-    // "Delete all Owly memory": empties the root folder but keeps the folder itself.
+    // The relative names of the *.json files in a folder (never the .tmp leftovers of an interrupted
+    // write). A missing folder lists as empty.
+    public IReadOnlyList<string> ListJson(string folder)
+    {
+        if (!Enter())
+        {
+            _log($"[owly] could not lock the Owly folder, so {folder} was not listed.");
+            return [];
+        }
+        try
+        {
+            string path = PathOf(folder);
+            if (!Directory.Exists(path)) return [];
+            return Directory.GetFiles(path, "*.json")
+                .Where(file => file.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                .Select(file => Path.Combine(folder, Path.GetFileName(file)))
+                .ToList();
+        }
+        catch (Exception ex) when (IsFileProblem(ex))
+        {
+            _log($"[owly] could not list {folder}: {ex.Message}");
+            return [];
+        }
+        finally
+        {
+            _lock.ReleaseMutex();
+        }
+    }
+
+    // True when the file is gone afterwards, including when it never existed.
+    public bool Delete(string name)
+    {
+        if (!Enter())
+        {
+            _log($"[owly] could not lock the Owly folder, so {name} was not deleted.");
+            return false;
+        }
+        try
+        {
+            string path = PathOf(name);
+            return !File.Exists(path) || TryDelete(() => File.Delete(path), path);
+        }
+        finally
+        {
+            _lock.ReleaseMutex();
+        }
+    }
+
+    // True when the folder is gone afterwards, including when it never existed.
+    public bool DeleteFolder(string folder)
+    {
+        if (!Enter())
+        {
+            _log($"[owly] could not lock the Owly folder, so {folder} was not deleted.");
+            return false;
+        }
+        try
+        {
+            string path = PathOf(folder);
+            return !Directory.Exists(path) || TryDelete(() => Directory.Delete(path, recursive: true), path);
+        }
+        finally
+        {
+            _lock.ReleaseMutex();
+        }
+    }
+
+    // "Delete all Owly memory": empties the root folder but keeps the folder itself (and the cli folder inside it).
     public bool DeleteAll()
     {
         if (!Enter())
@@ -112,7 +189,10 @@ internal sealed class OwlyStore
 
             bool clean = true;
             foreach (string directory in Directory.GetDirectories(Root))
+            {
+                if (string.Equals(Path.GetFileName(directory), CliFolder, StringComparison.OrdinalIgnoreCase)) continue;
                 clean &= TryDelete(() => Directory.Delete(directory, recursive: true), directory);
+            }
             foreach (string file in Directory.GetFiles(Root))
                 clean &= TryDelete(() => File.Delete(file), file);
             return clean;

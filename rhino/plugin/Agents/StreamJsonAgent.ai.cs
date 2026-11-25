@@ -48,7 +48,24 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
     // Sticky: set true on the first successful spawn and NEVER reset by Kill or read-loop-exit (it is
     // the parser's 'resume' flag, so a respawn always continues with --resume rather than re-opening a
     // fresh session).
+    // Pre-seeded true when reopening a saved conversation, so even the FIRST spawn resumes.
     private bool HasEverStarted { get; set; }
+
+    // True only while a resume-from-start spawn has not yet completed a single turn: the saved --resume
+    // target is unproven, so a CLI exit before any turn lands is read as the CLI rejecting the (likely
+    // expired) id. Cleared by the first completed turn, a clean cancel and AdoptMintedSessionId.
+    private bool ResumePending { get; set; }
+
+    // Set by the read-loop exit when it decided the resume was rejected (and rotated the session id);
+    // SessionPromptAsync then retries the student's message once as a fresh session.
+    private bool ResumeRejected { get; set; }
+
+    // The saved transcript, framed (ResumeContext.Build). Sent only inside the retry's stdin message,
+    // never on the command line.
+    private string ResumeContextText { get; } = string.Empty;
+
+    // The read loop of the current process, so a failed turn can wait for the loop's verdict.
+    private Task? ReadLoopTask { get; set; }
 
     private string McpUrl { get; set; } = string.Empty;
 
@@ -71,6 +88,18 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
         AgentSessionId = conversation.AgentSessionId;
     }
 
+    // Reopening a saved conversation: the first spawn passes --resume <resumeSessionId>. If Claude Code
+    // no longer has that session, the id is rotated and the message is retried as a fresh session, with
+    // resumeContext (the saved transcript, capped) in front of it.
+    public StreamJsonAgent(AgentDefinition def, IAcpClient client, Conversation conversation, string cwd, IStreamJsonParser parser, Guid resumeSessionId, string resumeContext)
+        : this(def, client, conversation, cwd, parser)
+    {
+        AgentSessionId = resumeSessionId;
+        HasEverStarted = true;
+        ResumePending = true;
+        ResumeContextText = resumeContext;
+    }
+
     public ValueTask<InitializeResponse> InitializeAsync(InitializeRequest request, CancellationToken cancellationToken = default) =>
         new(new InitializeResponse { ProtocolVersion = ProtocolConstants.Version });
 
@@ -84,18 +113,43 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
 
     public async ValueTask<PromptResponse> SessionPromptAsync(PromptRequest request, CancellationToken cancellationToken = default)
     {
-        await EnsureStartedAsync(request.Prompt).ConfigureAwait(false);
-
         await TurnGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            TaskCompletionSource<Acp.StopReason> turn = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            bool resuming;
             lock (Gate)
-                CurrentTurn = turn;
+                resuming = ResumePending;
 
-            await SendTurnAsync(request.Prompt).ConfigureAwait(false);
-            Acp.StopReason reason = await turn.Task.ConfigureAwait(false);
-            return new PromptResponse { StopReason = reason };
+            try
+            {
+                return await RunTurnAsync(request.Prompt).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (resuming && ex is not ObjectDisposedException && !Lifetime.IsCancellationRequested)
+            {
+                // The CLI may have refused the saved session. The read loop decides that when the process
+                // exits, so wait for it (a failed write can beat it), and retry once if it did.
+                Task? loop;
+                lock (Gate)
+                    loop = ReadLoopTask;
+                if (loop is not null)
+                    await Task.WhenAny(loop, Task.Delay(TimeSpan.FromSeconds(10))).ConfigureAwait(false);
+
+                bool rejected;
+                lock (Gate)
+                {
+                    rejected = ResumeRejected;
+                    ResumeRejected = false;
+                }
+                if (!rejected)
+                    throw;
+
+                HostUtils.LogDebugEvent("[owly] the saved Claude Code session is gone; starting a fresh one with the saved transcript as context.\n");
+                List<ContentBlock> retry = [];
+                if (ResumeContextText.Length > 0)
+                    retry.Add(new TextContentBlock { Text = ResumeContextText });
+                retry.AddRange(request.Prompt);
+                return await RunTurnAsync(retry).ConfigureAwait(false);
+            }
         }
         finally
         {
@@ -103,6 +157,20 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
                 CurrentTurn = null;
             TurnGate.Release();
         }
+    }
+
+    // One attempt: start the CLI if needed, send the message, wait for the turn to end.
+    private async Task<PromptResponse> RunTurnAsync(IReadOnlyList<ContentBlock> prompt)
+    {
+        await EnsureStartedAsync(prompt).ConfigureAwait(false);
+
+        TaskCompletionSource<Acp.StopReason> turn = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        lock (Gate)
+            CurrentTurn = turn;
+
+        await SendTurnAsync(prompt).ConfigureAwait(false);
+        Acp.StopReason reason = await turn.Task.ConfigureAwait(false);
+        return new PromptResponse { StopReason = reason };
     }
 
     // Resolve the in-flight turn as a clean cancel before tearing the process down, so a deliberate
@@ -116,6 +184,10 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
         lock (Gate)
         {
             turn = CurrentTurn;
+            // A clean cancel is proof the student, not the CLI, ended the turn, so the resume target was
+            // working: clear the unproven flag so the read-loop exit does not misread the kill as a
+            // rejected --resume.
+            ResumePending = false;
         }
         turn?.TrySetResult(Acp.StopReason.Cancelled);
         Kill();
@@ -207,8 +279,8 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
             Stdin.NewLine = "\n"; // stream-json input is newline-framed, not platform-framed
             HasEverStarted = true;
         }
-        _ = Task.Run(() => ReadLoopAsync(proc.StandardOutput, proc));
-
+        lock (Gate)
+            ReadLoopTask = Task.Run(() => ReadLoopAsync(proc.StandardOutput, proc));
     }
 
     private async Task SendTurnAsync(IReadOnlyList<ContentBlock> prompt)
@@ -274,9 +346,10 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
         }
         finally
         {
-            // A CLI that exits mid-turn may have lost its LOGIN, so ask the CLI before deciding. Only
-            // asked when a turn is actually hanging on this exit: a cancel or a teardown resolved its
-            // TCS already and pays nothing.
+            // A CLI that exits mid-turn has either lost the resumed SESSION or lost the LOGIN, and the two
+            // want opposite treatment (start fresh vs stop and sign in), so ask the CLI which before
+            // deciding. Only asked when a turn is actually hanging on this exit: a cancel or a teardown
+            // resolved its TCS already and pays nothing.
             bool hanging;
             lock (Gate)
                 hanging = ReferenceEquals(Proc, token) && PendingCompletion is null && CurrentTurn is { Task.IsCompleted: false };
@@ -300,6 +373,20 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
                     Proc = null;
                     Stdin = null;
                     StartTask = null;
+
+                    // An exit while the resume target is still unproven means the CLI rejected the (likely
+                    // expired) --resume id, unless it is simply signed out (which says nothing about the id)
+                    // or we are shutting down. HasEverStarted=false makes the next spawn pass --session-id,
+                    // and the id is rotated because Claude rejects a reused one. Conversation.AdoptSessionId
+                    // makes the saved conversation follow; ConversationStore removes the file under the old id.
+                    if (ResumePending && signedOut.Length == 0 && !Lifetime.IsCancellationRequested)
+                    {
+                        ResumeRejected = true;
+                        ResumePending = false;
+                        HasEverStarted = false;
+                        AgentSessionId = Guid.NewGuid();
+                        Conversation.AdoptSessionId(AgentSessionId);
+                    }
                 }
             }
             if (completed is TurnCompletion done)
@@ -406,6 +493,7 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
             if (parsed == AgentSessionId)
                 return;
             AgentSessionId = parsed;
+            ResumePending = false;
         }
         Conversation.AdoptSessionId(parsed);
     }
@@ -422,6 +510,7 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
             if (ReferenceEquals(Proc, token)) // both null in the loopback seam, so it matches there
             {
                 turn = CurrentTurn;
+                ResumePending = false; // a turn landed, so the --resume target was accepted
                 if (Parser.IsOneTurnPerProcess)
                 {
                     PendingCompletion = new TurnCompletion(reason, usage);
@@ -460,8 +549,8 @@ internal sealed class StreamJsonAgent : IAcpAgent, IDisposable
     {
         // Inert when never started: Kill is a no-op while Proc is null (probe-then-dispose in the
         // AgentHost pool must not spawn or tear down anything).
+        Lifetime.Cancel(); // First: stops browser sign-in before it posts into a replaced conversation, and tells the read-loop exit this is a teardown, not a rejected resume
         Kill();
-        Lifetime.Cancel(); // ...and stop browser sign-in before it posts into a replaced conversation
         TaskCompletionSource<Acp.StopReason>? turn;
         lock (Gate)
             turn = CurrentTurn;

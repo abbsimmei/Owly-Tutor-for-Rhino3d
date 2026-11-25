@@ -51,6 +51,7 @@ internal partial class AIPanelViewModel : IDisposable
     {
         Detach();
         UnsubscribeProjects();
+        UnsubscribeConversations();
         Listener.Close();
     }
 
@@ -197,6 +198,9 @@ internal partial class AIPanelViewModel : IDisposable
             RenameProjectCommand rename => RenameProject(rename.Id, rename.Name),
             DeleteProjectCommand delete => DeleteProject(delete.Id),
             MoveProjectCommand move => MoveProject(move.Id),
+            OpenConversationCommand open => OpenConversation(open.SessionId),
+            RenameConversationCommand rename => RenameConversation(rename.SessionId, rename.Title),
+            DeleteConversationCommand delete => DeleteConversation(delete.SessionId),
 
             _ => false
         };
@@ -246,6 +250,7 @@ internal partial class AIPanelViewModel : IDisposable
         return true;
     }
 
+    // Stopping the pooled agent saves the conversation (AgentHost.SafeDispose), so the old one is kept in the strip.
     private bool NewConversation()
     {
         if (Document is { } doc)
@@ -256,6 +261,7 @@ internal partial class AIPanelViewModel : IDisposable
         }
 
         ShowLive();
+        SendConversations();
         return true;
     }
 
@@ -283,10 +289,7 @@ internal partial class AIPanelViewModel : IDisposable
             return false;
         }
 
-        string workingDirectory = !string.IsNullOrEmpty(doc.Path)
-            ? Path.GetDirectoryName(doc.Path) ?? Path.GetTempPath()
-            : Path.GetTempPath();
-        _ = agent.LoginAsync($"http://localhost:{port}/agent", workingDirectory);
+        _ = agent.LoginAsync($"http://localhost:{port}/agent", OwlyMemory.CliDirectory);
         return true;
     }
 
@@ -787,6 +790,7 @@ internal partial class AIPanelViewModel : IDisposable
         Action handler = () => RhinoApp.InvokeOnUiThread(new Action(PumpIfLive));
         convo.Changed += handler;
         Subscription = new ConversationSubscription(convo, new ConversationFeed(convo, Bridge.Post), handler);
+        SyncConversationProject();
     }
 
     private void Unsubscribe()

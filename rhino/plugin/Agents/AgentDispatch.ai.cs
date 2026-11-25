@@ -147,9 +147,9 @@ internal static class AgentDispatch
         }
 
         string url = $"http://localhost:{port}/agent";
-        string cwd = !string.IsNullOrEmpty(doc.Path)
-            ? Path.GetDirectoryName(doc.Path) ?? Path.GetTempPath()
-            : Path.GetTempPath();
+        // Plan 026: always %AppData%\Owly\cli, whatever document this is, because Claude Code finds a session
+        // (for --resume) only from the folder it was started in.
+        string cwd = OwlyMemory.CliDirectory;
 
         // Resolve the gate (locks DocGates briefly) BEFORE taking PendingLock so there is no nested
         // lock-order inversion: the gate decision below holds only PendingLock.

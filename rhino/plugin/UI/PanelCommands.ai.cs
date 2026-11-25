@@ -16,6 +16,9 @@ namespace Rhino.AI.UI;
 [JsonDerivedType(typeof(RenameProjectCommand), "project.rename")]
 [JsonDerivedType(typeof(DeleteProjectCommand), "project.delete")]
 [JsonDerivedType(typeof(MoveProjectCommand), "project.move")]
+[JsonDerivedType(typeof(OpenConversationCommand), "conversation.open")]
+[JsonDerivedType(typeof(RenameConversationCommand), "conversation.rename")]
+[JsonDerivedType(typeof(DeleteConversationCommand), "conversation.delete")]
 internal abstract partial record PanelCommand { }
 
 internal sealed record PromptCommand(PromptRequest Request) : PanelCommand;
@@ -52,5 +55,10 @@ internal sealed record CreateProjectCommand(string Name) : PanelCommand;
 internal sealed record RenameProjectCommand(string Id, string Name) : PanelCommand;
 internal sealed record DeleteProjectCommand(string Id) : PanelCommand;
 internal sealed record MoveProjectCommand(string Id) : PanelCommand;
+
+// Plan 026: the strip of saved conversations. The host checks every id against this project's saved conversations.
+internal sealed record OpenConversationCommand(string SessionId) : PanelCommand;
+internal sealed record RenameConversationCommand(string SessionId, string Title) : PanelCommand;
+internal sealed record DeleteConversationCommand(string SessionId) : PanelCommand;
 
 internal sealed record PromptRequest(string Text, IReadOnlyList<PanelAttachment> Attachments);
