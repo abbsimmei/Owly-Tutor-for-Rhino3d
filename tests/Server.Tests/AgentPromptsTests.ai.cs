@@ -27,7 +27,7 @@ public class AgentPromptsTests
     [Test]
     public void Compose_allows_suggesting_option_values_with_a_command()
     {
-        Assert.That(AgentPrompts.Compose(""), Does.Contain("you may write it with the command, like `_Pyramid DirectionConstraint=Vertical`, but only options and values you are certain exist; the panel drops anything else and the student decides before clicking Run."));
+        Assert.That(AgentPrompts.Compose(""), Does.Contain("you may write it with the command, like `_Pyramid NumSides=6` or `_Pyramid DirectionConstraint=Vertical`, but only options and values you are certain exist; the panel drops anything else and the student decides before clicking Run."));
     }
 
     // The CLI is launched through cmd.exe, whose command line limit is 8,191 characters; the other arguments need room.

@@ -60,7 +60,7 @@ internal sealed record ToolbarIconFoundEvent(string Name, string? Light, string?
 internal sealed record CommandCheckedEvent(string Name, string Run) : PanelEvent;
 // Plan 023: the options of a command from its help page. Kind is "choice", "toggle" or "info". Empty when unknown.
 internal sealed record CommandOptionsFoundEvent(string Name, IReadOnlyList<PanelCommandOption> Options) : PanelEvent;
-internal sealed record PanelCommandOption(string Name, string Kind, IReadOnlyList<PanelCommandOptionValue> Values, string Description);
+internal sealed record PanelCommandOption(string Name, string Kind, IReadOnlyList<PanelCommandOptionValue> Values, string Description, string? Current = null, bool? FirstPrompt = null);
 internal sealed record PanelCommandOptionValue(string Name, string Description);
 internal sealed record StatusEvent(string? Text) : PanelEvent;
 

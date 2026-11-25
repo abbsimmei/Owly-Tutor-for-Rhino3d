@@ -269,3 +269,15 @@ test('a new conversation clears card values, and a card can be seeded again', ()
   store.seedCard('t1|_Pyramid', { Shape: 'Square' });
   assert.equal(store.cardValues().get('t1|_Pyramid')?.get('Shape')?.value, 'Square');
 });
+
+test('a typed number is stored without redrawing the cards, and replaces any suggestion', () => {
+  const store = new Store();
+  store.seedCard('t1|_Pyramid', { numsides: '6' });
+  const before = store.cardValues.peek();
+  store.commitCardNumber('t1|_Pyramid', 'NumSides', '8');
+  assert.equal(store.cardValues.peek(), before, 'the signal value keeps its identity, so nothing redraws');
+  assert.deepEqual(store.cardValues.peek().get('t1|_Pyramid')?.get('NumSides'), { value: '8', suggested: false });
+  assert.equal(store.cardValues.peek().get('t1|_Pyramid')?.size, 1);
+  store.commitCardNumber('t1|_Pyramid', 'NumSides', null);
+  assert.equal(store.cardValues.peek().get('t1|_Pyramid')?.size, 0);
+});

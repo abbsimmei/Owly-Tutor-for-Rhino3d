@@ -899,6 +899,53 @@ try {
     check('Escape closes the explain popover',
       (await host.evaluate(() => document.querySelectorAll('.explain-popover, .scrim').length)) === 0);
 
+    // Plan 024: probe data. A number row is a text field with the current value as its placeholder, committed on change
+    // (never per keystroke); an info row shows the value Rhino has now and says where to find the choices.
+    await host.evaluate(() => {
+      window.rhinoAI.receive({ type: 'command.checked', name: '_Probed', run: 'ok' });
+      window.rhinoAI.receive({ type: 'command.options.found', name: '_Probed', options: [
+        { name: 'Sides', kind: 'number', values: [], description: 'Demo sides.', current: '8', firstPrompt: true },
+        { name: 'Shape', kind: 'info', values: [], description: 'Demo shape.', current: 'Round', firstPrompt: true },
+        { name: 'Corner', kind: 'choice', values: [{ name: 'Sharp', description: 'Demo sharp.' }, { name: 'Soft', description: 'Demo soft.' }],
+          description: 'Demo corner.', current: 'Soft', firstPrompt: true }] });
+    });
+    await turnText('turn-0-probe', 'Probe card for `_Probed` here.\n\nEnd.');
+    await wait(300);
+    const probeCard = (js) => host.evaluate(`(() => { const card = ${messageWith('Probe card for')}.querySelector('.cmd-card[data-cmd="_Probed"]'); ${js} })()`);
+    const probeRows = await probeCard(`const field = card.querySelector('.cmd-opt[data-opt="Sides"] input.cmd-opt-number');
+      const choice = [...card.querySelectorAll('.cmd-opt[data-opt="Corner"] .cmd-opt-value')].map((b) => b.textContent + ':' + b.classList.contains('is-current') + ':' + b.getAttribute('aria-pressed')).join();
+      return { placeholder: field?.getAttribute('placeholder') ?? '', type: field?.getAttribute('type') ?? '', mode: field?.getAttribute('inputmode') ?? '',
+        label: field?.getAttribute('aria-label') ?? '', current: card.querySelector('.cmd-opt[data-opt="Shape"] .cmd-opt-current')?.textContent ?? '', choice };`);
+    check('the Sides row is a text field that shows the current value as its placeholder',
+      probeRows.placeholder === '8 now' && probeRows.type === 'text' && probeRows.mode === 'decimal' && probeRows.label === 'Sides', JSON.stringify(probeRows));
+    check('the info row shows the value Rhino has now', probeRows.current === 'Round now', JSON.stringify(probeRows));
+    check('the current choice button is marked is-current but is not pressed', probeRows.choice === 'Sharp:false:false,Soft:true:false', JSON.stringify(probeRows));
+    const typeSides = async (text) => {
+      await probeCard(`const f = card.querySelector('input.cmd-opt-number'); f.value = ${JSON.stringify(text)}; f.dispatchEvent(new Event('change', { bubbles: true })); return 0;`);
+      await wait(250);
+    };
+    const probeRuns = () => host.evaluate(() => window.__sent.filter((m) => m.type === 'command.run' && m.name === '_Probed'));
+    const clickProbeRun = async () => { await probeCard(`card.querySelector('.cmd-run').click(); return 0;`); await wait(100); };
+    const before = (await probeRuns()).length;
+    await typeSides('6');
+    await clickProbeRun();
+    const afterSix = await probeRuns();
+    check('typing 6 and committing makes Run send only Sides 6',
+      afterSix.length === before + 1 && JSON.stringify(afterSix[afterSix.length - 1].options) === JSON.stringify({ Sides: '6' }), JSON.stringify(afterSix));
+    await typeSides('abc');
+    await clickProbeRun();
+    const afterAbc = await probeRuns();
+    check('typing abc and committing makes Run send no Sides',
+      afterAbc.length === before + 2 && !('options' in afterAbc[afterAbc.length - 1]) , JSON.stringify(afterAbc[afterAbc.length - 1]));
+    check('the invalid field is marked aria-invalid',
+      (await probeCard(`return card.querySelector('input.cmd-opt-number').getAttribute('aria-invalid');`)) === 'true');
+    await probeCard(`card.querySelector('.cmd-opt[data-opt="Shape"] .cmd-opt-explain').click(); return 0;`);
+    await wait(250);
+    const probeExplain = await host.evaluate(() => document.querySelector('.explain-popover[role="dialog"]')?.textContent ?? '');
+    check('the info option explains where to find its choices', probeExplain.includes('to see the choices'), probeExplain);
+    await host.keyboard.press('Escape');
+    await wait(100);
+
     // Plan 020 (the old card's class name is split so a grep for the removed code finds nothing): the toolbar.found line of the contract fixture was never asked for, so the replay opens nothing.
     check('the contract replay opens no location popover and draws no location card',
       (await host.evaluate(() => document.querySelectorAll('.location-popover, .location-' + 'card').length)) === 0);

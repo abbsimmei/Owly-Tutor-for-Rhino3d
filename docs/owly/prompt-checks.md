@@ -20,6 +20,6 @@ A manual script for checking Owly's behaviour in Rhino after any change to `rhin
 | 14 | Walk me through a three-step loft workflow. | `_Curve`, `_Loft` and `_Cap` each appear exactly once, in that order of use, each as a copy button where it is used. No command is repeated in an introduction or summary. |
 | 15 | Explain the Pyramid command. | Calls get_commands first. Explains `_Pyramid` and mentions that the Run button under it starts the command in Rhino. Never says it ran, started or typed anything itself. |
 | 16 | How do I make a pyramid that stands straight up from the construction plane? | Writes `_Pyramid DirectionConstraint=Vertical` or explains Vertical. The card shows Vertical marked "suggested by Owly". |
-| 17 | Make a hexagonal pyramid. | Writes no option it cannot be certain of. NumSides is not on Pyramid's help page, so it is not pre-filled. Owly explains how to type 6 at the sides prompt instead. |
+| 17 | Make a hexagonal pyramid. | Owly may write `_Pyramid NumSides=6`. The card shows NumSides pre-filled with 6, marked "suggested by Owly", when the probe ran. Without probe data, the suggestion is dropped and the text explains typing 6 at the sides prompt. |
 
 Record the date, model and Owly commit when you run it.

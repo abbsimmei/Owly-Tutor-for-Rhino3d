@@ -13,6 +13,9 @@ internal static class CommandOptionsSource
 {
     private static readonly ConcurrentDictionary<string, Task<CommandOptions>> Cache = new(StringComparer.Ordinal);
 
+    // Plan 024: help data merged with the option probe's data. TryCached prefers it.
+    private static readonly ConcurrentDictionary<string, CommandOptions> Merged = new(StringComparer.Ordinal);
+
     private static string Key(string name, int major) => $"{CommandBlocklist.Bare(name).ToLowerInvariant()}|{major}";
 
     public static Task<CommandOptions> Get(string name)
@@ -50,13 +53,21 @@ internal static class CommandOptionsSource
         }
     }
 
-    // For Run: never fetches.
+    public static void SetMerged(string name, CommandOptions merged)
+    {
+        try { Merged[Key(name, RhinoApp.Version.Major)] = merged; }
+        catch (Exception) { }
+    }
+
+    // For Run: never fetches. Returns the merged (probe + help) data when the probe has run, otherwise the help data.
     public static bool TryCached(string name, out CommandOptions options)
     {
         options = CommandOptions.Empty;
         try
         {
-            if (!Cache.TryGetValue(Key(name, RhinoApp.Version.Major), out var task)) return false;
+            var key = Key(name, RhinoApp.Version.Major);
+            if (Merged.TryGetValue(key, out var merged)) { options = merged; return true; }
+            if (!Cache.TryGetValue(key, out var task)) return false;
             if (task.Status != TaskStatus.RanToCompletion) return false;
             options = task.Result;
             return true;

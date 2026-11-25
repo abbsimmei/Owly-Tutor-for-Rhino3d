@@ -57,7 +57,13 @@ export function explainPopover(ctx: PanelContext): Child {
             ),
           )
         : null,
-      info.kind === 'info' ? el('p', { class: 'explain-note', text: t('options.infoNote') }) : null,
+      info.kind === 'info'
+        ? el('p', {
+            class: 'explain-note',
+            // Plan 024: an option the probe saw with a value, whose choices the help page doesn't list.
+            text: info.current !== undefined && info.firstPrompt ? t('options.choicesHint', info.name) : t('options.infoNote'),
+          })
+        : null,
       el('p', { class: 'explain-source', text: t('options.source') }),
     );
   };

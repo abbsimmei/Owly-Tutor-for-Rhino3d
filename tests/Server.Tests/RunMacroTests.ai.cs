@@ -91,4 +91,57 @@ public class RunMacroTests
     {
         Assert.Throws<ArgumentException>(() => RunMacro.Build(name, null, Data));
     }
+    private static readonly CommandOptions NumData = new(new[]
+    {
+        new CommandOption("Sides", "number", Array.Empty<CommandOptionValue>(), "", "8", true),
+        Toggle("Solid"),
+        new CommandOption("Mode", "info", Array.Empty<CommandOptionValue>(), "", "Round", true),
+    });
+
+    [Test]
+    public void A_number_is_written_as_two_tokens()
+    {
+        Assert.That(RunMacro.Build("_Demo", Changes(("Sides", "6")), NumData), Is.EqualTo("_Demo _Sides 6"));
+    }
+
+    [TestCase("2.5", "_Demo _Sides 2.5")]
+    [TestCase("-3", "_Demo _Sides -3")]
+    [TestCase("-0.25", "_Demo _Sides -0.25")]
+    public void A_decimal_and_a_negative_number_work(string value, string expected)
+    {
+        Assert.That(RunMacro.Build("_Demo", Changes(("Sides", value)), NumData), Is.EqualTo(expected));
+    }
+
+    [Test]
+    public void A_number_mixed_with_a_toggle_keeps_data_order()
+    {
+        Assert.That(RunMacro.Build("_Demo", Changes(("Solid", "No"), ("Sides", "6")), NumData), Is.EqualTo("_Demo _Sides 6 _Solid=_No"));
+    }
+
+    [TestCase("2,5")]
+    [TestCase("1e5")]
+    [TestCase("6 _Delete")]
+    [TestCase("6;_Exit")]
+    [TestCase("-")]
+    [TestCase(".")]
+    [TestCase("abc")]
+    [TestCase("1234567890123456")]
+    [TestCase("")]
+    [TestCase("\u0663")]
+    public void A_number_that_is_not_a_plain_number_is_dropped(string value)
+    {
+        Assert.That(RunMacro.Build("_Demo", Changes(("Sides", value)), NumData), Is.EqualTo("_Demo"));
+    }
+
+    [Test]
+    public void A_number_change_for_an_info_option_is_dropped()
+    {
+        Assert.That(RunMacro.Build("_Demo", Changes(("Mode", "6")), NumData), Is.EqualTo("_Demo"));
+    }
+
+    [Test]
+    public void Fifteen_characters_are_allowed()
+    {
+        Assert.That(RunMacro.Build("_Demo", Changes(("Sides", "123456789012345")), NumData), Is.EqualTo("_Demo _Sides 123456789012345"));
+    }
 }
