@@ -60,14 +60,19 @@ internal static class ProjectNotesWriter
                 return;
             }
 
+            // The request took a while. FinishNotes only succeeds while the conversation file still exists, so a
+            // conversation (or project, or all memory) the student deleted meanwhile gets no notes, and
+            // notes.json is not created again for it.
+            if (!conversations.FinishNotes(projectId, sessionId, dto.Turns.Count)) return;
+
             IReadOnlyList<string> notes = NotesPrompt.Parse(answer);
-            if (notes.Count > 0 && !OwlyMemory.Notes.Add(projectId, sessionId, notes))
+            if (notes.Count == 0) return;
+            if (!OwlyMemory.Notes.Add(projectId, sessionId, notes))
             {
-                conversations.ReleaseNotes(projectId, sessionId);
+                Log("the notes could not be saved.");
                 return;
             }
-            conversations.FinishNotes(projectId, sessionId, dto.Turns.Count);
-            if (notes.Count > 0) OwlyMemory.NotifyNotesChanged();
+            OwlyMemory.NotifyNotesChanged();
         }
         catch (Exception ex)
         {

@@ -486,4 +486,44 @@ public class ConversationStoreTests
         Assert.That(_store.FinishNotes(project, session, 1), Is.False);
         Assert.That(_store.ReleaseNotes(project, session), Is.False);
     }
+
+    [Test]
+    public void Finishing_notes_for_a_deleted_conversation_fails_and_creates_no_file()
+    {
+        Conversation convo = Talk(Project, "a");
+        _store.Save(convo);
+        _store.MarkNotesPending(Project, Id(convo));
+        _store.TryClaimNotes(Project, Id(convo), out _);
+        _store.Delete(Project, Id(convo));
+
+        Assert.That(_store.FinishNotes(Project, Id(convo), 1), Is.False);
+        Assert.That(_store.ReleaseNotes(Project, Id(convo)), Is.False);
+        Assert.That(Files(Project), Is.Empty);
+    }
+
+    [Test]
+    public void Finishing_notes_after_the_project_was_deleted_fails_and_creates_no_folder()
+    {
+        Conversation convo = Talk(Project, "a");
+        _store.Save(convo);
+        _store.MarkNotesPending(Project, Id(convo));
+        _store.TryClaimNotes(Project, Id(convo), out _);
+        _store.DeleteProject(Project);
+
+        Assert.That(_store.FinishNotes(Project, Id(convo), 1), Is.False);
+        Assert.That(Directory.Exists(Path.Combine(_root, "projects", Project)), Is.False);
+    }
+
+    [Test]
+    public void Finishing_notes_after_delete_all_fails_and_creates_no_file()
+    {
+        Conversation convo = Talk(Project, "a");
+        _store.Save(convo);
+        _store.MarkNotesPending(Project, Id(convo));
+        _store.TryClaimNotes(Project, Id(convo), out _);
+        _files.DeleteAll();
+
+        Assert.That(_store.FinishNotes(Project, Id(convo), 1), Is.False);
+        Assert.That(Directory.Exists(Path.Combine(_root, "projects")), Is.False);
+    }
 }
