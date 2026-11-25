@@ -21,6 +21,9 @@ internal static class OwlyMemory
     // Plan 027: the notes Owly keeps per project (Haiku writes them when a conversation ends).
     public static ProjectNotes Notes { get; } = new(Store);
 
+    // Plan 028: main memory (opt-in; what the student finds hard, across projects).
+    public static MainMemory Main { get; } = new(Store);
+
     public static event Action? Changed;
 
     public static void NotifyChanged() => Changed?.Invoke();
@@ -37,6 +40,12 @@ internal static class OwlyMemory
 
     public static void NotifyNotesChanged() =>
         RhinoApp.InvokeOnUiThread(new Action(() => NotesChanged?.Invoke()));
+
+    // Plan 028: main memory gained items. Raised on the UI thread, so an open settings page can show them.
+    public static event Action? MainChanged;
+
+    public static void NotifyMainChanged() =>
+        RhinoApp.InvokeOnUiThread(new Action(() => MainChanged?.Invoke()));
 
     // "Delete all Owly memory" ran. Every panel drops its open conversation without saving it again.
     public static event Action? Cleared;

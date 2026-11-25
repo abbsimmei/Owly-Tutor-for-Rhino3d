@@ -66,6 +66,7 @@
     <Compile Include="../../rhino/plugin/Agents/Memory/ResumeContext.ai.cs" LinkBase="MemorySources" />
     <Compile Include="../../rhino/plugin/Agents/Memory/NotesPrompt.ai.cs" LinkBase="MemorySources" />
     <Compile Include="../../rhino/plugin/Agents/Memory/ProjectNotes.ai.cs" LinkBase="MemorySources" />
+    <Compile Include="../../rhino/plugin/Agents/Memory/MainMemory.ai.cs" LinkBase="MemorySources" />
     <Compile Include="../../rhino/plugin/Agents/Conversations/ClaudeLockdown.ai.cs" LinkBase="PluginSources" />
     <Compile Include="../../rhino/sdk/ProcessArguments.ai.cs" LinkBase="PluginSources" />
   </ItemGroup>

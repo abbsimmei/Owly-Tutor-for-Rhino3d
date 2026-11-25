@@ -55,7 +55,7 @@ internal sealed class AgentRunner : IAgentRunner
             IAcpAgent connection = await EnsureStartedAsync(mcpUrl, cwd).ConfigureAwait(false);
             // Plan 027: a fresh conversation starts with its project's notes, in front of the first message and
             // over stdin like the rest. They are not part of the transcript (BeginTurn keeps only message.Text).
-            string notes = Conversation.Turns.Count == 0 && !Conversation.Restored ? ProjectNotesContext() : string.Empty;
+            string notes = Conversation.Turns.Count == 0 && !Conversation.Restored ? StartContext() : string.Empty;
             Conversation.BeginTurn(message.Text, [.. message.Attachments.Select(static a => a.Info)]);
             Acp.ContentBlock[] blocks = AcpMessageMapper.Prompt(message);
             if (notes.Length > 0)
@@ -74,12 +74,17 @@ internal sealed class AgentRunner : IAgentRunner
         }
     }
 
-    private string ProjectNotesContext()
+    // What a fresh conversation starts with: its project's notes and, when main memory is on, the list of what
+    // the student finds hard (plan 028). Data, framed as such, never on the command line.
+    private string StartContext()
     {
         try
         {
             string project = Conversation.ProjectId ?? ProjectRegistry.UnsortedId;
-            return NotesPrompt.ContextBlock(OwlyMemory.Notes.List(project).Select(note => note.Text).ToList());
+            string notes = NotesPrompt.ContextBlock(OwlyMemory.Notes.List(project).Select(note => note.Text).ToList());
+            string hard = OwlyMemory.Main.Enabled ? NotesPrompt.DifficultiesBlock(OwlyMemory.Main.Items()) : string.Empty;
+            if (hard.Length == 0) return notes;
+            return notes.Length == 0 ? hard : notes + "\n\n" + hard;
         }
         catch (Exception)
         {

@@ -24,6 +24,11 @@ internal sealed class AISettingsPanel : Panel
 
     private bool LoadingTabShown { get; set; }
 
+    // Plan 028: main memory. The switch applies on OK (TryCommit); View and Clear act at once.
+    private CheckBox MainMemoryBox { get; } = new() { Text = Localization.LocalizeString("Remember what I find hard across projects", 430) };
+    private TextArea MainMemoryText { get; } = new() { Wrap = true, Height = 90, ReadOnly = true };
+    private bool MainMemoryShown { get; set; }
+
     // Sentinel shown in the grid's Model dropdown for an empty model. Picking it stores an empty
     // string, i.e. "pass no --model, let the CLI choose its own default".
     private static string DefaultModelLabel => Localization.LocalizeString("(default)", 16);
@@ -61,6 +66,7 @@ internal sealed class AISettingsPanel : Panel
 
     protected override void OnUnLoad(EventArgs e)
     {
+        OwlyMemory.MainChanged -= RefreshMainMemoryText;
         base.OnUnLoad(e);
     }
 
@@ -107,6 +113,10 @@ internal sealed class AISettingsPanel : Panel
         if (LoadingTabShown)
             AISettings.AutoLoadMCP = AutoLoadMcpBox.Checked == true;
 
+        // Only when it changed, so Cancel discards a change and OK without one touches nothing.
+        if (MainMemoryShown && (MainMemoryBox.Checked == true) != OwlyMemory.Main.Enabled)
+            OwlyMemory.Main.SetEnabled(MainMemoryBox.Checked == true);
+
         return true;
     }
 
@@ -128,6 +138,7 @@ internal sealed class AISettingsPanel : Panel
                 new TableRow(NameHeader),
                 new TableRow(AvailableLabel),
                 new TableRow(LabeledColumn(Localization.LocalizeString("Model:", 23), ModelBox)),
+                new TableRow(MainMemoryGroup()),
                 new TableRow(DeleteMemoryRow()),
                 new TableRow(LabeledColumn(Localization.LocalizeString("Found at:", 24), SearchPathsBox)),
                 new TableRow { ScaleHeight = true },
@@ -151,6 +162,63 @@ internal sealed class AISettingsPanel : Panel
             Rows = { new TableRow(new Label { Text = label }), new TableRow(new TableCell(control, true)) },
         };
 
+    // Plan 028 / ADR-0009: main memory, off by default. Checking the box is applied on OK; Clear acts at once,
+    // like Delete all, because its confirmation is the commit.
+    private Control MainMemoryGroup()
+    {
+        MainMemoryShown = true;
+        MainMemoryBox.Checked = OwlyMemory.Main.Enabled;
+        RefreshMainMemoryText();
+        OwlyMemory.MainChanged -= RefreshMainMemoryText;
+        OwlyMemory.MainChanged += RefreshMainMemoryText;
+
+        Label hint = new()
+        {
+            Wrap = WrapMode.Word,
+            TextColor = Colors.Gray,
+            Text = Localization.LocalizeString("Off by default. The list is kept on this computer and sent to Claude with new conversations. Turning this off deletes the list.", 431),
+        };
+        Button clear = new() { Text = Localization.LocalizeString("Clear", 433) };
+        clear.Click += (_, _) => ClearMainMemory();
+
+        return new TableLayout
+        {
+            Spacing = new Size(0, 4),
+            Rows =
+            {
+                new TableRow(new Label { Text = Localization.LocalizeString("Main memory", 436), Font = Eto.Drawing.Fonts.Sans(10, FontStyle.Bold) }),
+                new TableRow(MainMemoryBox),
+                new TableRow(hint),
+                new TableRow(MainMemoryText),
+                new TableRow(new TableLayout { Rows = { new TableRow(clear, null) } }),
+            },
+        };
+    }
+
+    // The saved list, one item per line. Shows what is stored, so a switch ticked but not yet applied shows nothing new.
+    private void RefreshMainMemoryText()
+    {
+        IReadOnlyList<string> items = OwlyMemory.Main.Items();
+        MainMemoryText.Text = items.Count == 0
+            ? Localization.LocalizeString("Nothing yet.", 432)
+            : string.Join(Environment.NewLine, items);
+    }
+
+    private void ClearMainMemory()
+    {
+        DialogResult answer = MessageBox.Show(
+            this,
+            Localization.LocalizeString("Clear what Owly remembers about what you find hard? This can't be undone.", 434),
+            Localization.LocalizeString("Clear main memory", 435),
+            MessageBoxButtons.YesNo,
+            MessageBoxType.Warning,
+            MessageBoxDefaultButton.No);
+        if (answer != DialogResult.Yes) return;
+
+        OwlyMemory.Main.Clear();
+        RefreshMainMemoryText();
+    }
+
     // Plan 025 / ADR-0009: everything Owly keeps in %AppData%\Owly, gone in one step. It happens at
     // once, not on OK, because the confirmation is the commit.
     private Control DeleteMemoryRow()
@@ -171,7 +239,11 @@ internal sealed class AISettingsPanel : Panel
             MessageBoxDefaultButton.No);
         if (answer != DialogResult.Yes) return;
 
-        if (OwlyMemory.DeleteAll())
+        bool deleted = OwlyMemory.DeleteAll();
+        // The profile is gone, so main memory is off again.
+        MainMemoryBox.Checked = OwlyMemory.Main.Enabled;
+        RefreshMainMemoryText();
+        if (deleted)
             MessageBox.Show(this, Localization.LocalizeString("Owly's memory on this computer is deleted.", 366), MessageBoxType.Information);
         else
             MessageBox.Show(this, Localization.LocalizeString("Owly couldn't delete everything. Close the other Rhino if it is open, then try again.", 367), MessageBoxType.Error);

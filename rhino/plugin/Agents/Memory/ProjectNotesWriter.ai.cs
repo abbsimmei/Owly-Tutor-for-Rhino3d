@@ -52,8 +52,13 @@ internal static class ProjectNotesWriter
                 return;
             }
 
+            // Plan 028: read once. On, the same request also asks for difficulties; off, it is exactly the notes request.
+            bool mainMemory = OwlyMemory.Main.Enabled;
             string[] existing = OwlyMemory.Notes.List(projectId).Select(note => note.Text).ToArray();
-            string? answer = await AskAsync(NotesPrompt.Input(existing, turns)).ConfigureAwait(false);
+            string input = mainMemory
+                ? NotesPrompt.Input(existing, turns, difficulties: OwlyMemory.Main.Items())
+                : NotesPrompt.Input(existing, turns);
+            string? answer = await AskAsync(input, mainMemory ? NotesPrompt.SystemPromptWithMemory : NotesPrompt.SystemPrompt).ConfigureAwait(false);
             if (answer is null)
             {
                 conversations.ReleaseNotes(projectId, sessionId);
@@ -65,14 +70,24 @@ internal static class ProjectNotesWriter
             // notes.json is not created again for it.
             if (!conversations.FinishNotes(projectId, sessionId, dto.Turns.Count)) return;
 
-            IReadOnlyList<string> notes = NotesPrompt.Parse(answer);
-            if (notes.Count == 0) return;
-            if (!OwlyMemory.Notes.Add(projectId, sessionId, notes))
+            IReadOnlyList<string> notes;
+            IReadOnlyList<string> difficulties = [];
+            if (mainMemory)
+                (notes, difficulties) = NotesPrompt.ParseCombined(answer);
+            else
+                notes = NotesPrompt.Parse(answer);
+
+            if (notes.Count > 0)
             {
-                Log("the notes could not be saved.");
-                return;
+                if (OwlyMemory.Notes.Add(projectId, sessionId, notes))
+                    OwlyMemory.NotifyNotesChanged();
+                else
+                    Log("the notes could not be saved.");
             }
-            OwlyMemory.NotifyNotesChanged();
+
+            // Merge checks the switch again under the store lock, so turning it off meanwhile wins.
+            if (difficulties.Count > 0 && OwlyMemory.Main.Merge(difficulties))
+                OwlyMemory.NotifyMainChanged();
         }
         catch (Exception ex)
         {
@@ -93,7 +108,7 @@ internal static class ProjectNotesWriter
     }
 
     // The model's text, or null when anything went wrong (no CLI, not signed in, timeout, bad output).
-    private static async Task<string?> AskAsync(string input)
+    private static async Task<string?> AskAsync(string input, string systemPrompt)
     {
         if (!AgentRegistry.Instance.TryGet("claude", out AgentDefinition def)
             || !CliProcess.TryResolve(def.SearchPaths.GetPaths(), out string cliPath))
@@ -113,7 +128,7 @@ internal static class ProjectNotesWriter
         };
         CliProcess.ConfigureEncoding(psi);
         CliProcess.ConfigureFileName(psi, cliPath);
-        AddArguments(psi);
+        AddArguments(psi, systemPrompt);
 
         try
         {
@@ -174,7 +189,7 @@ internal static class ProjectNotesWriter
     }
 
     // The exact argument list of the notes request. Always Haiku, whatever model the student picked for chat.
-    private static void AddArguments(ProcessStartInfo psi)
+    private static void AddArguments(ProcessStartInfo psi, string systemPrompt)
     {
         psi.AddArgument("-p");
         psi.AddArgument("--output-format");
@@ -186,7 +201,7 @@ internal static class ProjectNotesWriter
         psi.AddArgument("--model");
         psi.AddArgument("haiku");
         psi.AddArgument("--system-prompt");
-        psi.AddArgument(NotesPrompt.SystemPrompt);
+        psi.AddArgument(systemPrompt);
     }
 
     private static string? LogNull(string message)
