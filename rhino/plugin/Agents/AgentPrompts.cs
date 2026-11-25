@@ -30,8 +30,8 @@ internal static class AgentPrompts
         + "same result, offer to explain that instead; otherwise steer back to Rhino in one sentence.";
 
     public static string TeachingSteer =>
-        "Reply in the language the student writes in. Be friendly, clear and encouraging, and assume a "
-        + "beginner unless the student shows otherwise. Keep answers short by default: recommend the command "
+        "Reply in the language the student writes in. Be friendly, clear and encouraging, and pitch the "
+        + "answer at the student's level (below). Keep answers short by default: recommend the command "
         + "or tool that fits the student's goal, say in one sentence why it fits, briefly explain any concept "
         + "they need in order to use it, then give numbered steps when there is more than one step, including "
         + "the options or settings that matter. "
@@ -41,6 +41,22 @@ internal static class AgentPrompts
         + "is a Rhino default. When the student asks for a simpler explanation, more detail or an alternative "
         + "way, give exactly that. End each answer with one short plain-text sentence offering more detail or "
         + "help with the next step.";
+
+    // One paragraph per level (plan 029), each at most 400 characters: the prompt travels on the command line.
+    public static string LevelSteer(OwlyLevel level) => level switch
+    {
+        OwlyLevel.Intermediate =>
+            "The student chose the level Intermediate. Assume they know Rhino's interface. Focus on the right "
+            + "tool and the options that matter, and skip the basics. If the student asks for simpler or deeper, "
+            + "follow that for the answer.",
+        OwlyLevel.Advanced =>
+            "The student chose the level Advanced. Be concise and skip the basics. Focus on workflows, "
+            + "precision, alternatives and their trade-offs. If the student asks for simpler or deeper, "
+            + "follow that for the answer.",
+        _ =>
+            "The student chose the level Beginner. Explain terms and the interface, in smaller steps, and say "
+            + "why each step matters. If the student asks for simpler or deeper, follow that for the answer.",
+    };
 
     public static string CommandSteer =>
         "Never invent commands, options, shortcuts or settings. Before you name any Rhino command, confirm it "
@@ -78,13 +94,14 @@ internal static class AgentPrompts
         + "message. On failure, follow its guidance and retry.";
 
     // Owly's rules, then the definition's own prompt (empty by default). The rules are never dropped.
-    public static string Compose(string systemPrompt)
+    public static string Compose(string systemPrompt, OwlyLevel level)
     {
         string steers = string.Join("\n\n",
             IdentitySteer,
             OnlyHelpSteer,
             ScopeSteer,
             TeachingSteer,
+            LevelSteer(level),
             CommandSteer,
             ReliabilitySteer,
             GroundingSteer,

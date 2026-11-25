@@ -140,6 +140,22 @@ internal static class AgentHost
         return false;
     }
 
+    // Plan 029: the level changed, so every pooled CLI relaunches with the new prompt on its next prompt.
+    public static void RestartIdleAgents()
+    {
+        foreach (IAgentRunner agent in Agents.Values.ToArray())
+        {
+            try
+            {
+                agent.RestartWhenIdle();
+            }
+            catch (Exception ex)
+            {
+                RhinoApp.WriteLine($"[agenthost] restart failed: {ex.Message}");
+            }
+        }
+    }
+
     public static void Stop(RhinoDoc doc)
     {
         DisposeDoc(doc.RuntimeSerialNumber);

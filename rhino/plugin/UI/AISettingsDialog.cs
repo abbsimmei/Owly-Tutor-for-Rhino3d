@@ -32,7 +32,12 @@ internal sealed class AISettingsDialog : Dialog
         closeButton.Click += (_, _) => Close();
 
         Button aboutButton = new() { Text = Localization.LocalizeString("About Owly", 276) };
-        aboutButton.Click += (_, _) => WelcomeDialog.ShowFor(this);
+        aboutButton.Click += (_, _) =>
+        {
+            // The popup saves its own choices, so re-read them or a later Save would undo them.
+            if (WelcomeDialog.ShowFor(this))
+                Panel.ReloadLevelAndMemory();
+        };
 
         StackLayout buttons = new()
         {

@@ -27,6 +27,9 @@ internal sealed class AgentRunner : IAgentRunner
 
     private bool Started { get; set; }
 
+    // Set when a restart was asked for while a turn was running; PromptAsync's finally then restarts.
+    private bool RestartPending { get; set; }
+
     public AgentRunner(AgentDefinition def, string docTitle, Func<IAcpClient, Conversation, string, IAcpAgent> connect)
         : this(def, new Conversation(Guid.NewGuid(), def.Name, docTitle), connect)
     {
@@ -70,6 +73,8 @@ internal sealed class AgentRunner : IAgentRunner
         {
             Conversation.CompleteTurn();
             PersistTurn();
+            if (RestartPending)
+                RestartNow();
             TurnGate.Release();
         }
     }
@@ -131,6 +136,34 @@ internal sealed class AgentRunner : IAgentRunner
         }
         if (connection is not null)
             _ = connection.SessionCancelAsync(new CancelNotification { SessionId = sessionId });
+    }
+
+    // Plan 029: a changed level needs a new --system-prompt, which only a new CLI launch picks up. The next
+    // prompt relaunches with --resume. Never during a turn: it waits for the turn's end.
+    public void RestartWhenIdle()
+    {
+        RestartPending = true;
+        if (!TurnGate.Wait(0))
+            return;
+        try
+        {
+            if (RestartPending)
+                RestartNow();
+        }
+        finally
+        {
+            TurnGate.Release();
+        }
+    }
+
+    // Called with TurnGate held.
+    private void RestartNow()
+    {
+        RestartPending = false;
+        IAcpAgent? connection;
+        lock (Gate)
+            connection = Connection;
+        (connection as StreamJsonAgent)?.EndIdleProcess();
     }
 
     public void Dispose()

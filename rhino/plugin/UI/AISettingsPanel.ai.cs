@@ -29,6 +29,9 @@ internal sealed class AISettingsPanel : Panel
     private TextArea MainMemoryText { get; } = new() { Wrap = true, Height = 90, ReadOnly = true };
     private bool MainMemoryShown { get; set; }
 
+    // Plan 029: the level. Applied in TryCommit only when changed, then idle CLIs restart.
+    private DropDown LevelBox { get; } = new();
+
     // Sentinel shown in the grid's Model dropdown for an empty model. Picking it stores an empty
     // string, i.e. "pass no --model, let the CLI choose its own default".
     private static string DefaultModelLabel => Localization.LocalizeString("(default)", 16);
@@ -117,7 +120,20 @@ internal sealed class AISettingsPanel : Panel
         if (MainMemoryShown && (MainMemoryBox.Checked == true) != OwlyMemory.Main.Enabled)
             OwlyMemory.Main.SetEnabled(MainMemoryBox.Checked == true);
 
+        if (LevelBox.SelectedKey is { Length: > 0 } key && OwlyLevelExtensions.Parse(key) is var level && level != AISettings.Level)
+        {
+            AISettings.Level = level;
+            AgentHost.RestartIdleAgents();
+        }
+
         return true;
+    }
+
+    // The welcome popup (About Owly) saves the level and the switch itself; show what is stored.
+    public void ReloadLevelAndMemory()
+    {
+        LevelBox.SelectedKey = AISettings.Level.ToString();
+        MainMemoryBox.Checked = OwlyMemory.Main.Enabled;
     }
 
     private void SeedRows()
@@ -138,6 +154,7 @@ internal sealed class AISettingsPanel : Panel
                 new TableRow(NameHeader),
                 new TableRow(AvailableLabel),
                 new TableRow(LabeledColumn(Localization.LocalizeString("Model:", 23), ModelBox)),
+                new TableRow(LevelGroup()),
                 new TableRow(MainMemoryGroup()),
                 new TableRow(DeleteMemoryRow()),
                 new TableRow(LabeledColumn(Localization.LocalizeString("Found at:", 24), SearchPathsBox)),
@@ -161,6 +178,27 @@ internal sealed class AISettingsPanel : Panel
             Spacing = new Size(0, 3),
             Rows = { new TableRow(new Label { Text = label }), new TableRow(new TableCell(control, true)) },
         };
+
+    private Control LevelGroup()
+    {
+        LevelBox.Items.Clear();
+        LevelBox.Items.Add(new ListItem { Text = Localization.LocalizeString("Beginner", 447), Key = nameof(OwlyLevel.Beginner) });
+        LevelBox.Items.Add(new ListItem { Text = Localization.LocalizeString("Intermediate", 448), Key = nameof(OwlyLevel.Intermediate) });
+        LevelBox.Items.Add(new ListItem { Text = Localization.LocalizeString("Advanced", 449), Key = nameof(OwlyLevel.Advanced) });
+        LevelBox.SelectedKey = AISettings.Level.ToString();
+
+        Label hint = new()
+        {
+            Wrap = WrapMode.Word,
+            TextColor = Colors.Gray,
+            Text = Localization.LocalizeString("Owly uses the new level from your next question.", 446),
+        };
+        return new TableLayout
+        {
+            Spacing = new Size(0, 3),
+            Rows = { new TableRow(LabeledColumn(Localization.LocalizeString("Level:", 445), LevelBox)), new TableRow(hint) },
+        };
+    }
 
     // Plan 028 / ADR-0009: main memory, off by default. Checking the box is applied on OK; Clear acts at once,
     // like Delete all, because its confirmation is the commit.

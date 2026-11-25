@@ -14,6 +14,9 @@ internal interface IAgentRunner : IDisposable
     /// <summary>Cancels the agent's currently running turn, if any.</summary>
     public void Cancel();
 
+    /// <summary>Ends the idle CLI process (now, or after the running turn) so the next prompt relaunches it (plan 029).</summary>
+    public void RestartWhenIdle();
+
     /// <summary>Opens the CLI sign-in flow.</summary>
     public Task LoginAsync(string mcpUrl, string cwd);
 
