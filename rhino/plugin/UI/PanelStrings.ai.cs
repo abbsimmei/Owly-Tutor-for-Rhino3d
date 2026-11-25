@@ -37,11 +37,17 @@ internal static class PanelStrings
         ["project.create"] = Localization.LocalizeString("Create", 379),
         ["project.save"] = Localization.LocalizeString("Save", 380),
         ["project.cancel"] = Localization.LocalizeString("Cancel", 381),
-        ["project.deleteConfirm"] = Localization.LocalizeString("Delete {0}? Owly forgets this project and which files belong to it. This can't be undone.", 382),
+        ["project.deleteConfirm"] = Localization.LocalizeString("Delete {0}? Owly forgets this project, which files belong to it, and its saved conversations. This can't be undone.", 399),
         ["project.cardTitle"] = Localization.LocalizeString("Which project is this file part of?", 383),
         ["project.cardBody"] = Localization.LocalizeString("Owly keeps conversations and notes per project. Your question is sent either way.", 384),
         ["project.suggestedHint"] = Localization.LocalizeString("like the other files in this folder", 385),
         ["project.unsortedHint"] = Localization.LocalizeString("decide later", 386),
+
+        ["convo.strip"] = Localization.LocalizeString("Saved conversations", 394),
+        ["convo.rename"] = Localization.LocalizeString("Rename conversation", 395),
+        ["convo.delete"] = Localization.LocalizeString("Delete conversation", 396),
+        ["convo.deleteConfirm"] = Localization.LocalizeString("Delete \"{0}\"? Owly forgets this conversation. This can't be undone.", 397),
+        ["convo.titlePlaceholder"] = Localization.LocalizeString("Conversation title", 398),
 
         ["turn.copy"] = Localization.LocalizeString("Copy the reply", 77),
         ["command.copyNamed"] = Localization.LocalizeString("Copy {0}", 277),

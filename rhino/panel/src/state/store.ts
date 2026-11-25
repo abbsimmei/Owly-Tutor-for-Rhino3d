@@ -12,6 +12,7 @@ import {
   type BlockSnapshot,
   type CommandOptionInfo,
   type ContextItem,
+  type ConversationItem,
   type HostEvent,
   type HostInfo,
   type NoticeLevel,
@@ -79,6 +80,12 @@ export interface ProjectView {
   pending: boolean;
   suggestion: string | null;
   projects: readonly ProjectInfo[];
+}
+
+/** Plan 026: the saved conversations of the current project, as the host last reported them. */
+export interface ConversationsView {
+  projectId: string | null;
+  items: readonly ConversationItem[];
 }
 
 export interface Notice {
@@ -164,6 +171,7 @@ export class Store {
   readonly notices = signal<readonly Notice[]>([]);
   readonly status = signal<string | null>(null);
   readonly project = signal<ProjectView | null>(null);
+  readonly conversations = signal<ConversationsView | null>(null);
 
   readonly activeAgent: ReadSignal<AgentInfo | null> = computed(() => {
     const name = this.activeAgentName();
@@ -358,6 +366,10 @@ export class Store {
 
       case 'status':
         this.status.set(event.text);
+        return;
+
+      case 'conversations':
+        this.conversations.set({ projectId: event.projectId ?? null, items: event.items });
         return;
 
       case 'project':

@@ -3,12 +3,20 @@
 import { computed, signal, type ReadSignal } from '../core/signal.js';
 import type { Attachment } from '../protocol/events.js';
 
-export type Overlay = 'none' | 'agents' | 'context' | 'project' | 'location' | 'explain';
+export type Overlay = 'none' | 'agents' | 'context' | 'project' | 'location' | 'explain' | 'conversation';
+
+/** Plan 026: the strip's right-click menu is about one saved conversation, next to the owl that was clicked. */
+export interface ConversationMenuTarget {
+  sessionId: string;
+  title: string;
+  anchor: HTMLElement;
+}
 
 export class UiState {
   readonly draft = signal('');
   readonly attachments = signal<readonly Attachment[]>([]);
   readonly overlay = signal<Overlay>('none');
+  readonly conversationMenu = signal<ConversationMenuTarget | null>(null);
   /** False once the user scrolls away from the tail; new output then shows a jump affordance. */
   readonly pinned = signal(true);
   /** Output landed while the user was scrolled away from the tail. */

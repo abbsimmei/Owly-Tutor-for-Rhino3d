@@ -1,3 +1,4 @@
+using System.IO;
 using Rhino.Runtime;
 using Rhino.UI;
 
@@ -15,13 +16,48 @@ internal static class OwlyMemory
     public static ProjectRegistry Projects { get; } =
         new(Store, Localization.LocalizeString("Unsorted", 360));
 
+    public static ConversationStore Conversations { get; } = new(Store);
+
     public static event Action? Changed;
 
     public static void NotifyChanged() => Changed?.Invoke();
 
+    // Plan 026: a conversation was saved, renamed, deleted or moved. Raised on the UI thread, so every
+    // open panel can send its strip again.
+    public static event Action? ConversationsChanged;
+
+    public static void NotifyConversationsChanged() =>
+        RhinoApp.InvokeOnUiThread(new Action(() => ConversationsChanged?.Invoke()));
+
+    // "Delete all Owly memory" ran. Every panel drops its open conversation without saving it again.
+    public static event Action? Cleared;
+
+    // The Claude Code CLI always starts here, whatever document is open, because Claude Code finds a
+    // session only from the folder it was started in. Created when missing; if that fails, the CLI
+    // gets Rhino's temp folder, which is fine for everything but resuming.
+    public static string CliDirectory
+    {
+        get
+        {
+            string path = OwlyStore.CliDirectory(Store.Root);
+            try
+            {
+                Directory.CreateDirectory(path);
+                return path;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
+            {
+                HostUtils.LogDebugEvent($"[owly] could not create {path}: {ex.Message}\n");
+                return Path.GetTempPath();
+            }
+        }
+    }
+
     // "Delete all Owly memory" in settings.
     public static bool DeleteAll()
     {
+        // First, so no open conversation can be saved again while (or after) the folder is emptied.
+        Cleared?.Invoke();
         bool deleted = Store.DeleteAll();
         NotifyChanged();
         return deleted;

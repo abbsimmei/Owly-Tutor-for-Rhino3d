@@ -28,10 +28,18 @@ internal sealed class AgentRunner : IAgentRunner
     private bool Started { get; set; }
 
     public AgentRunner(AgentDefinition def, string docTitle, Func<IAcpClient, Conversation, string, IAcpAgent> connect)
+        : this(def, new Conversation(Guid.NewGuid(), def.Name, docTitle), connect)
+    {
+    }
+
+    // Reopening a saved conversation: drive the restored Conversation (its turns are already shown)
+    // rather than a fresh one. The connection factory seeds the CLI's --resume id from it.
+    public AgentRunner(AgentDefinition def, Conversation conversation, Func<IAcpClient, Conversation, string, IAcpAgent> connect)
     {
         Definition = def;
         Connect = connect;
-        Conversation = new Conversation(Guid.NewGuid(), def.Name, docTitle);
+        Conversation = conversation;
+        Conversation.TitleFallback = Rhino.UI.Localization.LocalizeString("Conversation", 390);
         Client = new RhinoAcpClient(Conversation);
     }
 
@@ -55,6 +63,7 @@ internal sealed class AgentRunner : IAgentRunner
         finally
         {
             Conversation.CompleteTurn();
+            PersistTurn();
             TurnGate.Release();
         }
     }
@@ -108,6 +117,20 @@ internal sealed class AgentRunner : IAgentRunner
         (connection as IDisposable)?.Dispose();
         // TurnGate is deliberately not disposed: a turn cancelled by this teardown still runs its
         // finally (TurnGate.Release), and disposing here would race it into ObjectDisposedException.
+    }
+
+    // Saved after every turn, on the turn's background thread, so a crash loses at most the turn in flight.
+    private void PersistTurn()
+    {
+        try
+        {
+            if (OwlyMemory.Conversations.Save(Conversation))
+                OwlyMemory.NotifyConversationsChanged();
+        }
+        catch (Exception)
+        {
+            // A disk hiccup must never fault the turn the student just ran.
+        }
     }
 
     private async Task<IAcpAgent> EnsureStartedAsync(string mcpUrl, string cwd)

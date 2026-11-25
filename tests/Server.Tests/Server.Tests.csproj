@@ -61,6 +61,9 @@
     <Compile Include="../../rhino/plugin/UI/ConversationFeed.ai.cs" LinkBase="PanelSources" />
     <Compile Include="../../rhino/plugin/Agents/Memory/OwlyStore.ai.cs" LinkBase="MemorySources" />
     <Compile Include="../../rhino/plugin/Agents/Memory/ProjectRegistry.ai.cs" LinkBase="MemorySources" />
+    <Compile Include="../../rhino/plugin/Agents/Memory/ConversationDto.ai.cs" LinkBase="MemorySources" />
+    <Compile Include="../../rhino/plugin/Agents/Memory/ConversationStore.ai.cs" LinkBase="MemorySources" />
+    <Compile Include="../../rhino/plugin/Agents/Memory/ResumeContext.ai.cs" LinkBase="MemorySources" />
   </ItemGroup>
 
   <ItemGroup>

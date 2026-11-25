@@ -595,6 +595,96 @@ try {
       && getComputedStyle(document.querySelector('.project-btn .project-name')).textOverflow === 'ellipsis')) === true);
   check('a file with a project gets no project card', (await count('.project-card')) === 0);
 
+  // ---------------------------------------------------------------- the strip of saved conversations (plan 026)
+  const convoStrip = () => page.evaluate(() => ({
+    strips: document.querySelectorAll('.stage > .convo-strip').length,
+    titles: [...document.querySelectorAll('.convo-strip .convo-item')].map((b) => b.getAttribute('aria-label')),
+    current: [...document.querySelectorAll('.convo-strip .convo-item')].map((b) => b.getAttribute('aria-current') === 'true'),
+  }));
+  // Earlier checks pressed New conversation, which leaves no owl open; the middle one is opened here.
+  await page.click('.convo-strip .convo-item:nth-child(2)');
+  await wait(150);
+  const stripNow = await convoStrip();
+  check('the strip lists the saved conversations newest first',
+    stripNow.strips === 1 && JSON.stringify(stripNow.titles) === JSON.stringify([
+      'How do I loft between curves?',
+      "What's the difference between Join and Group?",
+      'How do I make a wall with openings?',
+    ]), JSON.stringify(stripNow));
+  check('the open conversation, and only it, is current', JSON.stringify(stripNow.current) === '[false,true,false]', JSON.stringify(stripNow.current));
+  const stripLook = await page.evaluate(() => {
+    const items = [...document.querySelectorAll('.convo-strip .convo-item')];
+    const edge = (b) => { const s = getComputedStyle(b); return { width: s.borderTopWidth, color: s.borderTopColor }; };
+    const stage = document.querySelector('.stage').getBoundingClientRect();
+    const strip = document.querySelector('.convo-strip').getBoundingClientRect();
+    const view = document.querySelector('.transcript').getBoundingClientRect();
+    return {
+      open: edge(items[1]),
+      other: edge(items[0]),
+      rightOfTranscript: strip.left >= view.right - 1 && strip.right <= stage.right + 1,
+      secondChild: document.querySelector('.stage').children[1]?.classList.contains('convo-strip') === true,
+    };
+  });
+  check('the open conversation is outlined on its button, the others are not',
+    stripLook.open.width === '2px' && stripLook.open.color !== 'rgba(0, 0, 0, 0)' && stripLook.other.color === 'rgba(0, 0, 0, 0)',
+    JSON.stringify(stripLook));
+  check('the strip is the second column of the stage, right of the transcript',
+    stripLook.rightOfTranscript && stripLook.secondChild, JSON.stringify(stripLook));
+  const stripOwls = await owlsClear('.convo-item .owl');
+  check('each saved conversation shows the owl with nothing painted behind it', stripOwls.count === 3 && stripOwls.bad === 0, JSON.stringify(stripOwls));
+  const tips = await page.evaluate(() => {
+    const started = ['2026-11-24T10:15:00.000Z', '2026-11-23T14:30:00.000Z', '2026-11-20T09:05:00.000Z'];
+    const format = new Intl.DateTimeFormat(document.documentElement.lang, { dateStyle: 'medium', timeStyle: 'short' });
+    return [...document.querySelectorAll('.convo-strip .convo-item')].map((b, i) => ({
+      got: b.getAttribute('title'),
+      want: `${b.getAttribute('aria-label')} \u00b7 ${format.format(new Date(started[i]))}`,
+    }));
+  });
+  check('hovering an owl shows the title and the date', tips.every((tip) => tip.got === tip.want), JSON.stringify(tips));
+
+  await page.click('.convo-strip .convo-item:nth-child(1)');
+  await wait(150);
+  check('clicking another owl makes it the open one', JSON.stringify((await convoStrip()).current) === '[true,false,false]', JSON.stringify(await convoStrip()));
+
+  await page.click('.convo-strip .convo-item:nth-child(2)', { button: 'right' });
+  await wait(150);
+  const convoMenu = await page.evaluate(() => {
+    const menu = document.querySelector('.convo-menu');
+    const panel = document.querySelector('.panel').getBoundingClientRect();
+    const box = menu?.getBoundingClientRect();
+    return {
+      count: document.querySelectorAll('.convo-menu').length,
+      actions: ['rename', 'delete'].filter((a) => document.querySelector(`.convo-menu .convo-${a}`)).length,
+      inside: Boolean(box && box.left >= panel.left && box.right <= panel.right && box.top >= panel.top && box.bottom <= panel.bottom),
+    };
+  });
+  check('a right-click on an owl opens the in-panel menu with Rename and Delete, inside the panel',
+    convoMenu.count === 1 && convoMenu.actions === 2 && convoMenu.inside, JSON.stringify(convoMenu));
+  await page.click('.convo-menu .convo-rename');
+  await wait(100);
+  const renameField = await page.evaluate(() => {
+    const field = document.querySelector('.convo-menu .project-name-field');
+    return { value: field?.value ?? '', max: field?.getAttribute('maxlength') ?? '' };
+  });
+  check('Rename offers the title in a field limited to 80 characters',
+    renameField.value === "What's the difference between Join and Group?" && renameField.max === '80', JSON.stringify(renameField));
+  await page.click('.convo-menu .project-name-field', { clickCount: 3 });
+  await page.keyboard.type('Join or Group');
+  await page.keyboard.press('Enter');
+  await wait(200);
+  check('Rename changes the title in the strip and closes the menu',
+    (await convoStrip()).titles[1] === 'Join or Group' && (await count('.convo-menu')) === 0, JSON.stringify(await convoStrip()));
+
+  await page.click('.convo-strip .convo-item:nth-child(3)', { button: 'right' });
+  await wait(100);
+  await page.click('.convo-menu .convo-delete');
+  await wait(100);
+  const convoConfirm = await page.evaluate(() => document.querySelector('.convo-menu .project-confirm')?.textContent ?? '');
+  check('Delete asks for confirmation first', convoConfirm.includes('How do I make a wall with openings?'), convoConfirm);
+  await page.click('.convo-menu .btn.danger');
+  await wait(200);
+  check('a confirmed Delete removes the owl', (await convoStrip()).titles.length === 2 && (await count('.convo-menu')) === 0, JSON.stringify(await convoStrip()));
+
   await page.click('.project-btn');
   await wait(150);
   const projectMenu = await page.evaluate(() => ({
@@ -1030,6 +1120,58 @@ try {
     }));
     check('the host naming the project hides the card and shows the name',
       hostChosen.cards === 0 && hostChosen.header === 'Pavilion', JSON.stringify(hostChosen));
+
+    // Plan 026: the contract's conversations event draws the strip, and a click sends the command.
+    const convoEvent = events.find((event) => event.type === 'conversations');
+    const hostStrip = await host.evaluate(() => ({
+      titles: [...document.querySelectorAll('.convo-strip .convo-item')].map((b) => b.getAttribute('aria-label')),
+      current: [...document.querySelectorAll('.convo-strip .convo-item')].findIndex((b) => b.getAttribute('aria-current') === 'true'),
+      overflow: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    }));
+    check('a C#-serialised conversations event draws the strip newest first with the open one current',
+      JSON.stringify(hostStrip.titles) === JSON.stringify(convoEvent.items.map((item) => item.title)) && hostStrip.current === 1 && !hostStrip.overflow,
+      JSON.stringify(hostStrip));
+    // The question card is still up here and covers the strip, so the gestures are dispatched, not clicked.
+    const nth = (n) => `.convo-strip .convo-item:nth-child(${n})`;
+    const hostClick = (sel) => host.evaluate((q) => { document.querySelector(q).click(); }, sel);
+    const hostRight = (sel) => host.evaluate((q) => {
+      document.querySelector(q).dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: 5, clientY: 5 }));
+    }, sel);
+    await host.evaluate(() => { window.__sent.length = 0; });
+    await hostClick(nth(2));
+    await wait(100);
+    check('clicking the open owl sends nothing', (await host.evaluate(() => window.__sent.length)) === 0);
+    await hostClick(nth(1));
+    await wait(100);
+    const opened = await host.evaluate(() => window.__sent.filter((m) => m.type === 'conversation.open'));
+    check('clicking another owl sends conversation.open with its session id',
+      opened.length === 1 && opened[0].sessionId === convoEvent.items[0].sessionId, JSON.stringify(opened));
+    await hostRight(nth(3));
+    await wait(100);
+    check('a right-click on an owl opens its own menu and does not ask the host for the native one',
+      (await host.evaluate(() => window.__sent.some((m) => m.type === 'menu.open'))) === false
+        && (await host.evaluate(() => document.querySelectorAll('.convo-menu').length)) === 1);
+    await hostClick('.convo-menu .convo-rename');
+    await wait(100);
+    await host.evaluate(() => {
+      const field = document.querySelector('.convo-menu .project-name-field');
+      field.value = 'Walls';
+      field.dispatchEvent(new Event('input', { bubbles: true }));
+      field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+    });
+    await wait(100);
+    const renamed = await host.evaluate(() => window.__sent.filter((m) => m.type === 'conversation.rename'));
+    check('Rename sends conversation.rename with the id and the new title',
+      renamed.length === 1 && renamed[0].sessionId === convoEvent.items[2].sessionId && renamed[0].title === 'Walls', JSON.stringify(renamed));
+    await hostRight(nth(3));
+    await wait(100);
+    await hostClick('.convo-menu .convo-delete');
+    await wait(100);
+    await hostClick('.convo-menu .btn.danger');
+    await wait(100);
+    const deleted = await host.evaluate(() => window.__sent.filter((m) => m.type === 'conversation.delete'));
+    check('a confirmed Delete sends conversation.delete with the id',
+      deleted.length === 1 && deleted[0].sessionId === convoEvent.items[2].sessionId, JSON.stringify(deleted));
 
     await host.evaluate((batch) => { for (const event of batch) window.rhinoAI.receive(event); },
       events.filter(settling));

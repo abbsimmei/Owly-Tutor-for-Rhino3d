@@ -39,7 +39,12 @@ internal partial class AIPanelViewModel
         string? path = DocumentPath;
 
         // Anything deleted since (here, in settings or in the other Rhino) is forgotten.
-        if (!all.Any(p => p.Id == ProjectId)) ProjectId = null;
+        string? deletedProject = null;
+        if (!all.Any(p => p.Id == ProjectId))
+        {
+            deletedProject = ProjectId;
+            ProjectId = null;
+        }
         if (!all.Any(p => p.Id == UntitledChoice)) UntitledChoice = null;
 
         if (ProjectId is null || !SamePath(path, ResolvedPath))
@@ -47,6 +52,11 @@ internal partial class AIPanelViewModel
             ProjectId = path is null ? UntitledChoice : Projects.Resolve(path);
             ResolvedPath = path;
         }
+
+        // Plan 026: the open conversation of a deleted project is deleted with it, so it is never saved again.
+        if (deletedProject is not null && ActiveConversation?.ProjectId == deletedProject)
+            DiscardOpenConversation();
+        SyncConversationProject();
 
         OwlyProject? current = all.FirstOrDefault(p => p.Id == ProjectId);
         bool pending = current is null;
@@ -58,6 +68,7 @@ internal partial class AIPanelViewModel
             pending,
             suggestion,
             all.Select(p => new PanelProject(p.Id, p.Name, p.Builtin)).ToList()));
+        SendConversations();
     }
 
     // Switch project, or the project card's answer. A file Owly didn't know yet is filed under the
@@ -115,7 +126,11 @@ internal partial class AIPanelViewModel
     private bool DeleteProject(string id)
     {
         if (!Projects.Delete(id)) return false;
+
+        // Notified first: every panel whose open conversation belongs to this project drops it (SendProject),
+        // so nothing can save it into the folder that is removed next.
         OwlyMemory.NotifyChanged();
+        Saved.DeleteProject(id);
         return true;
     }
 

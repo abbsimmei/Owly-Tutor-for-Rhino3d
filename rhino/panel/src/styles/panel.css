@@ -1184,7 +1184,48 @@ a:hover { text-decoration: underline; }
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
 
-.stage { position: relative; flex: 1; min-height: 0; display: grid; grid-template-rows: 1fr; }
+/* Plan 026: the transcript and, when conversations are saved, the strip of owls as a second column. */
+.stage { position: relative; flex: 1; min-height: 0; display: grid; grid-template-rows: 1fr; grid-template-columns: minmax(0, 1fr) auto; }
+
+.convo-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3.6px;
+  min-height: 0;
+  padding: var(--pad) 3.6px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  border-inline-start: 1px solid var(--border);
+}
+/* The outline is on the button, never on the owl: .owl gets no background, filter or clipping. */
+.convo-item {
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 2.7px;
+  border: 2px solid transparent;
+  border-radius: var(--r-sm);
+  background: none;
+  cursor: pointer;
+}
+.convo-item:hover { background: var(--surface-2); }
+.convo-item:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 1px; }
+.convo-item[aria-current='true'] { border-color: var(--accent); background: var(--accent-soft); cursor: default; }
+
+/* Positioned by script in the panel's own units (the panel carries a CSS zoom), like .location-popover. */
+.convo-menu {
+  position: absolute;
+  z-index: 9;
+  width: 216px;
+  max-width: calc(100% - 56px);
+  padding: 3.6px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+}
 
 .mention-menu {
   position: absolute;

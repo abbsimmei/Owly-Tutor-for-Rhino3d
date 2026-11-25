@@ -68,6 +68,14 @@ export interface ProjectInfo {
   builtin: boolean;
 }
 
+/** Plan 026: one saved conversation of the current project. `startedAt` is ISO 8601; `current` is the open one. */
+export interface ConversationItem {
+  sessionId: string;
+  title: string;
+  startedAt: string;
+  current: boolean;
+}
+
 export type AttachmentKind = 'image' | 'text';
 
 export interface Attachment {
@@ -233,6 +241,9 @@ export type HostEvent =
   // Plan 025: this document's project. `pending`: Owly doesn't know the file's project yet, so the
   // project card asks once a question has been sent. `suggestion` is an id from `projects`.
   | { type: 'project'; id?: string; name?: string; pending: boolean; suggestion?: string; projects: ProjectInfo[] }
+  // Plan 026: the saved conversations of the current project, newest first, for the strip of owls. No
+  // `projectId` while the project is pending. Not the same as `conversation`, the transcript snapshot.
+  | { type: 'conversations'; projectId?: string; items: ConversationItem[] }
   // The host owns the right-click menu, but the panel owns the zoom ladder, so the menu sends back
   // an intent rather than a level. `set` is the other direction: the level the host had stored.
   | { type: 'zoom'; action: 'in' | 'out' | 'reset' }
@@ -289,6 +300,10 @@ export type PanelCommand =
   | { type: 'project.rename'; id: string; name: string }
   | { type: 'project.delete'; id: string }
   | { type: 'project.move'; id: string }
+  // Plan 026: the strip. `open` continues a saved conversation of this project; the host checks every id.
+  | { type: 'conversation.open'; sessionId: string }
+  | { type: 'conversation.rename'; sessionId: string; title: string }
+  | { type: 'conversation.delete'; sessionId: string }
   | {
       type: 'menu.open';
       x: number;

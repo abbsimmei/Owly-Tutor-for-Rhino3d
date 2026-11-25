@@ -72,6 +72,59 @@ internal static class AgentHost
         return probe;
     }
 
+    // Plan 026: reopen a saved conversation as the doc's active agent, replacing (and disposing, which
+    // saves) the runner pooled for it. The restored conversation carries the saved session id, so the
+    // first spawn passes --resume. Returns false when the saved conversation's agent is not available.
+    public static bool TryResume(RhinoDoc doc, ConversationDto dto, out IAgentRunner agent)
+    {
+        if (!AgentRegistry.Instance.TryGet(dto.AgentName, out AgentDefinition def) || !def.Enabled)
+        {
+            agent = default!;
+            return false;
+        }
+
+        IAgentRunner resumed;
+        try
+        {
+            resumed = CreateResumed(def, dto);
+        }
+        catch (NotImplementedException)
+        {
+            agent = default!;
+            return false;
+        }
+
+        (uint, string) key = (doc.RuntimeSerialNumber, def.Name);
+        if (Agents.Remove(key, out IAgentRunner? prior))
+            SafeDispose(prior);
+
+        Agents[key] = resumed;
+        SetActive(doc, def.Name);
+        agent = resumed;
+        return true;
+    }
+
+    // The saved transcript is restored, and the CLI is seeded to launch with --resume <saved id>. If Claude
+    // Code no longer has that session, the first message is retried as a fresh one with the capped transcript
+    // in front of it (ResumeContext).
+    public static IAgentRunner CreateResumed(AgentDefinition def, ConversationDto dto)
+    {
+        Conversation restored = Conversation.Restore(dto);
+        Guid resumeId = restored.AgentSessionId;
+        string context = ResumeContext.Build(dto.Turns);
+        switch (def.Name.ToLowerInvariant())
+        {
+            case "claude":
+                return new AgentRunner(def, restored, (client, convo, cwd) => new StreamJsonAgent(def, client, convo, cwd, new ClaudeStreamJsonParser(def), resumeId, context));
+            default:
+                throw new NotImplementedException($"Unknown agent adapter {def.Name}");
+        }
+    }
+
+    // True when this saved conversation is the live one of another open document, so it can't be opened twice.
+    public static bool IsLive(Guid sessionId, uint exceptDoc) =>
+        Agents.Any(entry => entry.Key.Doc != exceptDoc && entry.Value.Conversation.AgentSessionId == sessionId);
+
     // The active pooled agent for the doc, so a control verb (cancel/stop) acts on the running
     // turn rather than an arbitrary idle agent the doc happened to drive earlier. Resolves the
     // active definition's name and looks up only that pooled entry; false when none is pooled.
@@ -118,6 +171,18 @@ internal static class AgentHost
 
     private static void SafeDispose(IAgentRunner agent)
     {
+        // The conversation ends here (New conversation, another conversation opened, file closed, Rhino
+        // quitting), so it is saved once more before the agent goes.
+        try
+        {
+            if (OwlyMemory.Conversations.Save(agent.Conversation))
+                OwlyMemory.NotifyConversationsChanged();
+        }
+        catch (Exception ex)
+        {
+            RhinoApp.WriteLine($"[agenthost] could not save the conversation: {ex.Message}");
+        }
+
         try
         {
             agent.Dispose();

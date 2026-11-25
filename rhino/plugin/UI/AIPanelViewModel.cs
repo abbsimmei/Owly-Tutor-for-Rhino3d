@@ -29,6 +29,7 @@ internal partial class AIPanelViewModel
         Bridge = new PanelBridge(view, IncomingCommand);
         DocumentSerialNumber = documentSerialNumber;
         SubscribeProjects();
+        SubscribeConversations();
 
         StartPageServer();
     }
