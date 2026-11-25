@@ -22,7 +22,11 @@ export function nameField(
   submitKey: StringKey,
   onSubmit: (name: string) => void,
   onCancel: () => void,
+  // Plan 026: a conversation title is longer than a project name and has its own placeholder.
+  field: { maxLength?: number; placeholder?: StringKey } = {},
 ): Child {
+  const maxLength = field.maxLength ?? MAX_PROJECT_NAME;
+  const placeholder: StringKey = field.placeholder ?? 'project.namePlaceholder';
   const draft = signal(initial);
   const submit = (): void => {
     const name = draft.peek().trim();
@@ -34,9 +38,9 @@ export function nameField(
     el('input', {
       type: 'text',
       class: 'project-name-field',
-      maxlength: MAX_PROJECT_NAME,
-      placeholder: () => t('project.namePlaceholder'),
-      'aria-label': () => t('project.namePlaceholder'),
+      maxlength: maxLength,
+      placeholder: () => t(placeholder),
+      'aria-label': () => t(placeholder),
       value: initial,
       ref: (node: HTMLInputElement) => queueMicrotask(() => node.focus()),
       onInput: (event: Event) => draft.set((event.target as HTMLInputElement).value),

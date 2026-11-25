@@ -12,6 +12,7 @@ import { notices } from './notices.js';
 import { owl } from './owl.js';
 import { commandsIn, normaliseCommand } from '../core/commandMentions.js';
 import { agentMessage } from './message.js';
+import { conversationStrip } from './conversationStrip.js';
 
 function attachmentChip(attachment: Attachment): Child {
   return el(
@@ -259,6 +260,8 @@ export function transcript(ctx: PanelContext): Child {
     'div',
     { class: 'stage' },
     scroller,
+    // Plan 026: the second grid column; nothing while the project is pending or nothing is saved yet.
+    conversationStrip(ctx),
     notices(ctx),
     when(
       () => !ui.pinned() && ui.hasNew(),

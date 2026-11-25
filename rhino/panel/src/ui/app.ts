@@ -13,6 +13,7 @@ import { questionOverlay } from './question.js';
 import { owl } from './owl.js';
 import { explainPopover, explainScrim } from './explainPopover.js';
 import { locationPopover, locationScrim } from './locationPopover.js';
+import { conversationMenu } from './conversationStrip.js';
 import { projectCard } from './projectCard.js';
 import { projectMenu } from './projectMenu.js';
 import { transcript } from './transcript.js';
@@ -172,6 +173,11 @@ export function app(ctx: PanelContext): Child {
     when(
       () => ui.overlay() === 'project',
       () => [el('div', { class: 'scrim', onClick: () => ui.closeOverlay() }), projectMenu(ctx)],
+    ),
+    // Plan 026: the strip's right-click menu (Rename, Delete), beside the owl that was clicked.
+    when(
+      () => ui.overlay() === 'conversation' && ui.conversationMenu() !== null,
+      () => [el('div', { class: 'scrim clear', onClick: () => ui.closeOverlay() }), conversationMenu(ctx)],
     ),
   );
 }

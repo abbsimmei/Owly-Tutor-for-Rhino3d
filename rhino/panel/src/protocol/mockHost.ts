@@ -6,6 +6,7 @@ import type {
   AgentInfo,
   Attachment,
   ContextItem,
+  ConversationItem,
   ConversationSnapshot,
   HostEvent,
   PanelCommand,
@@ -762,6 +763,16 @@ export class MockHost implements Bridge {
   private fileProject: string | null = 'p-tower';
   private projectId: string | null = 'p-tower';
 
+  // Plan 026: the saved conversations of each project, newest first, and which one is open. Tower study starts
+  // with three; the open one is the middle one, so a wrong order or a wrong outline shows.
+  private saved: Record<string, ConversationItem[]> = {
+    'p-tower': [
+      { sessionId: 'c-3', title: 'How do I loft between curves?', startedAt: '2026-11-24T10:15:00.000Z', current: false },
+      { sessionId: 'c-2', title: "What's the difference between Join and Group?", startedAt: '2026-11-23T14:30:00.000Z', current: true },
+      { sessionId: 'c-1', title: 'How do I make a wall with openings?', startedAt: '2026-11-20T09:05:00.000Z', current: false },
+    ],
+  };
+
   subscribe(handler: (event: HostEvent) => void): () => void {
     this.handlers.add(handler);
     if (!this.booted) {
@@ -790,7 +801,14 @@ export class MockHost implements Bridge {
         }
         return;
 
+      case 'conversation.open':
+      case 'conversation.rename':
+      case 'conversation.delete':
+        this.changeSaved(command);
+        return;
+
       case 'conversation.new':
+        this.markOpenConversation(null);
         this.script?.cancel();
         this.script = null;
         this.activeTurn = null;
@@ -992,6 +1010,38 @@ export class MockHost implements Bridge {
     }
   }
 
+  // Plan 026: mirrors the host's list for this document's project; nothing while the project is pending.
+  private emitConversations(): void {
+    const items = this.projectId === null ? [] : [...(this.saved[this.projectId] ?? [])];
+    this.emit({ type: 'conversations', ...(this.projectId === null ? {} : { projectId: this.projectId }), items });
+  }
+
+  private markOpenConversation(sessionId: string | null): void {
+    for (const list of Object.values(this.saved))
+      for (const item of list) item.current = item.sessionId === sessionId;
+    this.emitConversations();
+  }
+
+  private changeSaved(
+    command: Extract<PanelCommand, { type: 'conversation.open' | 'conversation.rename' | 'conversation.delete' }>,
+  ): void {
+    const list = this.projectId === null ? undefined : this.saved[this.projectId];
+    const found = list?.find((item) => item.sessionId === command.sessionId);
+    if (!list || !found) return;
+
+    if (command.type === 'conversation.open') {
+      this.markOpenConversation(found.sessionId);
+    } else if (command.type === 'conversation.rename') {
+      const title = command.title.trim();
+      if (title.length === 0 || title.length > 80 || /\p{Cc}/u.test(title)) return;
+      found.title = title;
+      this.emitConversations();
+    } else {
+      this.saved[this.projectId as string] = list.filter((item) => item !== found);
+      this.emitConversations();
+    }
+  }
+
   // Mirrors AIPanelViewModel.SendProject. A pending file is offered the first project as if another
   // file in its folder belonged to it.
   private emitProject(): void {
@@ -1005,6 +1055,7 @@ export class MockHost implements Bridge {
       ...(suggestion ? { suggestion } : {}),
       projects: [...this.projects],
     });
+    this.emitConversations();
   }
 
   emit(event: HostEvent): void {

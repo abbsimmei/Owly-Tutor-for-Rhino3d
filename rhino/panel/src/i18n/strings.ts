@@ -31,11 +31,17 @@ export const EN = {
   'project.create': 'Create',
   'project.save': 'Save',
   'project.cancel': 'Cancel',
-  'project.deleteConfirm': "Delete {0}? Owly forgets this project and which files belong to it. This can't be undone.",
+  'project.deleteConfirm':
+    "Delete {0}? Owly forgets this project, which files belong to it, and its saved conversations. This can't be undone.",
   'project.cardTitle': 'Which project is this file part of?',
   'project.cardBody': 'Owly keeps conversations and notes per project. Your question is sent either way.',
   'project.suggestedHint': 'like the other files in this folder',
   'project.unsortedHint': 'decide later',
+  'convo.strip': 'Saved conversations',
+  'convo.rename': 'Rename conversation',
+  'convo.delete': 'Delete conversation',
+  'convo.deleteConfirm': 'Delete "{0}"? Owly forgets this conversation. This can\'t be undone.',
+  'convo.titlePlaceholder': 'Conversation title',
 
   'turn.copy': 'Copy the reply',
   'command.copyNamed': 'Copy {0}',
